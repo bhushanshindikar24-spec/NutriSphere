@@ -1,0 +1,3 @@
+#!/bin/sh
+# NutriSphere Maven Wrapper script for Unix/Linux
+exec mvn "$@"

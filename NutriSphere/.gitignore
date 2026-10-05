@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Frontend build
+frontend/dist/
+dist/
+
+# Java/Maven
+backend/target/
+target/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Temporary uploads
+uploads/temporary/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime/generated files
+*.tmp
+*.temp
+
+# Local databases / dumps
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage
+coverage/
+
+# Antigravity / Gemini local files
+.gemini/
+
+# Local project ZIP backups
+../NutriSphere.zip

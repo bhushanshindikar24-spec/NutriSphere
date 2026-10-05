@@ -1,0 +1,60 @@
+
+services:
+  mysqldb:
+    image: mysql:8.0
+    container_name: nutrisphere-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nutrisphere
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - nutrisphere-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../deployment/Dockerfile.backend
+    container_name: nutrisphere-backend
+    restart: always
+    depends_on:
+      mysqldb:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysqldb:3306/nutrisphere?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      JWT_SECRET: NutriSphereSecretKey2024VeryLongSecretKeyForHS256AlgorithmAtLeast256Bits
+    ports:
+      - "8080:8080"
+    networks:
+      - nutrisphere-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../deployment/Dockerfile.frontend
+    container_name: nutrisphere-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - nutrisphere-net
+
+volumes:
+  mysql_data:
+
+networks:
+  nutrisphere-net:
+    driver: bridge

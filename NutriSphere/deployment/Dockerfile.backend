@@ -1,0 +1,17 @@
+# Stage 1: Build JAR using Maven & JDK 17
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn clean package -DskipTests -B
+
+# Stage 2: Runtime Image with lightweight JRE 17
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+RUN addgroup -S nutrisphere && adduser -S nutrisphere -G nutrisphere
+RUN mkdir -p /var/nutrisphere/uploads && chown -R nutrisphere:nutrisphere /var/nutrisphere
+COPY --from=build /app/target/*.jar app.jar
+USER nutrisphere
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
