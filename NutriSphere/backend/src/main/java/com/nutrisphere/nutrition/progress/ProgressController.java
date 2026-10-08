@@ -15,22 +15,19 @@ public class ProgressController {
     @PostMapping("/measurements")
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<MeasurementResponse> recordMeasurement(@RequestBody MeasurementRequest req) {
+        securityUtils.assertPatientAccess(req.getPatientUserId());
         return ApiResponse.success(progressService.recordMeasurement(securityUtils.getCurrentUserId(), req));
     }
 
     @GetMapping("/measurements/{patientUserId}")
     public ApiResponse<List<MeasurementResponse>> getMeasurements(@PathVariable Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot access another patient's measurements");
-        }
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(progressService.getMeasurements(patientUserId));
     }
 
     @GetMapping("/{patientUserId}")
     public ApiResponse<List<ProgressResponse>> getProgress(@PathVariable Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot access another patient's progress");
-        }
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(progressService.getProgress(patientUserId));
     }
 }
