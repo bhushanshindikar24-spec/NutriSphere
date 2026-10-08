@@ -1,18 +1,22 @@
 package com.nutrisphere.hotel.menu.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
+
 @Data
 public class MealRequest {
     private Long categoryId;
-    private String name;
+    @NotBlank private String name;
     private String description;
-    private Double price;
-    private Double calories;
-    private Double proteinG;
-    private Double carbsG;
-    private Double fatG;
+    @PositiveOrZero private Double price;
+    @PositiveOrZero private Double calories;
+    @PositiveOrZero private Double proteinG;
+    @PositiveOrZero private Double carbsG;
+    @PositiveOrZero private Double fatG;
     private String allergens;
     private Boolean vegetarian;
     private Boolean vegan;
-    private Integer preparationTimeMin;
+    @PositiveOrZero private Integer preparationTimeMin;
     private boolean available = true;
 }
