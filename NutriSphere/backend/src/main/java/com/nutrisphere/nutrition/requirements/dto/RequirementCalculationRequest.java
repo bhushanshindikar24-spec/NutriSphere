@@ -1,12 +1,16 @@
 package com.nutrisphere.nutrition.requirements.dto;
+
 import com.nutrisphere.common.enums.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
+
 @Data
 public class RequirementCalculationRequest {
-    private Double weightKg;
-    private Double heightCm;
-    private Integer ageYears;
-    private Gender gender;
-    private ActivityLevel activityLevel;
-    private String goal; // WEIGHT_LOSS, MAINTENANCE, MUSCLE_GAIN
+    @NotNull @Positive private Double weightKg;
+    @NotNull @Positive private Double heightCm;
+    @NotNull @Positive private Integer ageYears;
+    @NotNull private Gender gender;
+    @NotNull private ActivityLevel activityLevel;
+    private String goal;
 }
