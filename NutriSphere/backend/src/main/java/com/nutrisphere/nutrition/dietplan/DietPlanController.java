@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.nutrisphere.exception.ForbiddenException;
 
 @RestController @RequestMapping("/api/nutrition/diet-plans") @RequiredArgsConstructor
 public class DietPlanController {
@@ -34,12 +35,20 @@ public class DietPlanController {
 
     @GetMapping("/patient/{patientUserId}")
     public ApiResponse<List<DietPlanResponse>> getForPatient(@PathVariable Long patientUserId) {
+        assertPatientOwnsTarget(patientUserId);
         return ApiResponse.success(dietPlanService.getPlansForPatient(patientUserId));
     }
 
     @GetMapping("/patient/{patientUserId}/approved")
     public ApiResponse<List<DietPlanResponse>> getApprovedForPatient(@PathVariable Long patientUserId) {
+        assertPatientOwnsTarget(patientUserId);
         return ApiResponse.success(dietPlanService.getApprovedPlanForPatient(patientUserId));
+    }
+
+    private void assertPatientOwnsTarget(Long patientUserId) {
+        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's diet plans");
+        }
     }
 
     @GetMapping("/my")
