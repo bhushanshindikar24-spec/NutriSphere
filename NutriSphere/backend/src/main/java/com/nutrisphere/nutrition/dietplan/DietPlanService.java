@@ -113,6 +113,9 @@ public class DietPlanService {
         if (!plan.getDietitianUserId().equals(dietitianUserId)) {
             throw new ForbiddenException("Not your diet plan");
         }
+        if (plan.getStatus() == DietPlanStatus.APPROVED) {
+            throw new BadRequestException("Approved diet plans are immutable. Create a new plan version instead.");
+        }
         if (req.getTitle() != null) plan.setTitle(req.getTitle());
         if (req.getDescription() != null) plan.setDescription(req.getDescription());
         if (req.getStartDate() != null) plan.setStartDate(req.getStartDate());
