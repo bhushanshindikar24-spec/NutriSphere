@@ -20,6 +20,8 @@ public class AssessmentController {
     @PostMapping
     @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR', 'ADMIN')")
     public ApiResponse<AssessmentResponse> create(@RequestBody AssessmentRequest req) {
+        Long patientId = req.getPatientUserId() != null ? req.getPatientUserId() : req.getPatientId();
+        securityUtils.assertPatientAccess(patientId);
         return ApiResponse.success(assessmentService.create(securityUtils.getCurrentUserId(), req));
     }
 
@@ -27,18 +29,14 @@ public class AssessmentController {
     @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR', 'PATIENT', 'ADMIN')")
     public ApiResponse<AssessmentResponse> getById(@PathVariable Long id) {
         AssessmentResponse response = assessmentService.getById(id);
-        if (securityUtils.hasRole("PATIENT") && !securityUtils.getCurrentUserId().equals(response.getPatientUserId())) {
-            throw new ForbiddenException("Cannot access another patient's assessment");
-        }
+        securityUtils.assertPatientAccess(response.getPatientUserId());
         return ApiResponse.success(response);
     }
 
     @GetMapping("/patient/{patientUserId}")
     @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR', 'PATIENT', 'ADMIN')")
     public ApiResponse<List<AssessmentResponse>> getForPatient(@PathVariable Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot access another patient's assessments");
-        }
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(assessmentService.getForPatient(patientUserId));
     }
 }
