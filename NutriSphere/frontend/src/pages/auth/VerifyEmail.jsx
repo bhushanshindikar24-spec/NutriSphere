@@ -7,28 +7,28 @@ export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
 
-  const [status, setStatus] = useState("verifying"); // verifying, success, error
-  const [errorMsg, setErrorMsg] = useState("");
+  const [status, setStatus] = useState(token ? "verifying" : "error");
+  const [errorMsg, setErrorMsg] = useState(token ? "" : "Missing email verification token.");
 
   useEffect(() => {
-    if (!token) {
-// eslint-disable-next-line react-hooks/set-state-in-effect
-      setStatus("error");
-      setErrorMsg("Missing email verification token.");
-      return;
-    }
+    if (!token) return;
+
+    let cancelled = false;
 
     const verify = async () => {
       try {
         await api.post("/auth/verify-email", { token });
-        setStatus("success");
+        if (!cancelled) setStatus("success");
       } catch (err) {
-        setStatus("error");
-        setErrorMsg(err?.response?.data?.message || "Verification link is invalid or expired.");
+        if (!cancelled) {
+          setStatus("error");
+          setErrorMsg(err?.response?.data?.message || "Verification link is invalid or expired.");
+        }
       }
     };
 
     verify();
+    return () => { cancelled = true; };
   }, [token]);
 
   return (
