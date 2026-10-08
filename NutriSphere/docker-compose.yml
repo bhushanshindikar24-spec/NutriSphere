@@ -20,8 +20,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: ../deployment/Dockerfile.backend
+      context: .
+      dockerfile: deployment/Dockerfile.backend
     container_name: nutrisphere-backend
     restart: unless-stopped
     depends_on:
