@@ -6,6 +6,7 @@ import com.nutrisphere.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.nutrisphere.exception.ForbiddenException;
 
 import java.util.List;
 
@@ -31,6 +32,9 @@ public class AssessmentController {
     @GetMapping("/patient/{patientUserId}")
     @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR', 'PATIENT', 'ADMIN')")
     public ApiResponse<List<AssessmentResponse>> getForPatient(@PathVariable Long patientUserId) {
+        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's assessments");
+        }
         return ApiResponse.success(assessmentService.getForPatient(patientUserId));
     }
 }
