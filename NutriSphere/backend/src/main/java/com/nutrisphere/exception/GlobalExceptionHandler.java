@@ -95,6 +95,12 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(500, "File Error", e.getMessage());
     }
 
+    @ExceptionHandler(RateLimitException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ErrorResponse handleRateLimit(RateLimitException e) {
+        return new ErrorResponse(429, "Too Many Requests", e.getMessage());
+    }
+
     @ExceptionHandler(EmailDeliveryException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public ErrorResponse handleEmailDelivery(EmailDeliveryException e) {
