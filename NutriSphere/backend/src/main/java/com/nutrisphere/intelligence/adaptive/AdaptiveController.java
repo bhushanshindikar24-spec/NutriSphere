@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.nutrisphere.exception.ForbiddenException;
 
 import java.util.List;
 
@@ -45,6 +46,7 @@ public class AdaptiveController {
 
     @GetMapping("/patient/{patientUserId}")
     public ApiResponse<List<AdaptiveRecommendation>> getForPatient(@PathVariable Long patientUserId) {
+        assertPatientOwnsTarget(patientUserId);
         return ApiResponse.success(adaptiveEngineService.getForPatient(patientUserId));
     }
 
@@ -52,6 +54,7 @@ public class AdaptiveController {
     public ApiResponse<List<AdaptiveRecommendation>> getRecommendations(
             @RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
+        assertPatientOwnsTarget(uid);
         return ApiResponse.success(adaptiveEngineService.getForPatient(uid));
     }
 
@@ -90,6 +93,12 @@ public class AdaptiveController {
     public ApiResponse<AdaptiveRecommendation> reject(@PathVariable Long id) {
         return ApiResponse.success(adaptiveEngineService.reviewRecommendation(
             id, securityUtils.getCurrentUserId(), false, "Rejected by Dietitian"));
+    }
+
+    private void assertPatientOwnsTarget(Long patientUserId) {
+        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's adaptive recommendations");
+        }
     }
 
     @Data
