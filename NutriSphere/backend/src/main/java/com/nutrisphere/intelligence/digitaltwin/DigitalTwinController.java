@@ -3,6 +3,8 @@ import com.nutrisphere.common.ApiResponse;
 import com.nutrisphere.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.nutrisphere.exception.ForbiddenException;
 @RestController @RequestMapping("/api/digital-twin") @RequiredArgsConstructor
 public class DigitalTwinController {
     private final DigitalTwinService digitalTwinService;
@@ -14,7 +16,11 @@ public class DigitalTwinController {
     }
 
     @GetMapping("/patient/{patientUserId}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN', 'ADMIN', 'PATIENT')")
     public ApiResponse<DigitalTwinData> getForPatient(@PathVariable Long patientUserId) {
+        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's Digital Twin");
+        }
         return ApiResponse.success(digitalTwinService.buildDigitalTwin(patientUserId));
     }
 
