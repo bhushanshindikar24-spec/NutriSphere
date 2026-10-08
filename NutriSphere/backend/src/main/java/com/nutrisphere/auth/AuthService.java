@@ -2,11 +2,11 @@ package com.nutrisphere.auth;
 
 import com.nutrisphere.audit.AuditService;
 import com.nutrisphere.exception.*;
+import com.nutrisphere.notification.EmailService;
 import com.nutrisphere.security.*;
 import com.nutrisphere.user.*;
 import com.nutrisphere.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,35 +17,63 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AuthService {
+    private static final int VERIFICATION_TOKEN_HOURS = 24;
+    private static final int PASSWORD_RESET_TOKEN_HOURS = 1;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authManager;
     private final UserMapper userMapper;
     private final AuditService auditService;
+    private final EmailService emailService;
 
     @Transactional
-    public TokenResponse register(RegisterRequest req) {
+    public RegistrationResponse register(RegisterRequest req) {
         if (userRepository.existsByEmail(req.getEmail())) {
             throw new DuplicateResourceException("Email already registered: " + req.getEmail());
         }
-        // SECURITY: Public registration ALWAYS defaults to PATIENT.
-        // Professional roles (DOCTOR, DIETITIAN, HOTEL) must be provisioned by admin.
-        // Never trust the role field from the client request.
+
+        String verificationToken = UUID.randomUUID().toString();
+        LocalDateTime verificationExpires = LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
+
         User user = User.builder()
             .email(req.getEmail())
             .passwordHash(passwordEncoder.encode(req.getPassword()))
             .firstName(req.getFirstName())
             .lastName(req.getLastName())
             .phoneNumber(req.getPhoneNumber())
-            .role(com.nutrisphere.user.Role.PATIENT)
-            .emailVerified(true) // For demo; in prod send verification email
+            .role(Role.PATIENT)
+            .emailVerified(false)
+            .emailVerifyToken(verificationToken)
+            .emailVerifyExpires(verificationExpires)
             .build();
+
         userRepository.save(user);
-        auditService.log(user.getId(), "REGISTER", "USER", user.getId(), "User registered as PATIENT");
-        return generateTokenResponse(user);
+        emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationToken);
+        auditService.log(user.getId(), "REGISTER", "USER", user.getId(), "User registered as PATIENT; email verification required");
+
+        return RegistrationResponse.builder()
+            .email(user.getEmail())
+            .verificationRequired(true)
+            .build();
+    }
+
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (user.isEmailVerified()) {
+                return;
+            }
+
+            String token = UUID.randomUUID().toString();
+            user.setEmailVerifyToken(token);
+            user.setEmailVerifyExpires(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS));
+            userRepository.save(user);
+
+            emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), token);
+        });
     }
 
     @Transactional
@@ -53,6 +81,7 @@ public class AuthService {
         authManager.authenticate(new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
         User user = userRepository.findByEmail(req.getEmail())
             .orElseThrow(() -> new ResourceNotFoundException("User", 0L));
+
         user.setLastLoginAt(LocalDateTime.now());
         String refreshToken = jwtService.generateRefreshToken(user.getEmail());
         user.setRefreshToken(refreshToken);
@@ -87,10 +116,9 @@ public class AuthService {
         userRepository.findByEmail(email).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
             user.setPasswordResetToken(token);
-            user.setPasswordResetExpires(LocalDateTime.now().plusHours(1));
+            user.setPasswordResetExpires(LocalDateTime.now().plusHours(PASSWORD_RESET_TOKEN_HOURS));
             userRepository.save(user);
-            log.info("Password reset token for {}: {}", email, token);
-            // In production: send email with reset link
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), token);
         });
     }
 
@@ -98,13 +126,15 @@ public class AuthService {
     public void resetPassword(String token, String newPassword) {
         User user = userRepository.findByPasswordResetToken(token)
             .orElseThrow(() -> new BadRequestException("Invalid reset token"));
-        if (user.getPasswordResetExpires().isBefore(LocalDateTime.now())) {
+
+        if (user.getPasswordResetExpires() == null || user.getPasswordResetExpires().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("Reset token expired");
         }
+
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setPasswordResetToken(null);
         user.setPasswordResetExpires(null);
-        user.setRefreshToken(null); // Invalidate active sessions
+        user.setRefreshToken(null);
         userRepository.save(user);
         auditService.log(user.getId(), "PASSWORD_RESET", "USER", user.getId(), "Password reset successfully");
     }
@@ -113,22 +143,25 @@ public class AuthService {
     public void verifyEmail(String token) {
         User user = userRepository.findByEmailVerifyToken(token)
             .orElseThrow(() -> new BadRequestException("Invalid verification token"));
+
+        if (user.getEmailVerifyExpires() == null || user.getEmailVerifyExpires().isBefore(LocalDateTime.now())) {
+            user.setEmailVerifyToken(null);
+            user.setEmailVerifyExpires(null);
+            userRepository.save(user);
+            throw new BadRequestException("Verification token expired");
+        }
+
         user.setEmailVerified(true);
         user.setEmailVerifyToken(null);
+        user.setEmailVerifyExpires(null);
         userRepository.save(user);
+        auditService.log(user.getId(), "EMAIL_VERIFIED", "USER", user.getId(), "Email address verified");
     }
 
     public UserResponse getMe(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         return userMapper.toResponse(user);
-    }
-
-    private TokenResponse generateTokenResponse(User user) {
-        String refresh = jwtService.generateRefreshToken(user.getEmail());
-        user.setRefreshToken(refresh);
-        userRepository.save(user);
-        return generateTokenResponse(user, refresh);
     }
 
     private TokenResponse generateTokenResponse(User user, String refreshToken) {

@@ -58,6 +58,9 @@ public class User extends BaseEntity {
     @Column(name = "email_verify_token")
     private String emailVerifyToken;
 
+    @Column(name = "email_verify_expires")
+    private LocalDateTime emailVerifyExpires;
+
     public String getFullName() {
         return firstName + " " + lastName;
     }

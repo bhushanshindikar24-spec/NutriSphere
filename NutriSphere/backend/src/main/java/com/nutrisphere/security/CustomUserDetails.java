@@ -25,6 +25,6 @@ public class CustomUserDetails implements UserDetails {
     }
     @Override public boolean isCredentialsNonExpired() { return true; }
     @Override public boolean isEnabled() {
-        return user.getStatus() == com.nutrisphere.common.enums.Status.ACTIVE;
+        return user.getStatus() == com.nutrisphere.common.enums.Status.ACTIVE && user.isEmailVerified();
     }
 }

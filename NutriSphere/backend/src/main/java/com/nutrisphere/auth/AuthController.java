@@ -16,8 +16,17 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<TokenResponse> register(@Valid @RequestBody RegisterRequest req) {
-        return ApiResponse.success("Registration successful", authService.register(req));
+    public ApiResponse<RegistrationResponse> register(@Valid @RequestBody RegisterRequest req) {
+        return ApiResponse.success(
+            "Registration successful. Please verify your email before signing in.",
+            authService.register(req)
+        );
+    }
+
+    @PostMapping("/resend-verification")
+    public ApiResponse<Void> resendVerification(@Valid @RequestBody ResendVerificationRequest req) {
+        authService.resendVerificationEmail(req.getEmail());
+        return ApiResponse.success("If the account exists and is not verified, a verification email has been sent.", null);
     }
 
     @PostMapping("/login")

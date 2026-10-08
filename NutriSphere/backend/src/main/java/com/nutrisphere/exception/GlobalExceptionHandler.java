@@ -1,6 +1,7 @@
 package com.nutrisphere.exception;
 
 import com.nutrisphere.common.ErrorResponse;
+import com.nutrisphere.notification.EmailDeliveryException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
@@ -57,6 +58,12 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(401, "Unauthorized", "Invalid email or password");
     }
 
+    @ExceptionHandler(DisabledException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleDisabled(DisabledException e) {
+        return new ErrorResponse(403, "Email verification required", "Please verify your email before signing in");
+    }
+
     @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     public ErrorResponse handleValidation(ValidationException e) {
@@ -86,6 +93,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleFileStorage(FileStorageException e) {
         return new ErrorResponse(500, "File Error", e.getMessage());
+    }
+
+    @ExceptionHandler(EmailDeliveryException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ErrorResponse handleEmailDelivery(EmailDeliveryException e) {
+        return new ErrorResponse(503, "Email Service Unavailable", "Email delivery is temporarily unavailable");
     }
 
     @ExceptionHandler(Exception.class)

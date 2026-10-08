@@ -1,6 +1,5 @@
 package com.nutrisphere.auth;
 
-import com.nutrisphere.user.Role;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
@@ -15,6 +14,4 @@ public class RegisterRequest {
     @NotBlank
     private String lastName;
     private String phoneNumber;
-    @NotNull
-    private Role role;
 }
