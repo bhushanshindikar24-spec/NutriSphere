@@ -12,6 +12,7 @@ public class RequirementController {
     private final SecurityUtils securityUtils;
 
     @PostMapping("/calculate")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<RequirementResponse> calculate(@RequestBody RequirementCalculationRequest req) {
         return ApiResponse.success(requirementService.calculate(req));
     }
