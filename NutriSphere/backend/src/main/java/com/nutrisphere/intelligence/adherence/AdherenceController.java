@@ -55,7 +55,7 @@ public class AdherenceController {
 
     @PutMapping("/{id}/resolve")
     public ApiResponse<String> resolveBarrier(@PathVariable Long id) {
-        adherenceService.resolveBarrier(id);
+        adherenceService.resolveBarrier(id, securityUtils.getCurrentUserId(), securityUtils.hasRole("PATIENT"));
         return ApiResponse.success("Barrier resolved successfully", null);
     }
 
