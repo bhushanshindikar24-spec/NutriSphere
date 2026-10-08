@@ -15,11 +15,9 @@ public class LaboratoryController {
     private final SecurityUtils securityUtils;
 
     @GetMapping("/patient/{patientUserId}")
-    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT')")
+    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT','ADMIN')")
     public ApiResponse<List<LaboratoryReport>> getForPatient(@PathVariable Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !securityUtils.getCurrentUserId().equals(patientUserId)) {
-            throw new com.nutrisphere.exception.ForbiddenException("Not authorized");
-        }
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(labService.getForPatient(patientUserId));
     }
 
@@ -27,9 +25,7 @@ public class LaboratoryController {
     @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT')")
     public ApiResponse<LaboratoryReport> getById(@PathVariable Long id) {
         LaboratoryReport report = labService.getById(id);
-        if (securityUtils.hasRole("PATIENT") && !securityUtils.getCurrentUserId().equals(report.getPatientUserId())) {
-            throw new com.nutrisphere.exception.ForbiddenException("Not authorized");
-        }
+        securityUtils.assertPatientAccess(report.getPatientUserId());
         return ApiResponse.success(report);
     }
 
@@ -44,15 +40,18 @@ public class LaboratoryController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ApiResponse<LaboratoryReport> create(@RequestBody LaboratoryReport report) {
+        securityUtils.assertPatientAccess(report.getPatientUserId());
         report.setDoctorUserId(securityUtils.getCurrentUserId());
         return ApiResponse.success(labService.create(report));
     }
 
     @PostMapping("/{id}/values")
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ApiResponse<LaboratoryValue> addValue(@PathVariable Long id, @RequestBody LaboratoryValue value) {
+        LaboratoryReport report = labService.getById(id);
+        securityUtils.assertPatientAccess(report.getPatientUserId());
         value.setReportId(id);
         return ApiResponse.success(labService.addValue(value));
     }
@@ -60,12 +59,16 @@ public class LaboratoryController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('DOCTOR')")
     public ApiResponse<LaboratoryReport> update(@PathVariable Long id, @RequestBody LaboratoryReport updates) {
+        LaboratoryReport existing = labService.getById(id);
+        securityUtils.assertPatientAccess(existing.getPatientUserId());
         return ApiResponse.success(labService.update(id, updates));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('DOCTOR')")
     public ApiResponse<Void> delete(@PathVariable Long id) {
+        LaboratoryReport existing = labService.getById(id);
+        securityUtils.assertPatientAccess(existing.getPatientUserId());
         labService.delete(id);
         return ApiResponse.success("Deleted", null);
     }
