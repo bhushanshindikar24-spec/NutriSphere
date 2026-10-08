@@ -106,11 +106,11 @@ public class OrderService {
         if (profile == null) return;
 
         String restrictions = profile.getDietaryRestrictions() == null ? "" : profile.getDietaryRestrictions().toLowerCase();
-        if (meal.isVegan() && restrictions.contains("non-vegan")) {
-            throw new BadRequestException("Meal conflicts with the patient's dietary restrictions");
+        if (restrictions.contains("vegan") && !meal.isVegan()) {
+            throw new BadRequestException("Meal conflicts with the patient's vegan dietary restriction");
         }
-        if (meal.isVegetarian() && restrictions.contains("vegetarian")) {
-            // Compatible.
+        if (restrictions.contains("vegetarian") && !meal.isVegetarian()) {
+            throw new BadRequestException("Meal conflicts with the patient's vegetarian dietary restriction");
         }
 
         String allergens = meal.getAllergens() == null ? "" : meal.getAllergens().toLowerCase();
