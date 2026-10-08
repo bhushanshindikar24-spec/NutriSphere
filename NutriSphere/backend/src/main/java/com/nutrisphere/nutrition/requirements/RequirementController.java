@@ -1,5 +1,6 @@
 package com.nutrisphere.nutrition.requirements;
 import com.nutrisphere.common.ApiResponse;
+import jakarta.validation.Valid;
 import com.nutrisphere.nutrition.requirements.dto.*;
 import com.nutrisphere.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ public class RequirementController {
 
     @PostMapping("/calculate")
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<RequirementResponse> calculate(@RequestBody RequirementCalculationRequest req) {
+    public ApiResponse<RequirementResponse> calculate(@Valid @RequestBody RequirementCalculationRequest req) {
         return ApiResponse.success(requirementService.calculate(req));
     }
 
