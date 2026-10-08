@@ -4,6 +4,7 @@ import com.nutrisphere.user.*;
 import com.nutrisphere.common.enums.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +18,16 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.demo-data.enabled:false}")
+    private boolean demoDataEnabled;
+
     @Override
     public void run(String... args) {
+        if (!demoDataEnabled) {
+            System.out.println("Demo data seeding is disabled. Set DEMO_DATA_ENABLED=true to enable it explicitly.");
+            return;
+        }
+
         if (userRepository.count() > 0) {
             System.out.println("Demo data already seeded.");
             return;
@@ -33,6 +42,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         doctor.setEmail("doctor@nutrisphere.com");
         doctor.setPasswordHash(passwordEncoder.encode("password"));
         doctor.setRole(Role.DOCTOR);
+        doctor.setEmailVerified(true);
         userRepository.save(doctor);
 
         // 2. Dietitian
@@ -42,6 +52,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         dietitian.setEmail("dietitian@nutrisphere.com");
         dietitian.setPasswordHash(passwordEncoder.encode("password"));
         dietitian.setRole(Role.DIETITIAN);
+        dietitian.setEmailVerified(true);
         userRepository.save(dietitian);
 
         // 3. Patient 1
@@ -51,6 +62,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         patient1.setEmail("patient@nutrisphere.com");
         patient1.setPasswordHash(passwordEncoder.encode("password"));
         patient1.setRole(Role.PATIENT);
+        patient1.setEmailVerified(true);
         userRepository.save(patient1);
         
         // 4. Hotel
@@ -60,6 +72,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         hotel.setEmail("hotel@nutrisphere.com");
         hotel.setPasswordHash(passwordEncoder.encode("password"));
         hotel.setRole(Role.HOTEL);
+        hotel.setEmailVerified(true);
         userRepository.save(hotel);
 
         System.out.println("Demo users seeded successfully.");
