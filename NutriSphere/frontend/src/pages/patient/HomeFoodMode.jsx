@@ -1,4 +1,4 @@
-import {  useState, useEffect  } from "react";
+import { useEffect, useState } from "react";
 import { homeFoodService } from "../../services/homeFoodService";
 import { foodLogService } from "../../services/foodLogService";
 import HomeFoodInventory from "../../components/intelligence/HomeFoodInventory";
@@ -10,76 +10,108 @@ export default function HomeFoodMode() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadData = async () => {
+      try {
+        const [invRes, suggRes] = await Promise.all([
+          homeFoodService.getInventory(),
+          homeFoodService.getMealSuggestions(),
+        ]);
+        if (!cancelled) {
+          const items = invRes.data?.data || invRes.data || [];
+          const generated = suggRes.data?.data || suggRes.data || [];
+          setInventory(Array.isArray(items) ? items : []);
+          setSuggestions(Array.isArray(generated) ? generated : []);
+          setError("");
+        }
+      } catch (_err) {
+        if (!cancelled) {
+          setError("Unable to load Home Food data. Please try again.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadData();
+    return () => { cancelled = true; };
+  }, []);
 
   const loadData = async () => {
     try {
-      const invRes = await homeFoodService.getInventory();
-      const items = invRes.data?.data || invRes.data || [];
-      setInventory(items);
-
-      const suggRes = await homeFoodService.getMealSuggestions();
+      const [invRes, suggRes] = await Promise.all([
+        homeFoodService.getInventory(),
+        homeFoodService.getMealSuggestions(),
+      ]);
+      setInventory(invRes.data?.data || invRes.data || []);
       setSuggestions(suggRes.data?.data || suggRes.data || []);
-    } catch (err) {
-      console.error("Failed to load home food data", err);
-    } finally {
-      setLoading(false);
+      setError("");
+    } catch (_err) {
+      setError("Unable to refresh Home Food data.");
     }
   };
 
-  useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
-    loadData();
-  }, []);
-
   const handleAddItem = async (item) => {
     try {
+      setError("");
       await homeFoodService.addInventoryItem(item);
       await loadData();
-    } catch (err) {
-      console.error("Failed to add inventory item", err);
-      // Local optimistic update
-      setInventory((prev) => [...prev, { ...item, id: Date.now() }]);
+    } catch (_err) {
+      setError("Unable to add the pantry item.");
     }
   };
 
   const handleRemoveItem = async (itemId) => {
     try {
+      setError("");
       await homeFoodService.removeInventoryItem(itemId);
       await loadData();
     } catch (_err) {
-      setInventory((prev) => prev.filter((i) => i.id !== itemId));
+      setError("Unable to remove the pantry item.");
     }
   };
 
   const handleGenerateMore = async () => {
     setGenerating(true);
+    setError("");
     try {
       const res = await homeFoodService.generateSuggestions({
         availableIngredients: inventory.map((i) => i.foodName || i.name),
       });
-      setSuggestions(res.data?.data || res.data || []);
-    } catch (err) {
-      console.error("Failed to regenerate suggestions", err);
+      const generated = res.data?.data || res.data || [];
+      setSuggestions(Array.isArray(generated) ? generated : []);
+    } catch (_err) {
+      setError("Unable to generate meal suggestions.");
     } finally {
       setGenerating(false);
     }
   };
 
   const handleSelectSuggestion = async (suggestion) => {
+    if (!suggestion.estimatedCalories || suggestion.estimatedCalories <= 0) {
+      setError("This suggestion does not have enough linked food data to log accurate nutrition values.");
+      return;
+    }
+
     try {
+      setError("");
       await foodLogService.logFood({
         foodName: suggestion.mealName,
-        calories: suggestion.estimatedCalories || 450,
-        protein: suggestion.estimatedProteinG || 25,
-        carbs: suggestion.estimatedCarbsG || 55,
-        fat: suggestion.estimatedFatG || 14,
+        calories: suggestion.estimatedCalories,
+        proteinG: suggestion.estimatedProteinG,
         mealType: suggestion.mealType || "LUNCH",
+        logDate: new Date().toISOString().slice(0, 10),
+        logTime: new Date().toTimeString().slice(0, 8),
+        notes: "Logged from Home Food Mode; nutrition values are based on linked food data.",
       });
-      setSuccessMsg(`Logged "${suggestion.mealName}" to your daily journal!`);
+      setSuccessMsg(`Logged "${suggestion.mealName}" using the available nutrition data.`);
       setTimeout(() => setSuccessMsg(""), 3500);
-    } catch (err) {
-      console.error("Failed to log suggested meal", err);
-      alert("Failed to log meal.");
+    } catch (_err) {
+      setError("Failed to log the suggested meal.");
     }
   };
 
@@ -90,9 +122,11 @@ export default function HomeFoodMode() {
       <div>
         <h2>Home Food Mode</h2>
         <p className="text-muted">
-          Manage your available kitchen pantry items. The AI automatically composes nutritious, home-cooked meals tailored to your diet plan.
+          Use available pantry items to generate heuristic meal suggestions against your approved plan and recorded food data.
         </p>
       </div>
+
+      {error && <div className="alert alert-error" role="alert">{error}</div>}
 
       {successMsg && (
         <div style={{ background: "rgba(16, 185, 129, 0.15)", color: "#10B981", padding: "1rem", borderRadius: "var(--radius-md)", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
