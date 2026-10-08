@@ -4,7 +4,6 @@ import com.nutrisphere.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import com.nutrisphere.exception.ForbiddenException;
 @RestController @RequestMapping("/api/reality-score") @RequiredArgsConstructor
 public class RealityScoreController {
     private final RealityScoreService realityScoreService;
@@ -14,10 +13,8 @@ public class RealityScoreController {
             @RequestParam(required = false) Long patientUserId,
             @RequestParam(required = false) Long dietPlanId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
-        assertPatientOwnsTarget(uid);
-        if (securityUtils.hasRole("PATIENT")) {
-            realityScoreService.assertDietPlanBelongsToPatient(dietPlanId, uid);
-        }
+        securityUtils.assertPatientAccess(uid);
+        realityScoreService.assertDietPlanBelongsToPatient(dietPlanId, uid);
         return ApiResponse.success(realityScoreService.calculateAndSave(uid, dietPlanId));
     }
     @GetMapping("/history")
@@ -26,10 +23,5 @@ public class RealityScoreController {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
         assertPatientOwnsTarget(uid);
         return ApiResponse.success(realityScoreService.getHistory(uid));
-    }
-    private void assertPatientOwnsTarget(Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot access another patient's Reality Score");
-        }
     }
 }
