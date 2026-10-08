@@ -1,10 +1,15 @@
 package com.nutrisphere.hotel.order.dto;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import java.util.List;
+
 @Data
 public class OrderRequest {
     private Long hotelUserId;
-    private String deliveryAddress;
+    @NotBlank private String deliveryAddress;
     private String specialInstructions;
-    private List<OrderItemRequest> items;
+    @NotEmpty @Valid private List<OrderItemRequest> items;
 }
