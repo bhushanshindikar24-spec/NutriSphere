@@ -1,132 +1,139 @@
-﻿import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { Activity, Apple, Droplets, Target, AlertTriangle } from "lucide-react";
 
 export default function PatientDashboard() {
   const [twinData, setTwinData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchTwin = async () => {
       try {
         const res = await api.get("/digital-twin");
-        setTwinData(res.data.data);
-      } catch (err) {
-        console.error("Failed to load digital twin", err);
+        if (!cancelled) {
+          const data = res.data?.data || res.data;
+          setTwinData(data || null);
+          setError(data ? "" : "Nutrition data is not available yet.");
+        }
+      } catch (_err) {
+        if (!cancelled) {
+          setTwinData(null);
+          setError("Unable to load your nutrition dashboard.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
+
     fetchTwin();
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) return <div className="loading-screen">Loading Patient Data...</div>;
+
+  if (!twinData) {
+    return (
+      <div className="glass-panel" style={{ padding: "2rem" }}>
+        <h2>Patient Dashboard</h2>
+        <p className="text-muted">{error || "Nutrition data is not available yet."}</p>
+      </div>
+    );
+  }
+
+  const targetCalories = twinData.targetCalories;
+  const targetProtein = twinData.targetProteinG;
+  const targetWater = twinData.targetWaterMl;
+  const hasPlan = targetCalories != null || targetProtein != null || targetWater != null;
+  const calorieProgress = targetCalories > 0 ? Math.min(100, ((twinData.avgDailyCalories || 0) / targetCalories) * 100) : 0;
+  const proteinProgress = targetProtein > 0 ? Math.min(100, ((twinData.avgDailyProteinG || 0) / targetProtein) * 100) : 0;
+  const waterProgress = targetWater > 0 ? Math.min(100, ((twinData.avgDailyWaterMl || 0) / targetWater) * 100) : 0;
 
   return (
     <div>
       <div style={{ marginBottom: "2rem" }}>
         <h2>Patient Dashboard</h2>
-        <p className="text-muted">Welcome back. Here is your daily nutritional overview.</p>
+        <p className="text-muted">Welcome back. Here is your recorded nutritional overview.</p>
       </div>
 
-      {/* Quick Stats Grid */}
+      {error && <div className="alert alert-error" role="alert">{error}</div>}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
-        
         <div className="glass-panel" style={{ padding: "1.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-            <div>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginBottom: "0.25rem" }}>Daily Calories</p>
-              <h3 style={{ fontSize: "1.5rem" }}>{twinData?.avgDailyCalories ? Math.round(twinData.avgDailyCalories) : 0} kcal</h3>
-            </div>
-            <div style={{ background: "rgba(245, 158, 11, 0.1)", color: "#F59E0B", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
-              <Activity size={24} />
-            </div>
-          </div>
+          <p className="text-muted">Daily Calories</p>
+          <h3 style={{ fontSize: "1.5rem" }}>{Math.round(twinData.avgDailyCalories || 0)} kcal</h3>
           <div style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            Target: {twinData?.targetCalories || 2000} kcal
+            Target: {targetCalories != null ? `${targetCalories} kcal` : "Not set"}
           </div>
-          {/* Progress bar */}
-          <div style={{ marginTop: "1rem", height: "6px", background: "var(--border-color)", borderRadius: "3px", overflow: "hidden" }}>
-            <div style={{ 
-              width: `${Math.min(100, ((twinData?.avgDailyCalories || 0) / (twinData?.targetCalories || 2000)) * 100)}%`, 
-              height: "100%", 
-              background: "#F59E0B" 
-            }}></div>
-          </div>
+          {targetCalories > 0 && (
+            <div style={{ marginTop: "1rem", height: "6px", background: "var(--border-color)", borderRadius: "3px", overflow: "hidden" }}>
+              <div style={{ width: `${calorieProgress}%`, height: "100%" }} />
+            </div>
+          )}
+          <Activity size={20} />
         </div>
 
         <div className="glass-panel" style={{ padding: "1.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-            <div>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginBottom: "0.25rem" }}>Protein Intake</p>
-              <h3 style={{ fontSize: "1.5rem" }}>{twinData?.avgDailyProteinG ? Math.round(twinData.avgDailyProteinG) : 0}g</h3>
-            </div>
-            <div style={{ background: "rgba(16, 185, 129, 0.1)", color: "var(--secondary)", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
-              <Apple size={24} />
-            </div>
-          </div>
+          <p className="text-muted">Protein Intake</p>
+          <h3 style={{ fontSize: "1.5rem" }}>{Math.round(twinData.avgDailyProteinG || 0)} g</h3>
           <div style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            Target: {twinData?.targetProteinG || 50}g
+            Target: {targetProtein != null ? `${targetProtein} g` : "Not set"}
           </div>
-          <div style={{ marginTop: "1rem", height: "6px", background: "var(--border-color)", borderRadius: "3px", overflow: "hidden" }}>
-            <div style={{ width: `${Math.min(100, ((twinData?.avgDailyProteinG || 0) / (twinData?.targetProteinG || 50)) * 100)}%`, height: "100%", background: "var(--secondary)" }}></div>
-          </div>
+          {targetProtein > 0 && (
+            <div style={{ marginTop: "1rem", height: "6px", background: "var(--border-color)", borderRadius: "3px", overflow: "hidden" }}>
+              <div style={{ width: `${proteinProgress}%`, height: "100%" }} />
+            </div>
+          )}
+          <Apple size={20} />
         </div>
 
         <div className="glass-panel" style={{ padding: "1.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-            <div>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginBottom: "0.25rem" }}>Hydration</p>
-              <h3 style={{ fontSize: "1.5rem" }}>{twinData?.avgDailyWaterMl ? Math.round(twinData.avgDailyWaterMl) : 0} ml</h3>
-            </div>
-            <div style={{ background: "rgba(59, 130, 246, 0.1)", color: "#3B82F6", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
-              <Droplets size={24} />
-            </div>
-          </div>
+          <p className="text-muted">Hydration</p>
+          <h3 style={{ fontSize: "1.5rem" }}>{Math.round(twinData.avgDailyWaterMl || 0)} ml</h3>
           <div style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            Target: {twinData?.targetWaterMl || 2500} ml
+            Target: {targetWater != null ? `${targetWater} ml` : "Not set"}
           </div>
-          <div style={{ marginTop: "1rem", height: "6px", background: "var(--border-color)", borderRadius: "3px", overflow: "hidden" }}>
-            <div style={{ width: `${Math.min(100, ((twinData?.avgDailyWaterMl || 0) / (twinData?.targetWaterMl || 2500)) * 100)}%`, height: "100%", background: "#3B82F6" }}></div>
-          </div>
+          {targetWater > 0 && (
+            <div style={{ marginTop: "1rem", height: "6px", background: "var(--border-color)", borderRadius: "3px", overflow: "hidden" }}>
+              <div style={{ width: `${waterProgress}%`, height: "100%" }} />
+            </div>
+          )}
+          <Droplets size={20} />
         </div>
 
         <div className="glass-panel" style={{ padding: "1.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-            <div>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginBottom: "0.25rem" }}>AI Reality Score</p>
-              <h3 style={{ fontSize: "1.5rem" }}>{twinData?.latestRealityScore || "N/A"}</h3>
-            </div>
-            <div style={{ background: "rgba(139, 92, 246, 0.1)", color: "#8B5CF6", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
-              <Target size={24} />
-            </div>
-          </div>
+          <p className="text-muted">Reality Score</p>
+          <h3 style={{ fontSize: "1.5rem" }}>{twinData.latestRealityScore ?? "N/A"}</h3>
           <div style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            {twinData?.realityScoreInterpretation || "No score yet"}
+            {twinData.realityScoreInterpretation || "No score yet"}
           </div>
+          <Target size={20} />
         </div>
-
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1.5rem" }}>
         <div className="glass-panel" style={{ padding: "2rem" }}>
-          <h3 style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            Current Diet Plan
-          </h3>
-          <p className="text-muted">No active diet plan found. Your dietitian will assign one soon.</p>
+          <h3 style={{ marginBottom: "1rem" }}>Current Diet Plan</h3>
+          {hasPlan ? (
+            <p className="text-muted">Your dashboard is using targets from the current approved diet plan.</p>
+          ) : (
+            <p className="text-muted">No approved diet plan targets are available yet.</p>
+          )}
         </div>
 
         <div className="glass-panel" style={{ padding: "2rem" }}>
           <h3 style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <AlertTriangle size={20} color="#F59E0B" /> Adherence Barriers
+            <AlertTriangle size={20} /> Adherence Barriers
           </h3>
-          {twinData?.totalBarriers > 0 ? (
-             <div>
-               <p><strong>Total Barriers Detected:</strong> {twinData.totalBarriers}</p>
-               <p><strong>Dominant Barrier:</strong> <span style={{ color: "red" }}>{twinData.dominantBarrier}</span></p>
-             </div>
+          {twinData.totalBarriers > 0 ? (
+            <div>
+              <p><strong>Total Barriers Detected:</strong> {twinData.totalBarriers}</p>
+              <p><strong>Dominant Barrier:</strong> {twinData.dominantBarrier || "Not determined"}</p>
+            </div>
           ) : (
-             <p className="text-muted">No significant barriers detected recently. Keep up the good work!</p>
+            <p className="text-muted">No barriers are recorded in the current data window.</p>
           )}
         </div>
       </div>
