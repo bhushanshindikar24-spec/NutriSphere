@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.nutrisphere.exception.ForbiddenException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,7 +20,10 @@ public class AdherenceController {
     @PostMapping
     @PreAuthorize("hasAnyRole('PATIENT', 'DIETITIAN')")
     public ApiResponse<AdherenceBarrier> recordBarrier(@RequestBody BarrierRequest req) {
-        Long uid = securityUtils.getCurrentUserId();
+        Long uid = securityUtils.hasRole("PATIENT")
+            ? securityUtils.getCurrentUserId()
+            : req.getPatientUserId();
+        securityUtils.assertPatientAccess(uid);
         return ApiResponse.success(adherenceService.recordBarrier(
             uid, req.getBarrierType(),
             req.getBarrierDate() != null ? req.getBarrierDate() : LocalDate.now(),
@@ -43,18 +45,21 @@ public class AdherenceController {
     @GetMapping({"/analysis", "/summary"})
     public ApiResponse<BarrierAnalysisResult> analyze(@RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
-        assertPatientOwnsTarget(uid);
+        securityUtils.assertPatientAccess(uid);
         return ApiResponse.success(adherenceService.analyze(uid));
     }
 
     @PutMapping("/{id}/resolve")
     public ApiResponse<String> resolveBarrier(@PathVariable Long id) {
-        adherenceService.resolveBarrier(id, securityUtils.getCurrentUserId(), securityUtils.hasRole("PATIENT"));
+        AdherenceBarrier barrier = adherenceService.getBarrier(id);
+        securityUtils.assertPatientAccess(barrier.getPatientUserId());
+        adherenceService.resolveBarrier(id);
         return ApiResponse.success("Barrier resolved successfully", null);
     }
 
     @Data
     public static class BarrierRequest {
+        private Long patientUserId;
         private String barrierType;
         private LocalDate barrierDate;
         private String mealType;
