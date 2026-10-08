@@ -12,17 +12,16 @@ public class MedicalHistoryController {
     private final SecurityUtils securityUtils;
 
     @GetMapping("/patient/{patientUserId}")
-    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT')")
+    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT','ADMIN')")
     public ApiResponse<List<MedicalHistory>> getForPatient(@PathVariable Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !securityUtils.getCurrentUserId().equals(patientUserId)) {
-            throw new com.nutrisphere.exception.ForbiddenException("Not authorized");
-        }
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(repo.findByPatientUserIdOrderByDiagnosisDateDesc(patientUserId));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
     public ApiResponse<MedicalHistory> create(@RequestBody MedicalHistory h) {
+        securityUtils.assertPatientAccess(h.getPatientUserId());
         h.setDoctorUserId(securityUtils.getCurrentUserId());
         return ApiResponse.success(repo.save(h));
     }
