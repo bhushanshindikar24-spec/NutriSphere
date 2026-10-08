@@ -56,7 +56,7 @@ public class RealityScoreService {
         double accessibility = (foodAvail + afford + cooking + preference + schedule) / 5.0;
 
         // Historical adherence
-        double adherence = calcHistoricalAdherence(patientUserId);
+        double adherence = calcHistoricalAdherence(patientUserId, dietPlanId);
 
         // Weighted overall
         double overall = (foodAvail * 0.2 + afford * 0.15 + cooking * 0.15 + preference * 0.15 +
@@ -86,12 +86,27 @@ public class RealityScoreService {
         return Math.max(0, 100 - (pct * 200)); // penalize proportion
     }
 
-    private double calcHistoricalAdherence(Long patientUserId) {
+    private double calcHistoricalAdherence(Long patientUserId, Long dietPlanId) {
         LocalDate today = LocalDate.now();
-        LocalDate weekAgo = today.minusDays(7);
-        var logs = logRepo.findByPatientUserIdAndLogDateBetweenOrderByLogDateAscLogTimeAsc(patientUserId, weekAgo, today);
-        double totalActual = logs.stream().mapToDouble(l -> l.getCalories() != null ? l.getCalories() : 0).sum();
-        return totalActual > 0 ? Math.min(100, (totalActual / (2000 * 7)) * 100) : 50.0;
+        LocalDate weekAgo = today.minusDays(6);
+        DietPlan plan = dietPlanId != null
+            ? planRepo.findById(dietPlanId).orElse(null)
+            : planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED).orElse(null);
+
+        if (plan == null || plan.getTargetCalories() == null || plan.getTargetCalories() <= 0) {
+            return 0.0;
+        }
+
+        var logs = logRepo.findByPatientUserIdAndLogDateBetweenOrderByLogDateAscLogTimeAsc(
+            patientUserId, weekAgo, today);
+        double totalActual = logs.stream()
+            .mapToDouble(l -> l.getCalories() != null ? l.getCalories() : 0.0)
+            .sum();
+        double planned = plan.getTargetCalories() * 7.0;
+
+        if (planned <= 0) return 0.0;
+        double ratio = totalActual / planned;
+        return Math.max(0.0, Math.min(100.0, ratio * 100.0));
     }
 
     private String buildExplanation(double foodAvail, double afford, double cooking, double preference, double schedule, double adherence) {
