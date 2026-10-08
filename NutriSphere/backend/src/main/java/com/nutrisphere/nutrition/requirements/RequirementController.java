@@ -5,7 +5,6 @@ import com.nutrisphere.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.nutrisphere.exception.ForbiddenException;
 import java.util.List;
 @RestController @RequestMapping("/api/nutrition/requirements") @RequiredArgsConstructor
 public class RequirementController {
@@ -20,14 +19,14 @@ public class RequirementController {
     @PostMapping
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<RequirementResponse> save(@RequestBody RequirementRequest req) {
+        securityUtils.assertPatientAccess(req.getPatientUserId());
         return ApiResponse.success(requirementService.save(securityUtils.getCurrentUserId(), req));
     }
 
     @GetMapping("/patient/{patientUserId}")
+    @PreAuthorize("hasAnyRole('PATIENT','DOCTOR','DIETITIAN','ADMIN')")
     public ApiResponse<List<RequirementResponse>> getForPatient(@PathVariable Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot access another patient's requirements");
-        }
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(requirementService.getForPatient(patientUserId));
     }
 }
