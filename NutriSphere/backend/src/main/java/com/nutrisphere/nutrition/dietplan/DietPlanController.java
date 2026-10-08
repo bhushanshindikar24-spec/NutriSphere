@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import com.nutrisphere.exception.ForbiddenException;
 
 @RestController @RequestMapping("/api/nutrition/diet-plans") @RequiredArgsConstructor
 public class DietPlanController {
@@ -18,15 +17,14 @@ public class DietPlanController {
     @PostMapping
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<DietPlanResponse> create(@Valid @RequestBody DietPlanRequest req) {
+        securityUtils.assertPatientAccess(req.getPatientUserId());
         return ApiResponse.success(dietPlanService.createPlan(securityUtils.getCurrentUserId(), req));
     }
 
     @GetMapping("/{id}")
     public ApiResponse<DietPlanResponse> getById(@PathVariable Long id) {
         DietPlanResponse plan = dietPlanService.getPlanById(id);
-        if (securityUtils.hasRole("PATIENT") && !securityUtils.getCurrentUserId().equals(plan.getPatientUserId())) {
-            throw new ForbiddenException("Cannot access another patient's diet plan");
-        }
+        securityUtils.assertPatientAccess(plan.getPatientUserId());
         return ApiResponse.success(plan);
     }
 
@@ -39,7 +37,7 @@ public class DietPlanController {
 
     @GetMapping("/patient/{patientUserId}")
     public ApiResponse<List<DietPlanResponse>> getForPatient(@PathVariable Long patientUserId) {
-        assertPatientOwnsTarget(patientUserId);
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(dietPlanService.getPlansForPatient(patientUserId));
     }
 
@@ -47,12 +45,6 @@ public class DietPlanController {
     public ApiResponse<List<DietPlanResponse>> getApprovedForPatient(@PathVariable Long patientUserId) {
         assertPatientOwnsTarget(patientUserId);
         return ApiResponse.success(dietPlanService.getApprovedPlanForPatient(patientUserId));
-    }
-
-    private void assertPatientOwnsTarget(Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot access another patient's diet plans");
-        }
     }
 
     @GetMapping("/my")
