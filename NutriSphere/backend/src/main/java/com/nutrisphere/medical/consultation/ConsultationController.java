@@ -39,9 +39,7 @@ public class ConsultationController {
     @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN', 'PATIENT', 'ADMIN')")
     public ApiResponse<List<Consultation>> getForPatient(@PathVariable Long patientUserId) {
         Long currentUserId = securityUtils.getCurrentUserId();
-        if (securityUtils.hasRole("PATIENT") && !currentUserId.equals(patientUserId)) {
-            throw new com.nutrisphere.exception.ForbiddenException("Not authorized to view other patient's consultations");
-        }
+        securityUtils.assertPatientAccess(patientUserId);
         List<Consultation> list = repo.findByPatientUserIdOrderByConsultationDateDesc(patientUserId);
         populateTransientFields(list);
         return ApiResponse.success(list);
@@ -53,12 +51,7 @@ public class ConsultationController {
         Consultation c = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Consultation not found with id: " + id));
         Long currentUserId = securityUtils.getCurrentUserId();
-        if (securityUtils.hasRole("PATIENT") && !c.getPatientUserId().equals(currentUserId)) {
-            throw new com.nutrisphere.exception.ForbiddenException("Not your consultation");
-        }
-        if ((securityUtils.hasRole("DOCTOR") || securityUtils.hasRole("DIETITIAN")) && !c.getDoctorUserId().equals(currentUserId)) {
-            throw new com.nutrisphere.exception.ForbiddenException("Not authorized to view this consultation");
-        }
+        securityUtils.assertPatientAccess(c.getPatientUserId());
         populateTransientFields(List.of(c));
         return ApiResponse.success(c);
     }
@@ -69,6 +62,7 @@ public class ConsultationController {
         Long currentUserId = securityUtils.getCurrentUserId();
         Consultation c = new Consultation();
         c.setPatientUserId(request.getPatientId() != null ? request.getPatientId() : request.getPatientUserId());
+        securityUtils.assertPatientAccess(c.getPatientUserId());
         c.setDoctorUserId(currentUserId);
         c.setConsultationDate(request.getConsultationDate() != null ? request.getConsultationDate() : LocalDateTime.now());
         c.setChiefComplaint(request.getChiefComplaint());
