@@ -1,8 +1,11 @@
 package com.nutrisphere.ai;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nutrisphere.ai.dto.AIRecommendationRequest;
 import com.nutrisphere.ai.dto.AIRecommendationResponse;
 import com.nutrisphere.integrations.ai.AIProviderClient;
+import com.nutrisphere.integrations.ai.AIProviderException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,79 +20,74 @@ public class AIRecommendationService {
     private final AIProviderClient aiClient;
     private final AIPromptBuilder promptBuilder;
     private final AIContextBuilder contextBuilder;
+    private final ObjectMapper objectMapper;
 
     public AIRecommendationResponse getRecommendations(AIRecommendationRequest req) {
+        if (req.getPatientUserId() == null) {
+            throw new IllegalArgumentException("patientUserId is required");
+        }
+
         String context = contextBuilder.buildContextForPatient(req.getPatientUserId());
-        String prompt = "Generate dietary recommendations for condition: " + req.getHealthCondition()
-                + ", target calories: " + req.getTargetCalories()
-                + ", preferences: " + req.getDietaryPreferences()
-                + ", allergies: " + req.getAllergies()
-                + ", notes: " + req.getNotes()
-                + "\nContext:\n" + context
-                + "\n\nYou MUST respond strictly with a valid JSON object (no markdown, no backticks, no comments) matching exactly this format:\n"
-                + "{\n"
-                + "  \"summary\": \"Detailed summary...\",\n"
-                + "  \"recommendations\": [\"rec1\", \"rec2\"],\n"
-                + "  \"foodsToEncourage\": [\"food1\", \"food2\"],\n"
-                + "  \"foodsToAvoid\": [\"food1\", \"food2\"],\n"
-                + "  \"clinicalRationale\": \"Clinical rationale...\"\n"
-                + "}";
+        String prompt = "Generate dietary decision-support recommendations using only the supplied patient context. "
+                + "Do not diagnose, prescribe medication changes, or modify an approved diet plan. "
+                + "Return ONLY a valid JSON object with exactly these fields: "
+                + "summary (string), recommendations (array of strings), foodsToEncourage (array of strings), "
+                + "foodsToAvoid (array of strings), clinicalRationale (string). "
+                + "Do not use markdown or code fences.\n"
+                + "Condition: " + req.getHealthCondition()
+                + "\nTarget calories: " + req.getTargetCalories()
+                + "\nPreferences: " + req.getDietaryPreferences()
+                + "\nAllergies: " + req.getAllergies()
+                + "\nNotes: " + req.getNotes()
+                + "\nPatient context:\n" + context;
 
-        String result = aiClient.generateCompletion(promptBuilder.buildSystemPrompt(), prompt);
-        
-        // Strip possible markdown blocks if the LLM ignores the instruction
-        result = result.trim();
-        if (result.startsWith("```json")) {
-            result = result.substring(7);
-        } else if (result.startsWith("```")) {
-            result = result.substring(3);
-        }
-        if (result.endsWith("```")) {
-            result = result.substring(0, result.length() - 3);
-        }
-        result = result.trim();
-
-        String summary = "Unable to generate summary.";
-        List<String> recommendations = List.of("Maintain balanced diet.", "Consult dietitian.");
-        List<String> foodsToEncourage = List.of("Vegetables", "Lean Proteins");
-        List<String> foodsToAvoid = List.of("Ultra-processed foods");
-        String clinicalRationale = "Standard fallback recommendations due to parsing error.";
+        String result = aiClient.generateCompletion(promptBuilder.buildSystemPrompt(), prompt).trim();
 
         try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(result);
-            
-            if (node.has("summary")) summary = node.get("summary").asText();
-            if (node.has("clinicalRationale")) clinicalRationale = node.get("clinicalRationale").asText();
-            
-            if (node.has("recommendations") && node.get("recommendations").isArray()) {
-                recommendations = new ArrayList<>();
-                for (com.fasterxml.jackson.databind.JsonNode item : node.get("recommendations")) recommendations.add(item.asText());
-            }
-            if (node.has("foodsToEncourage") && node.get("foodsToEncourage").isArray()) {
-                foodsToEncourage = new ArrayList<>();
-                for (com.fasterxml.jackson.databind.JsonNode item : node.get("foodsToEncourage")) foodsToEncourage.add(item.asText());
-            }
-            if (node.has("foodsToAvoid") && node.get("foodsToAvoid").isArray()) {
-                foodsToAvoid = new ArrayList<>();
-                for (com.fasterxml.jackson.databind.JsonNode item : node.get("foodsToAvoid")) foodsToAvoid.add(item.asText());
-            }
-        } catch (Exception e) {
-            // Fallback to putting the raw output in summary if JSON parsing fails
-            summary = result;
-        }
+            JsonNode node = objectMapper.readTree(result);
+            requireField(node, "summary", JsonNode::isTextual);
+            requireField(node, "clinicalRationale", JsonNode::isTextual);
+            requireField(node, "recommendations", JsonNode::isArray);
+            requireField(node, "foodsToEncourage", JsonNode::isArray);
+            requireField(node, "foodsToAvoid", JsonNode::isArray);
 
-        return AIRecommendationResponse.builder()
-                .summary(summary)
+            List<String> recommendations = toStringList(node.get("recommendations"));
+            List<String> foodsToEncourage = toStringList(node.get("foodsToEncourage"));
+            List<String> foodsToAvoid = toStringList(node.get("foodsToAvoid"));
+
+            return AIRecommendationResponse.builder()
+                .summary(node.get("summary").asText())
                 .recommendations(recommendations)
                 .foodsToEncourage(foodsToEncourage)
                 .foodsToAvoid(foodsToAvoid)
-                .clinicalRationale(clinicalRationale)
-                .disclaimer("Dietitian review is required before prescribing new meal guidelines.")
+                .clinicalRationale(node.get("clinicalRationale").asText())
+                .disclaimer("Dietitian or physician review is required before applying recommendations.")
                 .requiresDietitianApproval(true)
                 .decisionSupportOnly(true)
                 .guardrailStatus("VALIDATED_DECISION_SUPPORT")
                 .generatedAt(LocalDateTime.now())
                 .build();
+        } catch (AIProviderException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AIProviderException("AI recommendation response was not valid structured JSON", e);
+        }
+    }
+
+    private void requireField(JsonNode node, String name, java.util.function.Predicate<JsonNode> predicate) {
+        if (node == null || !node.has(name) || !predicate.test(node.get(name))) {
+            throw new AIProviderException("AI response missing or invalid field: " + name);
+        }
+    }
+
+    private List<String> toStringList(JsonNode array) {
+        List<String> values = new ArrayList<>();
+        for (JsonNode item : array) {
+            if (!item.isTextual()) {
+                throw new AIProviderException("AI response contains a non-string list item");
+            }
+            values.add(item.asText());
+        }
+        return values;
     }
 }
