@@ -1,12 +1,16 @@
 package com.nutrisphere.nutrition.hydration.dto;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
+
 @Data
 public class WaterLogRequest {
-    private LocalDate logDate;
+    @NotNull private LocalDate logDate;
     private LocalTime logTime;
-    private Double amountMl;
-    private Double amount;
+    @Positive private Double amountMl;
+    @Positive private Double amount;
     private String notes;
 }
