@@ -2,6 +2,7 @@ package com.nutrisphere.hotel.menu;
 import com.nutrisphere.common.ApiResponse;
 import com.nutrisphere.hotel.menu.dto.*;
 import com.nutrisphere.security.SecurityUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,7 @@ public class MenuController {
 
     @PostMapping
     @PreAuthorize("hasRole('HOTEL')")
-    public ApiResponse<MealResponse> addMeal(@RequestBody MealRequest req) {
+    public ApiResponse<MealResponse> addMeal(@Valid @RequestBody MealRequest req) {
         return ApiResponse.success(menuService.addMeal(securityUtils.getCurrentUserId(), req));
     }
 
