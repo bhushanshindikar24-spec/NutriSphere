@@ -8,10 +8,10 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "nutrisphere.ai")
 @Data
 public class AIProviderConfig {
-    private String provider = "mock";
+    private String provider = "openai";
     private String apiKey = "";
     private String model = "gpt-4o-mini";
     private String baseUrl = "https://api.openai.com/v1";
     private double temperature = 0.3;
-    private int maxTokens = 1000;
+    private int maxTokens = 2000;
 }
