@@ -15,9 +15,11 @@ public class FoodLogService {
     private final FoodLogRepository logRepo;
     private final MealDeviationRepository deviationRepo;
     private final DietPlanRepository planRepo;
+    private final DietPlanMealRepository mealRepo;
 
     @Transactional
     public FoodLogResponse logFood(Long patientUserId, FoodLogRequest req) {
+        assertMealBelongsToPatient(req.getDietPlanMealId(), patientUserId);
         FoodLog log = FoodLog.builder()
             .patientUserId(patientUserId).foodItemId(req.getFoodItemId())
             .foodName(req.getFoodName()).logDate(req.getLogDate())
@@ -42,6 +44,7 @@ public class FoodLogService {
 
     @Transactional
     public void recordDeviation(Long patientUserId, MealDeviationRequest req) {
+        assertMealBelongsToPatient(req.getDietPlanMealId(), patientUserId);
         MealDeviation d = MealDeviation.builder()
             .patientUserId(patientUserId).dietPlanMealId(req.getDietPlanMealId())
             .deviationDate(req.getDeviationDate()).reason(req.getReason())
@@ -69,6 +72,15 @@ public class FoodLogService {
             r.setAdherencePercent(Math.min(100, (r.getActualCalories() / r.getPlannedCalories()) * 100));
         }
         return r;
+    }
+
+    private void assertMealBelongsToPatient(Long mealId, Long patientUserId) {
+        if (mealId == null) return;
+        DietPlanMeal meal = mealRepo.findById(mealId)
+            .orElseThrow(() -> new ResourceNotFoundException("DietPlanMeal", mealId));
+        if (meal.getDietPlan() == null || !patientUserId.equals(meal.getDietPlan().getPatientUserId())) {
+            throw new com.nutrisphere.exception.ForbiddenException("Diet plan meal does not belong to this patient");
+        }
     }
 
     private FoodLogResponse toResponse(FoodLog l) {
