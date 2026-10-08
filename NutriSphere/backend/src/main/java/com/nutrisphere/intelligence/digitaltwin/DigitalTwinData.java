@@ -25,12 +25,15 @@ public class DigitalTwinData {
     private Double targetCarbsG;
     private Double targetFatG;
     private Double targetWaterMl;
+    private Double netCaloricDeficit;
+    private Double projectedWeight30Days;
     // Adherence
     private Double adherencePercent;
     private Integer totalFoodLogs;
     private Integer totalWaterLogs;
     private Integer totalBarriers;
     private String dominantBarrier;
+    private Map<String, Double> dimensionScores;
     // Trends
     private List<DailyNutrition> nutritionHistory;
     private List<WeightRecord> weightHistory;
