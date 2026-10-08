@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.nutrisphere.exception.ForbiddenException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,6 +31,7 @@ public class AdherenceController {
     @GetMapping
     public ApiResponse<List<AdherenceBarrier>> getBarriers(@RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
+        assertPatientOwnsTarget(uid);
         return ApiResponse.success(adherenceService.getBarriers(uid));
     }
 
@@ -41,7 +43,14 @@ public class AdherenceController {
     @GetMapping({"/analysis", "/summary"})
     public ApiResponse<BarrierAnalysisResult> analyze(@RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
+        assertPatientOwnsTarget(uid);
         return ApiResponse.success(adherenceService.analyze(uid));
+    }
+
+    private void assertPatientOwnsTarget(Long patientUserId) {
+        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's adherence data");
+        }
     }
 
     @PutMapping("/{id}/resolve")
