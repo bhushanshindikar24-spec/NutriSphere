@@ -110,8 +110,7 @@ class SecurityUtilsTest {
     }
 
     private User user(Long id, Role role) {
-        return User.builder()
-            .id(id)
+        User user = User.builder()
             .email(id + "@example.com")
             .passwordHash("hash")
             .firstName("Test")
@@ -120,5 +119,7 @@ class SecurityUtilsTest {
             .status(Status.ACTIVE)
             .emailVerified(true)
             .build();
+        user.setId(id);
+        return user;
     }
 }
