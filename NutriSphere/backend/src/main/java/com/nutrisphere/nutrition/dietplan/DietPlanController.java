@@ -23,7 +23,11 @@ public class DietPlanController {
 
     @GetMapping("/{id}")
     public ApiResponse<DietPlanResponse> getById(@PathVariable Long id) {
-        return ApiResponse.success(dietPlanService.getPlanById(id));
+        DietPlanResponse plan = dietPlanService.getPlanById(id);
+        if (securityUtils.hasRole("PATIENT") && !securityUtils.getCurrentUserId().equals(plan.getPatientUserId())) {
+            throw new ForbiddenException("Cannot access another patient's diet plan");
+        }
+        return ApiResponse.success(plan);
     }
 
     @PostMapping("/{id}/approve")
