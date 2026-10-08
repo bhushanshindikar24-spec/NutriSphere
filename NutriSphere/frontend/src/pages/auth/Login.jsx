@@ -1,7 +1,7 @@
 import {  useState, useContext  } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import { LogIn, Sparkles, User, Stethoscope, Utensils, Award } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 export default function Login() {
   const { login } = useContext(AuthContext);
@@ -24,19 +24,6 @@ export default function Login() {
     }
   };
 
-  const handleQuickLogin = async (roleEmail) => {
-    setFormData({ email: roleEmail, password: "password" });
-    setError("");
-    setIsLoading(true);
-    try {
-      await login(roleEmail, "password");
-      navigate("/");
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to login. Ensure backend server is running.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="auth-container">
@@ -86,55 +73,6 @@ export default function Login() {
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
-
-        {/* Quick Demo Accounts */}
-        <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--border-color)", paddingTop: "1.25rem" }}>
-          <span className="text-muted" style={{ fontSize: "0.75rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            <Sparkles size={14} color="var(--primary)" /> One-Click Clinical Demo Access
-          </span>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("patient@nutrisphere.com")}
-              className="btn btn-sm btn-outline"
-              disabled={isLoading}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem", fontSize: "0.75rem" }}
-            >
-              <User size={13} /> Patient
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("dietitian@nutrisphere.com")}
-              className="btn btn-sm btn-outline"
-              disabled={isLoading}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem", fontSize: "0.75rem" }}
-            >
-              <Award size={13} /> Dietitian
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("doctor@nutrisphere.com")}
-              className="btn btn-sm btn-outline"
-              disabled={isLoading}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem", fontSize: "0.75rem" }}
-            >
-              <Stethoscope size={13} /> Doctor
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("hotel@nutrisphere.com")}
-              className="btn btn-sm btn-outline"
-              disabled={isLoading}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem", fontSize: "0.75rem" }}
-            >
-              <Utensils size={13} /> Hotel Kitchen
-            </button>
-          </div>
-        </div>
 
         <p className="text-center text-muted" style={{ marginTop: "1.25rem", fontSize: "0.85rem", textAlign: "center" }}>
           Don't have an account? <Link to="/register" style={{ color: "var(--primary)", textDecoration: "none", fontWeight: 600 }}>Register</Link>
