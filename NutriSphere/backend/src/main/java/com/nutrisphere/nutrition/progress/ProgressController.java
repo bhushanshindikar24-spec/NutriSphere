@@ -5,6 +5,7 @@ import com.nutrisphere.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.nutrisphere.exception.ForbiddenException;
 import java.util.List;
 @RestController @RequestMapping("/api/nutrition/progress") @RequiredArgsConstructor
 public class ProgressController {
@@ -19,11 +20,17 @@ public class ProgressController {
 
     @GetMapping("/measurements/{patientUserId}")
     public ApiResponse<List<MeasurementResponse>> getMeasurements(@PathVariable Long patientUserId) {
+        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's measurements");
+        }
         return ApiResponse.success(progressService.getMeasurements(patientUserId));
     }
 
     @GetMapping("/{patientUserId}")
     public ApiResponse<List<ProgressResponse>> getProgress(@PathVariable Long patientUserId) {
+        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's progress");
+        }
         return ApiResponse.success(progressService.getProgress(patientUserId));
     }
 }
