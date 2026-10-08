@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.nutrisphere.exception.ForbiddenException;
 
 @Service @RequiredArgsConstructor
 public class AdherenceService {
@@ -56,10 +57,13 @@ public class AdherenceService {
     }
 
     @Transactional
-    public void resolveBarrier(Long barrierId) {
-        if (barrierRepo.existsById(barrierId)) {
-            barrierRepo.deleteById(barrierId);
+    public void resolveBarrier(Long barrierId, Long currentUserId, boolean isPatient) {
+        AdherenceBarrier barrier = barrierRepo.findById(barrierId)
+            .orElseThrow(() -> new IllegalArgumentException("Barrier not found"));
+        if (isPatient && !currentUserId.equals(barrier.getPatientUserId())) {
+            throw new ForbiddenException("Cannot resolve another patient's barrier");
         }
+        barrierRepo.delete(barrier);
     }
 
     public BarrierAnalysisResult analyzeBarriers(Long patientUserId) {
