@@ -6,11 +6,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
-import com.nutrisphere.exception.ForbiddenException;
-
+import com.nutrisphere.exception.*;
+import com.nutrisphere.nutrition.dietplan.DietPlanMeal;
+import com.nutrisphere.nutrition.dietplan.DietPlanMealRepository;
 @Service @RequiredArgsConstructor
 public class AdherenceService {
     private final AdherenceBarrierRepository barrierRepo;
+    private final DietPlanMealRepository mealRepo;
 
     @Transactional
     public AdherenceBarrier recordBarrier(Long patientUserId, String barrierType, LocalDate date,
@@ -20,6 +22,13 @@ public class AdherenceService {
             .barrierDate(date).mealType(mealType)
             .description(description).dietPlanMealId(dietPlanMealId)
             .build();
+        if (dietPlanMealId != null) {
+            DietPlanMeal meal = mealRepo.findById(dietPlanMealId)
+                .orElseThrow(() -> new ResourceNotFoundException("DietPlanMeal", dietPlanMealId));
+            if (meal.getDietPlan() == null || !patientUserId.equals(meal.getDietPlan().getPatientUserId())) {
+                throw new ForbiddenException("Diet plan meal does not belong to this patient");
+            }
+        }
         return barrierRepo.save(b);
     }
 
@@ -56,14 +65,14 @@ public class AdherenceService {
         return barrierRepo.findByPatientUserIdOrderByBarrierDateDesc(patientUserId);
     }
 
+    public AdherenceBarrier getBarrier(Long barrierId) {
+        return barrierRepo.findById(barrierId)
+            .orElseThrow(() -> new ResourceNotFoundException("AdherenceBarrier", barrierId));
+    }
+
     @Transactional
-    public void resolveBarrier(Long barrierId, Long currentUserId, boolean isPatient) {
-        AdherenceBarrier barrier = barrierRepo.findById(barrierId)
-            .orElseThrow(() -> new IllegalArgumentException("Barrier not found"));
-        if (isPatient && !currentUserId.equals(barrier.getPatientUserId())) {
-            throw new ForbiddenException("Cannot resolve another patient's barrier");
-        }
-        barrierRepo.delete(barrier);
+    public void resolveBarrier(Long barrierId) {
+        barrierRepo.delete(getBarrier(barrierId));
     }
 
     public BarrierAnalysisResult analyzeBarriers(Long patientUserId) {
