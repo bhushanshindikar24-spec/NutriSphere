@@ -1,9 +1,13 @@
 package com.nutrisphere.hotel.order.dto;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
+
 @Data
 public class OrderItemRequest {
-    private Long mealId;
+    @NotNull private Long mealId;
     private String mealName;
-    private Integer quantity;
+    @Positive private Integer quantity;
     private Double unitPrice;
 }
