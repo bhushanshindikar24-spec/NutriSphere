@@ -1,16 +1,21 @@
 package com.nutrisphere.intelligence.adaptive;
 
-import com.nutrisphere.intelligence.adherence.AdherenceBarrierRepository;
+import com.nutrisphere.exception.BadRequestException;
+import com.nutrisphere.exception.ForbiddenException;
+import com.nutrisphere.exception.ResourceNotFoundException;
 import com.nutrisphere.nutrition.dietplan.*;
+import com.nutrisphere.intelligence.adherence.AdherenceBarrierRepository;
 import com.nutrisphere.nutrition.hydration.WaterLogRepository;
 import com.nutrisphere.nutrition.logging.FoodLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.util.*;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class AdaptiveEngineService {
     private final AdaptiveRecommendationRepository repo;
     private final FoodLogRepository logRepo;
@@ -18,68 +23,128 @@ public class AdaptiveEngineService {
     private final AdherenceBarrierRepository barrierRepo;
     private final DietPlanRepository planRepo;
 
-    /**
-     * Adaptive Diet Engine — analyzes patterns and generates suggestions.
-     * Does NOT automatically change the approved diet plan.
-     * All suggestions require dietitian review.
-     */
     @Transactional
     public List<AdaptiveRecommendation> generateRecommendations(Long patientUserId, Long dietPlanId) {
-        List<AdaptiveRecommendation> generated = new ArrayList<>();
+        if (patientUserId == null) {
+            throw new BadRequestException("Patient is required");
+        }
+
         LocalDate today = LocalDate.now();
-        LocalDate weekAgo = today.minusDays(7);
+        LocalDate weekAgo = today.minusDays(6);
+        DietPlan plan = resolvePlan(patientUserId, dietPlanId);
+        Long effectivePlanId = plan != null ? plan.getId() : null;
 
-        var logs = logRepo.findByPatientUserIdAndLogDateBetweenOrderByLogDateAscLogTimeAsc(patientUserId, weekAgo, today);
-        var barriers = barrierRepo.findByPatientUserIdAndBarrierDateBetween(patientUserId, weekAgo, today);
-        var plan = dietPlanId != null ? planRepo.findById(dietPlanId).orElse(null)
-            : planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED).orElse(null);
-        Long effectivePlanId = plan != null ? plan.getId() : dietPlanId;
+        var logs = logRepo.findByPatientUserIdAndLogDateBetweenOrderByLogDateAscLogTimeAsc(
+            patientUserId, weekAgo, today);
+        var barriers = barrierRepo.findByPatientUserIdAndBarrierDateBetween(
+            patientUserId, weekAgo, today);
 
-        // 1. Low protein intake detection
-        if (plan != null && plan.getTargetProteinG() != null) {
-            double avgProtein = logs.stream().mapToDouble(l -> l.getProteinG() != null ? l.getProteinG() : 0).average().orElse(0);
+        List<AdaptiveRecommendation> generated = new ArrayList<>();
+
+        // Protein is evaluated as daily totals, then averaged across the 7-day window.
+        if (plan != null && plan.getTargetProteinG() != null && plan.getTargetProteinG() > 0) {
+            Map<LocalDate, Double> dailyProtein = new HashMap<>();
+            for (int i = 0; i < 7; i++) {
+                dailyProtein.put(today.minusDays(i), 0.0);
+            }
+            logs.forEach(l -> dailyProtein.computeIfPresent(l.getLogDate(),
+                (d, value) -> value + (l.getProteinG() != null ? l.getProteinG() : 0.0)));
+            double avgProtein = dailyProtein.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
             if (avgProtein < plan.getTargetProteinG() * 0.7) {
-                generated.add(createRecommendation(patientUserId, effectivePlanId, "PROTEIN_DEFICIT",
+                addIfNotPending(generated, createRecommendation(patientUserId, effectivePlanId, "PROTEIN_DEFICIT",
                     "Low Protein Intake Detected",
-                    "Patient average protein intake (" + String.format("%.1f",avgProtein) + "g) is significantly below target (" + plan.getTargetProteinG() + "g). Consider adding high-protein foods.",
-                    "Low protein intake over 7 days", "Add Greek yogurt, eggs, or lean protein to meals", "HIGH"));
+                    "Average daily protein intake (" + String.format("%.1f", avgProtein) + "g) is below 70% of the approved target (" +
+                        plan.getTargetProteinG() + "g). Consider a dietitian-reviewed adjustment.",
+                    "Low protein intake over 7 days",
+                    "Review protein distribution and add appropriate protein sources",
+                    "HIGH"));
             }
         }
 
-        // 2. Low hydration
-        double avgWater = 0;
-        for (int i=0; i<7; i++) {
-            avgWater += waterRepo.sumAmountForDate(patientUserId, today.minusDays(i));
+        // Hydration uses the approved plan target when available; no fabricated universal target.
+        double avgWater = 0.0;
+        for (int i = 0; i < 7; i++) {
+            Double amount = waterRepo.sumAmountForDate(patientUserId, today.minusDays(i));
+            avgWater += amount != null ? amount : 0.0;
         }
-        avgWater /= 7;
-        if (avgWater < 1500) {
-            generated.add(createRecommendation(patientUserId, effectivePlanId, "LOW_HYDRATION",
+        avgWater /= 7.0;
+
+        double targetWater = plan != null && plan.getTargetWaterMl() != null ? plan.getTargetWaterMl() : 0.0;
+        if (targetWater > 0 && avgWater < targetWater * 0.8) {
+            addIfNotPending(generated, createRecommendation(patientUserId, effectivePlanId, "LOW_HYDRATION",
                 "Low Hydration Pattern",
-                "Average water intake of " + String.format("%.0f",avgWater) + "ml/day is below recommended 2000ml. Consider hydration reminders.",
-                "Consistently low water intake", "Set hydration reminders, carry a water bottle", "MEDIUM"));
+                "Average water intake of " + String.format("%.0f", avgWater) +
+                    "ml/day is below 80% of the approved target (" + String.format("%.0f", targetWater) + "ml/day).",
+                "Consistently low water intake",
+                "Use reminders and distribute fluids across the day within the approved plan",
+                "MEDIUM"));
         }
 
-        // 3. Frequent barriers
+        // Frequent barriers.
         if (barriers.size() >= 3) {
             Map<String, Long> barrierCount = new HashMap<>();
             barriers.forEach(b -> barrierCount.merge(b.getBarrierType(), 1L, Long::sum));
-            String dominant = barrierCount.entrySet().stream().max(Map.Entry.comparingByValue())
+            String dominant = barrierCount.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey).orElse("");
+
             if (!dominant.isEmpty()) {
-                generated.add(createRecommendation(patientUserId, effectivePlanId, "BARRIER_PATTERN",
+                addIfNotPending(generated, createRecommendation(patientUserId, effectivePlanId, "BARRIER_PATTERN",
                     "Recurring Adherence Barrier: " + dominant,
-                    "Barrier '" + dominant + "' detected " + barrierCount.get(dominant) + " times in the last 7 days. Diet plan may need adjustment.",
-                    "Recurring " + dominant + " barrier", "Review meals that trigger this barrier, consider alternatives", "HIGH"));
+                    "Barrier '" + dominant + "' was detected " + barrierCount.get(dominant) +
+                        " times in the last 7 days. Review the affected meals before changing the approved plan.",
+                    "Recurring " + dominant + " barrier",
+                    "Review affected meals and consider clinically appropriate alternatives",
+                    "HIGH"));
             }
         }
 
-        repo.saveAll(generated);
+        if (!generated.isEmpty()) {
+            repo.saveAll(generated);
+        }
         return generated;
+    }
+
+    private DietPlan resolvePlan(Long patientUserId, Long dietPlanId) {
+        DietPlan plan;
+        if (dietPlanId != null) {
+            plan = planRepo.findById(dietPlanId)
+                .orElseThrow(() -> new ResourceNotFoundException("DietPlan", dietPlanId));
+            if (!patientUserId.equals(plan.getPatientUserId())) {
+                throw new ForbiddenException("Diet plan does not belong to this patient");
+            }
+        } else {
+            plan = planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED).orElse(null);
+        }
+
+        if (plan != null && plan.getStatus() != DietPlanStatus.APPROVED) {
+            throw new BadRequestException("Adaptive analysis requires an approved diet plan");
+        }
+        return plan;
+    }
+
+    public void assertPlanBelongsToPatient(Long dietPlanId, Long patientUserId) {
+        resolvePlan(patientUserId, dietPlanId);
+    }
+
+    public Long getPatientUserIdForPlan(Long dietPlanId) {
+        return planRepo.findById(dietPlanId)
+            .orElseThrow(() -> new ResourceNotFoundException("DietPlan", dietPlanId))
+            .getPatientUserId();
+    }
+
+    public Long getPatientUserIdForRecommendation(Long recommendationId) {
+        return repo.findById(recommendationId)
+            .orElseThrow(() -> new ResourceNotFoundException("Recommendation", recommendationId))
+            .getPatientUserId();
     }
 
     public List<AdaptiveRecommendation> getPendingReviews(Long dietPlanId) {
         return repo.findByDietPlanIdOrderByCreatedAtDesc(dietPlanId)
-            .stream().filter(r -> r.getStatus() == AdaptiveRecommendationStatus.PENDING_REVIEW).toList();
+            .stream()
+            .filter(r -> r.getStatus() == AdaptiveRecommendationStatus.PENDING_REVIEW)
+            .toList();
     }
 
     public List<AdaptiveRecommendation> getForPatient(Long patientUserId) {
@@ -89,12 +154,23 @@ public class AdaptiveEngineService {
     @Transactional
     public AdaptiveRecommendation reviewRecommendation(Long recId, Long dietitianUserId, boolean approved, String notes) {
         AdaptiveRecommendation rec = repo.findById(recId)
-            .orElseThrow(() -> new com.nutrisphere.exception.ResourceNotFoundException("Recommendation", recId));
+            .orElseThrow(() -> new ResourceNotFoundException("Recommendation", recId));
         rec.setStatus(approved ? AdaptiveRecommendationStatus.APPROVED : AdaptiveRecommendationStatus.REJECTED);
         rec.setReviewedByUserId(dietitianUserId);
         rec.setReviewNotes(notes);
         rec.setReviewedAt(java.time.LocalDateTime.now());
         return repo.save(rec);
+    }
+
+    private void addIfNotPending(List<AdaptiveRecommendation> generated, AdaptiveRecommendation candidate) {
+        boolean alreadyPending = repo.findByPatientUserIdAndStatus(candidate.getPatientUserId(), AdaptiveRecommendationStatus.PENDING_REVIEW)
+            .stream()
+            .anyMatch(existing ->
+                Objects.equals(existing.getDietPlanId(), candidate.getDietPlanId()) &&
+                Objects.equals(existing.getRecommendationType(), candidate.getRecommendationType()));
+        if (!alreadyPending) {
+            generated.add(candidate);
+        }
     }
 
     private AdaptiveRecommendation createRecommendation(Long patientUserId, Long dietPlanId, String type,
