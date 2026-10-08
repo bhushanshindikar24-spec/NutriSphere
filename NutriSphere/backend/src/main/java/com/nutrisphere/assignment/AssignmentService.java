@@ -3,6 +3,7 @@ package com.nutrisphere.assignment;
 import com.nutrisphere.assignment.dto.*;
 import com.nutrisphere.exception.*;
 import com.nutrisphere.patient.PatientRepository;
+import com.nutrisphere.user.Role;
 import com.nutrisphere.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,8 @@ public class AssignmentService {
 
     @Transactional
     public AssignmentResponse assignPatientToDoctor(Long doctorUserId, AssignPatientRequest req) {
+        assertUserRole(doctorUserId, Role.DOCTOR);
+        assertUserRole(req.getPatientUserId(), Role.PATIENT);
         if (doctorPatientRepo.existsByDoctorUserIdAndPatientUserId(doctorUserId, req.getPatientUserId())) {
             throw new DuplicateResourceException("Patient already assigned to this doctor");
         }
@@ -39,6 +42,8 @@ public class AssignmentService {
 
     @Transactional
     public AssignmentResponse assignPatientToDietitian(Long dietitianUserId, AssignPatientRequest req) {
+        assertUserRole(dietitianUserId, Role.DIETITIAN);
+        assertUserRole(req.getPatientUserId(), Role.PATIENT);
         if (dietitianPatientRepo.existsByDietitianUserIdAndPatientUserId(dietitianUserId, req.getPatientUserId())) {
             throw new DuplicateResourceException("Patient already assigned to this dietitian");
         }
@@ -78,6 +83,14 @@ public class AssignmentService {
             r.setPatientEmail(u.getEmail());
         });
         return r;
+    }
+
+    private void assertUserRole(Long userId, Role expectedRole) {
+        var user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        if (user.getRole() != expectedRole) {
+            throw new ForbiddenException("User does not have the required role: " + expectedRole);
+        }
     }
 
     private AssignmentResponse toDietitianAssignmentResponse(DietitianPatient a) {
