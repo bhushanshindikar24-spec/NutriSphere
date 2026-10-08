@@ -28,6 +28,16 @@ public class RealityScoreService {
      * - Overall: weighted average of all dimensions
      */
     @Transactional
+    public void assertDietPlanBelongsToPatient(Long dietPlanId, Long patientUserId) {
+        if (dietPlanId != null) {
+            DietPlan plan = planRepo.findById(dietPlanId)
+                .orElseThrow(() -> new com.nutrisphere.exception.ResourceNotFoundException("DietPlan", dietPlanId));
+            if (!patientUserId.equals(plan.getPatientUserId())) {
+                throw new com.nutrisphere.exception.ForbiddenException("Diet plan does not belong to this patient");
+            }
+        }
+    }
+
     public RealityScoreResult calculateAndSave(Long patientUserId, Long dietPlanId) {
         List<Object[]> barrierCounts = barrierRepo.countByBarrierType(patientUserId);
         Map<String, Long> counts = new HashMap<>();
