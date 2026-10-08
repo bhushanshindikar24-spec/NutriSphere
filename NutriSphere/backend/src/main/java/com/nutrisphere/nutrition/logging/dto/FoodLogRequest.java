@@ -1,9 +1,12 @@
 package com.nutrisphere.nutrition.logging.dto;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
+
 @Data
 public class FoodLogRequest {
     private Long foodItemId;
@@ -11,12 +14,12 @@ public class FoodLogRequest {
     @NotNull private LocalDate logDate;
     private LocalTime logTime;
     private String mealType;
-    private Double quantityG;
-    private Double calories;
-    private Double proteinG;
-    private Double carbsG;
-    private Double fatG;
-    private Double fiberG;
+    @PositiveOrZero private Double quantityG;
+    @PositiveOrZero private Double calories;
+    @PositiveOrZero private Double proteinG;
+    @PositiveOrZero private Double carbsG;
+    @PositiveOrZero private Double fatG;
+    @PositiveOrZero private Double fiberG;
     private String notes;
     private Long dietPlanMealId;
 }
