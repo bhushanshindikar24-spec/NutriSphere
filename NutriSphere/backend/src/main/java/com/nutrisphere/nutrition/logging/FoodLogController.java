@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.nutrisphere.exception.ForbiddenException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -58,6 +59,9 @@ public class FoodLogController {
             @RequestParam(required = false) Long patientUserId) {
         if (date == null) date = LocalDate.now();
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
+        if (securityUtils.hasRole("PATIENT") && !uid.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's nutrition data");
+        }
         return ApiResponse.success(foodLogService.getPlannedVsActual(uid, date));
     }
 }
