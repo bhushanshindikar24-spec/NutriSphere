@@ -2,6 +2,7 @@ package com.nutrisphere.exception;
 
 import com.nutrisphere.common.ErrorResponse;
 import com.nutrisphere.notification.EmailDeliveryException;
+import com.nutrisphere.integrations.ai.AIProviderException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
@@ -99,6 +100,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
     public ErrorResponse handleRateLimit(RateLimitException e) {
         return new ErrorResponse(429, "Too Many Requests", e.getMessage());
+    }
+
+    @ExceptionHandler(AIProviderException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ErrorResponse handleAIProvider(AIProviderException e) {
+        return new ErrorResponse(503, "AI Service Unavailable", "AI decision-support service is temporarily unavailable");
     }
 
     @ExceptionHandler(EmailDeliveryException.class)
