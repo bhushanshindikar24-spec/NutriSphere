@@ -26,7 +26,11 @@ public class AssessmentController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR', 'PATIENT', 'ADMIN')")
     public ApiResponse<AssessmentResponse> getById(@PathVariable Long id) {
-        return ApiResponse.success(assessmentService.getById(id));
+        AssessmentResponse response = assessmentService.getById(id);
+        if (securityUtils.hasRole("PATIENT") && !securityUtils.getCurrentUserId().equals(response.getPatientUserId())) {
+            throw new ForbiddenException("Cannot access another patient's assessment");
+        }
+        return ApiResponse.success(response);
     }
 
     @GetMapping("/patient/{patientUserId}")
