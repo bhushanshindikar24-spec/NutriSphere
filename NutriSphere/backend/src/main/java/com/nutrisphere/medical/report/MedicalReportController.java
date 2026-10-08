@@ -29,7 +29,11 @@ public class MedicalReportController {
     @PostMapping
     @PreAuthorize("hasAnyRole('DOCTOR','PATIENT')")
     public ApiResponse<MedicalReport> create(@RequestBody MedicalReport report) {
-        report.setUploadedByUserId(securityUtils.getCurrentUserId());
+        Long currentUserId = securityUtils.getCurrentUserId();
+        report.setUploadedByUserId(currentUserId);
+        if (securityUtils.hasRole("PATIENT")) {
+            report.setPatientUserId(currentUserId);
+        }
         return ApiResponse.success(reportService.create(report));
     }
 
