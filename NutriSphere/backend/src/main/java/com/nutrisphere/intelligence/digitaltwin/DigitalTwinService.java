@@ -46,11 +46,13 @@ public class DigitalTwinService {
         var logs = logRepo.findByPatientUserIdAndLogDateBetweenOrderByLogDateAscLogTimeAsc(patientUserId, weekAgo, today);
 
         twin.setTotalFoodLogs(logs.size());
+        int waterLogCount = 0;
         if (!logs.isEmpty()) {
             twin.setAvgDailyCalories(logs.stream().mapToDouble(l -> l.getCalories() != null ? l.getCalories() : 0).sum() / 7.0);
             twin.setAvgDailyProteinG(logs.stream().mapToDouble(l -> l.getProteinG() != null ? l.getProteinG() : 0).sum() / 7.0);
             twin.setAvgDailyCarbsG(logs.stream().mapToDouble(l -> l.getCarbsG() != null ? l.getCarbsG() : 0).sum() / 7.0);
             twin.setAvgDailyFatG(logs.stream().mapToDouble(l -> l.getFatG() != null ? l.getFatG() : 0).sum() / 7.0);
+            twin.setAvgDailyFiberG(logs.stream().mapToDouble(l -> l.getFiberG() != null ? l.getFiberG() : 0).sum() / 7.0);
         }
 
         // Water 7-day
@@ -58,8 +60,10 @@ public class DigitalTwinService {
         for (int i=0; i<7; i++) {
             Double amount = waterRepo.sumAmountForDate(patientUserId, today.minusDays(i));
             totalWater += amount != null ? amount : 0.0;
+            waterLogCount += waterRepo.findByPatientUserIdAndLogDateOrderByLogTime(patientUserId, today.minusDays(i)).size();
         }
         twin.setAvgDailyWaterMl(totalWater / 7.0);
+        twin.setTotalWaterLogs(waterLogCount);
 
         // Diet plan targets
         planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED).ifPresent(plan -> {
@@ -69,6 +73,14 @@ public class DigitalTwinService {
             twin.setTargetFatG(plan.getTargetFatG());
             twin.setTargetWaterMl(plan.getTargetWaterMl());
         });
+
+        // Simple transparent 30-day energy-balance projection. It is only produced when
+        // both an approved calorie target and recorded intake are available.
+        if (twin.getTargetCalories() != null && twin.getAvgDailyCalories() != null && twin.getCurrentWeightKg() != null) {
+            double balance = twin.getTargetCalories() - twin.getAvgDailyCalories();
+            twin.setNetCaloricDeficit(Math.round(balance * 10.0) / 10.0);
+            twin.setProjectedWeight30Days(Math.round((twin.getCurrentWeightKg() - (balance * 30.0 / 7700.0)) * 10.0) / 10.0);
+        }
 
         // Adherence
         if (twin.getTargetCalories() != null && twin.getTargetCalories() > 0 && twin.getAvgDailyCalories() != null) {
@@ -104,6 +116,14 @@ public class DigitalTwinService {
         // Reality Score
         realityScoreRepo.findFirstByPatientUserIdOrderByCreatedAtDesc(patientUserId).ifPresent(rs -> {
             twin.setLatestRealityScore(rs.getOverallScore());
+            twin.setDimensionScores(new LinkedHashMap<>());
+            twin.getDimensionScores().put("Food Availability", rs.getFoodAvailabilityScore());
+            twin.getDimensionScores().put("Affordability", rs.getAffordabilityScore());
+            twin.getDimensionScores().put("Cooking Complexity", rs.getCookingComplexityScore());
+            twin.getDimensionScores().put("Preference", rs.getPreferenceScore());
+            twin.getDimensionScores().put("Schedule", rs.getScheduleScore());
+            twin.getDimensionScores().put("Accessibility", rs.getAccessibilityScore());
+            twin.getDimensionScores().put("Historical Adherence", rs.getHistoricalAdherenceScore());
             twin.setRealityScoreInterpretation(rs.getOverallScore() != null && rs.getOverallScore() >= 75 ? "High Feasibility" :
                 rs.getOverallScore() != null && rs.getOverallScore() >= 50 ? "Moderate Feasibility" : "Low Feasibility");
         });
