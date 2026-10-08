@@ -31,7 +31,7 @@ public class AdherenceController {
     @GetMapping
     public ApiResponse<List<AdherenceBarrier>> getBarriers(@RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
-        assertPatientOwnsTarget(uid);
+        securityUtils.assertPatientAccess(uid);
         return ApiResponse.success(adherenceService.getBarriers(uid));
     }
 
@@ -45,12 +45,6 @@ public class AdherenceController {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
         assertPatientOwnsTarget(uid);
         return ApiResponse.success(adherenceService.analyze(uid));
-    }
-
-    private void assertPatientOwnsTarget(Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot access another patient's adherence data");
-        }
     }
 
     @PutMapping("/{id}/resolve")
