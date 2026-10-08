@@ -68,7 +68,7 @@ public class DietPlanController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('DIETITIAN')")
-    public ApiResponse<DietPlanResponse> update(@PathVariable Long id, @Valid @RequestBody DietPlanRequest req) {
+    public ApiResponse<DietPlanResponse> update(@PathVariable Long id, @RequestBody DietPlanRequest req) {
         return ApiResponse.success(dietPlanService.updatePlan(id, securityUtils.getCurrentUserId(), req));
     }
 
