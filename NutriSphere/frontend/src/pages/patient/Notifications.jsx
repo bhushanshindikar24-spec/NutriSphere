@@ -1,4 +1,4 @@
-import {  useState, useEffect  } from "react";
+import { useEffect, useState } from "react";
 import NotificationCard from "../../components/notifications/NotificationCard";
 import { notificationService } from "../../services/notificationService";
 import { Bell, CheckCheck } from "lucide-react";
@@ -6,37 +6,31 @@ import { Bell, CheckCheck } from "lucide-react";
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadNotifications = async () => {
       try {
         const res = await notificationService.getMyNotifications();
-        setNotifications(res.data?.data || res.data || []);
+        const data = res.data?.data || res.data || [];
+        if (!cancelled) {
+          setNotifications(Array.isArray(data) ? data : []);
+          setError("");
+        }
       } catch (_err) {
-        console.error("Failed to load notifications", _err);
-        setNotifications([
-          {
-            id: 1,
-            title: "Adaptive Recommendation Ready",
-            message: "Dietitian Dr. Vance updated your dinner carbohydrate target to adjust for late-evening metabolic recovery.",
-            type: "INFO",
-            createdAt: new Date().toISOString(),
-            read: false,
-          },
-          {
-            id: 2,
-            title: "Daily Hydration Reminder",
-            message: "You are currently at 1,250 mL of your 2,500 mL goal today. Remember to drink a glass of water.",
-            type: "REMINDER",
-            createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-            read: true,
-          },
-        ]);
+        if (!cancelled) {
+          setNotifications([]);
+          setError("Unable to load notifications. Please try again.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
+
     loadNotifications();
+    return () => { cancelled = true; };
   }, []);
 
   const handleMarkRead = async (id) => {
@@ -46,9 +40,7 @@ export default function Notifications() {
         prev.map((n) => (n.id === id ? { ...n, isRead: true, read: true } : n))
       );
     } catch (_err) {
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true, read: true } : n))
-      );
+      setError("Unable to mark the notification as read.");
     }
   };
 
@@ -57,7 +49,7 @@ export default function Notifications() {
       await notificationService.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
     } catch (_err) {
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
+      setError("Unable to mark notifications as read.");
     }
   };
 
@@ -66,7 +58,7 @@ export default function Notifications() {
       await notificationService.deleteNotification(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (_err) {
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setError("Unable to delete the notification.");
     }
   };
 
@@ -76,34 +68,29 @@ export default function Notifications() {
     <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h2>Notifications</h2>
-          <p className="text-muted">Stay informed on plan adjustments, hydration alerts, and physician notes.</p>
+          <h2>Patient Notifications</h2>
+          <p className="text-muted">Stay informed about plan approvals, reminders, and care-team updates.</p>
         </div>
         {notifications.length > 0 && (
-          <button
-            onClick={handleMarkAllRead}
-            className="btn btn-outline"
-            style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}
-          >
+          <button onClick={handleMarkAllRead} className="btn btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}>
             <CheckCheck size={16} /> Mark All Read
           </button>
         )}
       </div>
 
+      {error && (
+        <div className="alert alert-error" role="alert">{error}</div>
+      )}
+
       {notifications.length === 0 ? (
         <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", borderRadius: "var(--radius-lg)" }}>
           <Bell size={40} style={{ margin: "0 auto 1rem", opacity: 0.5 }} />
-          <p style={{ margin: 0 }}>You are all caught up! No notifications.</p>
+          <p style={{ margin: 0 }}>No notifications are available.</p>
         </div>
       ) : (
         <div style={{ display: "grid", gap: "0.75rem" }}>
           {notifications.map((n) => (
-            <NotificationCard
-              key={n.id}
-              notification={n}
-              onMarkRead={handleMarkRead}
-              onDelete={handleDelete}
-            />
+            <NotificationCard key={n.id} notification={n} onMarkRead={handleMarkRead} onDelete={handleDelete} />
           ))}
         </div>
       )}
