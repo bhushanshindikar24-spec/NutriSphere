@@ -62,14 +62,12 @@ npm run dev
 
 ---
 
-## 🔑 Demo Clinical Accounts
+## 🔐 Authentication and Demo Data
 
-| Role | Email | Password | Primary Route |
-|---|---|---|---|
-| **Patient** | `patient@nutrisphere.com` | `password` | `/patient` |
-| **Dietitian** | `dietitian@nutrisphere.com` | `password` | `/dietitian` |
-| **Doctor** | `doctor@nutrisphere.com` | `password` | `/doctor` |
-| **Hotel Kitchen** | `hotel@nutrisphere.com` | `password` | `/hotel` |
+- Public registration always creates a **PATIENT** account.
+- New accounts must verify their email before login.
+- Configure SMTP variables (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `FRONTEND_URL`) for email verification and password reset.
+- Demo data seeding is **disabled by default**. For a controlled local demonstration only, set `DEMO_DATA_ENABLED=true` before starting the backend. Demo credentials are defined by `DemoDataSeeder` and should not be used as production credentials.
 
 ---
 
@@ -81,7 +79,7 @@ NutriSphere/
 │   ├── src/main/java/com/nutrisphere/
 │   │   ├── ai/                # AI recommendation services
 │   │   ├── assignment/        # Doctor-Patient & Dietitian-Patient mappings
-│   │   ├── audit/             # HIPAA-aligned access logging
+│   │   ├── audit/             # Security and access audit logging
 │   │   ├── auth/              # JWT authentication & registration
 │   │   ├── config/            # Security, Jackson, WebMvc config
 │   │   ├── doctor/            # Doctor profile & clinical workflows
@@ -94,7 +92,7 @@ NutriSphere/
 │   │   ├── nutrition/         # Diet plans, food logs, water logs, requirements
 │   │   ├── patient/           # Patient profile & health records
 │   │   └── user/              # User account entity & repositories
-│   └── src/main/resources/db/migration/ # Flyway SQL migrations (V1, V2)
+│   └── src/main/resources/db/migration/ # Flyway SQL migrations
 ├── frontend/                  # React 19 + Vite SPA
 │   ├── src/
 │   │   ├── components/        # Intelligence, nutrition, medical, common UI
