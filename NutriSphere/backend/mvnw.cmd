@@ -1,24 +1,34 @@
-@REM ----------------------------------------------------------------------------
-@REM NutriSphere Maven Wrapper script for Windows
-@REM ----------------------------------------------------------------------------
+@echo off
+setlocal EnableExtensions EnableDelayedExpansion
 
-@IF "%DEBUG%" == "" @ECHO OFF
-@SETLOCAL
+set "BASE_DIR=%~dp0"
+set "WRAPPER_DIR=%BASE_DIR%.mvn\wrapper"
+set "PROPS=%WRAPPER_DIR%\maven-wrapper.properties"
+set "MAVEN_VERSION=3.9.16"
 
-@IF EXIST "C:\Program Files\Java\jdk-17" (
-  SET "JAVA_HOME=C:\Program Files\Java\jdk-17"
-  SET "PATH=C:\Program Files\Java\jdk-17\bin;%PATH%"
+if exist "%PROPS%" (
+  for /f "tokens=1,* delims==" %%A in ('findstr /b "mavenVersion=" "%PROPS%"') do set "MAVEN_VERSION=%%B"
 )
 
-IF NOT "%JAVA_HOME%" == "" (
-  SET "JAVACMD=%JAVA_HOME%\bin\java.exe"
-) ELSE (
-  SET "JAVACMD=java.exe"
+set "DIST_DIR=%WRAPPER_DIR%\apache-maven-%MAVEN_VERSION%"
+set "MAVEN_HOME=%DIST_DIR%"
+
+if not exist "%DIST_DIR%\bin\mvn.cmd" (
+  set "ZIP=%WRAPPER_DIR%\apache-maven-%MAVEN_VERSION%-bin.zip"
+  if not exist "%ZIP%" (
+    echo Downloading Apache Maven %MAVEN_VERSION%...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/%MAVEN_VERSION%/apache-maven-%MAVEN_VERSION%-bin.zip' -OutFile '%ZIP%'"
+    if errorlevel 1 (
+      echo Failed to download Maven %MAVEN_VERSION%.
+      exit /b 1
+    )
+  )
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -LiteralPath '%ZIP%' -DestinationPath '%WRAPPER_DIR%' -Force"
+  if errorlevel 1 (
+    echo Failed to extract Maven.
+    exit /b 1
+  )
 )
 
-SET "MAVEN_WRAPPER_BIN=C:\Users\Bhushan\.m2\wrapper\dists\apache-maven-3.9.16\0daed3be3ebd1c706f0e69e8b07c6b73f5cc4ea3dfce72a8d0ec2e849ca2ddb0\bin\mvn.cmd"
-IF EXIST "%MAVEN_WRAPPER_BIN%" (
-  "%MAVEN_WRAPPER_BIN%" %*
-) ELSE (
-  mvn %*
-)
+call "%DIST_DIR%\bin\mvn.cmd" %*
+exit /b %ERRORLEVEL%
