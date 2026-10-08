@@ -1,3 +1,30 @@
 #!/bin/sh
-# NutriSphere Maven Wrapper script for Unix/Linux
-exec mvn "$@"
+set -eu
+
+BASE_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+WRAPPER_DIR="$BASE_DIR/.mvn/wrapper"
+PROPS="$WRAPPER_DIR/maven-wrapper.properties"
+MAVEN_VERSION="3.9.16"
+
+if [ -f "$PROPS" ]; then
+  VALUE=$(sed -n 's/^mavenVersion=//p' "$PROPS" | head -n 1)
+  if [ -n "$VALUE" ]; then MAVEN_VERSION="$VALUE"; fi
+fi
+
+DIST_DIR="$WRAPPER_DIR/apache-maven-$MAVEN_VERSION"
+MAVEN_HOME="$DIST_DIR"
+export MAVEN_HOME
+
+if [ ! -x "$DIST_DIR/bin/mvn" ]; then
+  ZIP="$WRAPPER_DIR/apache-maven-$MAVEN_VERSION-bin.zip"
+  mkdir -p "$WRAPPER_DIR"
+
+  if [ ! -f "$ZIP" ]; then
+    echo "Downloading Apache Maven $MAVEN_VERSION..."
+    curl -fsSL "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.zip" -o "$ZIP"
+  fi
+
+  unzip -q -o "$ZIP" -d "$WRAPPER_DIR"
+fi
+
+exec "$DIST_DIR/bin/mvn" "$@"
