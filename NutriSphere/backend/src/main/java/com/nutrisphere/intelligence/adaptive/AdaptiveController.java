@@ -25,6 +25,10 @@ public class AdaptiveController {
             @RequestBody(required = false) GenerateRequest req) {
         Long pId = patientUserId != null ? patientUserId : (req != null ? req.getPatientUserId() : null);
         Long dpId = dietPlanId != null ? dietPlanId : (req != null ? req.getDietPlanId() : null);
+        securityUtils.assertPatientAccess(pId);
+        if (dpId != null) {
+            adaptiveEngineService.assertPlanBelongsToPatient(dpId, pId);
+        }
         return ApiResponse.success(adaptiveEngineService.generateRecommendations(pId, dpId));
     }
 
@@ -41,12 +45,16 @@ public class AdaptiveController {
             @RequestParam(required = false) Long patientUserId,
             @RequestParam(required = false) Long dietPlanId) {
         Long pId = patientId != null ? patientId : (patientUserId != null ? patientUserId : securityUtils.getCurrentUserId());
+        securityUtils.assertPatientAccess(pId);
+        if (dietPlanId != null) {
+            adaptiveEngineService.assertPlanBelongsToPatient(dietPlanId, pId);
+        }
         return ApiResponse.success(adaptiveEngineService.generateRecommendations(pId, dietPlanId));
     }
 
     @GetMapping("/patient/{patientUserId}")
     public ApiResponse<List<AdaptiveRecommendation>> getForPatient(@PathVariable Long patientUserId) {
-        assertPatientOwnsTarget(patientUserId);
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(adaptiveEngineService.getForPatient(patientUserId));
     }
 
@@ -54,7 +62,7 @@ public class AdaptiveController {
     public ApiResponse<List<AdaptiveRecommendation>> getRecommendations(
             @RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
-        assertPatientOwnsTarget(uid);
+        securityUtils.assertPatientAccess(uid);
         return ApiResponse.success(adaptiveEngineService.getForPatient(uid));
     }
 
@@ -63,13 +71,16 @@ public class AdaptiveController {
     public ApiResponse<List<AdaptiveRecommendation>> getPendingRecommendations(
             @RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
-        return ApiResponse.success(adaptiveEngineService.getForPatient(uid).stream()
+        securityUtils.assertPatientAccess(uid);
+        return ApiResponse.success(adaptiveEngineService.getForPatient(uid).stream(
             .filter(r -> r.getStatus() == AdaptiveRecommendationStatus.PENDING_REVIEW).toList());
     }
 
     @GetMapping("/plan/{dietPlanId}/pending")
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<List<AdaptiveRecommendation>> getPending(@PathVariable Long dietPlanId) {
+        Long patientUserId = adaptiveEngineService.getPatientUserIdForPlan(dietPlanId);
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(adaptiveEngineService.getPendingReviews(dietPlanId));
     }
 
@@ -77,6 +88,7 @@ public class AdaptiveController {
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<AdaptiveRecommendation> review(@PathVariable Long id,
             @RequestBody ReviewRequest req) {
+        securityUtils.assertPatientAccess(adaptiveEngineService.getPatientUserIdForRecommendation(id));
         return ApiResponse.success(adaptiveEngineService.reviewRecommendation(
             id, securityUtils.getCurrentUserId(), req.isApproved(), req.getNotes()));
     }
@@ -84,6 +96,7 @@ public class AdaptiveController {
     @PutMapping({"/recommendations/{id}/approve", "/{id}/approve"})
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<AdaptiveRecommendation> approve(@PathVariable Long id) {
+        securityUtils.assertPatientAccess(adaptiveEngineService.getPatientUserIdForRecommendation(id));
         return ApiResponse.success(adaptiveEngineService.reviewRecommendation(
             id, securityUtils.getCurrentUserId(), true, "Approved by Dietitian"));
     }
@@ -91,14 +104,9 @@ public class AdaptiveController {
     @PutMapping({"/recommendations/{id}/reject", "/{id}/reject"})
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<AdaptiveRecommendation> reject(@PathVariable Long id) {
+        securityUtils.assertPatientAccess(adaptiveEngineService.getPatientUserIdForRecommendation(id));
         return ApiResponse.success(adaptiveEngineService.reviewRecommendation(
             id, securityUtils.getCurrentUserId(), false, "Rejected by Dietitian"));
-    }
-
-    private void assertPatientOwnsTarget(Long patientUserId) {
-        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot access another patient's adaptive recommendations");
-        }
     }
 
     @Data
