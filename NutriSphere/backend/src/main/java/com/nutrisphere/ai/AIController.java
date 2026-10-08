@@ -32,6 +32,7 @@ public class AIController {
     @PostMapping("/recommendations")
     @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR')")
     public ApiResponse<AIRecommendationResponse> getRecommendations(@RequestBody AIRecommendationRequest request) {
+        securityUtils.assertPatientAccess(request.getPatientUserId());
         return ApiResponse.success(recommendationService.getRecommendations(request));
     }
 
