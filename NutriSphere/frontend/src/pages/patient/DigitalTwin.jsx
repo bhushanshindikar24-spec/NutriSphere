@@ -1,4 +1,4 @@
-import {  useState, useEffect  } from "react";
+import { useEffect, useState } from "react";
 import DigitalTwinComponent from "../../components/intelligence/DigitalTwin";
 import RealityScoreGauge from "../../components/intelligence/RealityScoreGauge";
 import RealityScoreBreakdown from "../../components/intelligence/RealityScoreBreakdown";
@@ -8,80 +8,75 @@ export default function DigitalTwin() {
   const [twinData, setTwinData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [simulating, setSimulating] = useState(false);
-
-  const fetchTwin = async () => {
-    try {
-      const res = await digitalTwinService.getMyDigitalTwin();
-      setTwinData(res.data?.data || res.data);
-    } catch (err) {
-      console.error("Failed to load digital twin", err);
-      // Sensible baseline twin fallback
-      setTwinData({
-        currentWeightKg: 78.5,
-        targetWeightKg: 72.0,
-        netCaloricDeficit: -450,
-        projectedWeight30Days: 76.2,
-        realityScore: 84,
-        realityScoreInterpretation: "Feasible and Sustainable",
-        dailyCaloricTarget: 1950,
-        bmr: 1680,
-        tdee: 2320,
-        historicalWeights: [
-          { date: "Day 1", weight: 80.0 },
-          { date: "Day 7", weight: 79.4 },
-          { date: "Day 14", weight: 79.0 },
-          { date: "Day 21", weight: 78.5 },
-        ],
-        projectedWeights: [
-          { date: "Day 21", weight: 78.5 },
-          { date: "Day 30", weight: 77.8 },
-          { date: "Day 45", weight: 76.9 },
-          { date: "Day 60", weight: 76.0 },
-        ],
-        dimensionScores: {
-          caloricFeasibility: 88,
-          mealTimingFeasibility: 82,
-          foodAvailability: 85,
-          biologicalTolerance: 80,
-        },
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState("");
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchTwin();
+    let cancelled = false;
+
+    const loadTwin = async () => {
+      try {
+        const res = await digitalTwinService.getMyDigitalTwin();
+        if (!cancelled) {
+          const data = res.data?.data || res.data;
+          setTwinData(data || null);
+          setError(data ? "" : "Digital Twin data is not available yet.");
+        }
+      } catch (_err) {
+        if (!cancelled) {
+          setTwinData(null);
+          setError("Unable to load your Digital Twin. Please try again.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadTwin();
+    return () => { cancelled = true; };
   }, []);
 
   const handleRunSimulation = async () => {
     setSimulating(true);
+    setError("");
     try {
       const res = await digitalTwinService.recalculateProjection();
-      if (res.data?.data) {
-        setTwinData(res.data.data);
-      } else {
-        await fetchTwin();
+      const data = res.data?.data || res.data;
+      if (!data) {
+        throw new Error("No Digital Twin data returned");
       }
-    } catch (err) {
-      console.error("Simulation recalculation error", err);
-      await fetchTwin();
+      setTwinData(data);
+    } catch (_err) {
+      setError("Unable to recalculate the Digital Twin.");
     } finally {
       setSimulating(false);
     }
   };
 
-  if (loading) return <div className="loading-screen">Synthesizing Bioenergetic Digital Twin...</div>;
+  if (loading) return <div className="loading-screen">Loading Nutrition Digital Twin...</div>;
+
+  if (!twinData) {
+    return (
+      <div className="glass-panel" style={{ maxWidth: "900px", margin: "0 auto", padding: "2rem" }}>
+        <h2>Nutrition Digital Twin</h2>
+        <p className="text-muted">{error || "Digital Twin data is not available yet."}</p>
+      </div>
+    );
+  }
+
+  const realityScore = twinData.realityScore ?? twinData.latestRealityScore;
+  const interpretation = twinData.realityScoreInterpretation;
+  const dimensions = twinData.dimensionScores || {};
 
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gap: "2rem" }}>
       <div>
         <h2>Nutrition Digital Twin</h2>
         <p className="text-muted">
-          Your personalized bioenergetic computational model. It continuously updates with your intake, activity, and metabolic expenditure to predict long-term outcomes.
+          A data-driven nutrition profile updated from your recorded intake, hydration, approved plan targets, barriers, and Reality Score.
         </p>
       </div>
+
+      {error && <div className="alert alert-error" role="alert">{error}</div>}
 
       <DigitalTwinComponent
         twinData={twinData}
@@ -89,18 +84,19 @@ export default function DigitalTwin() {
         isSimulating={simulating}
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-        <RealityScoreGauge
-          score={twinData?.realityScore || 80}
-          interpretation={twinData?.realityScoreInterpretation || "Adherent"}
-          dimensionScores={twinData?.dimensionScores || {}}
-        />
-
-        <RealityScoreBreakdown
-          score={twinData?.realityScore || 80}
-          breakdown={twinData?.dimensionScores || {}}
-        />
-      </div>
+      {realityScore != null && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+          <RealityScoreGauge
+            score={realityScore}
+            interpretation={interpretation || "Calculated from available data"}
+            dimensionScores={dimensions}
+          />
+          <RealityScoreBreakdown
+            score={realityScore}
+            breakdown={dimensions}
+          />
+        </div>
+      )}
     </div>
   );
 }
