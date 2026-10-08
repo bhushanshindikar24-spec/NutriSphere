@@ -3,6 +3,7 @@ package com.nutrisphere.nutrition.logging;
 import com.nutrisphere.common.ApiResponse;
 import com.nutrisphere.nutrition.logging.dto.*;
 import com.nutrisphere.security.SecurityUtils;
+import com.nutrisphere.exception.BadRequestException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -42,6 +43,9 @@ public class FoodLogController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) Long patientUserId) {
+        if (from.isAfter(to) || from.plusDays(90).isBefore(to)) {
+            throw new BadRequestException("Date range must be valid and no longer than 90 days");
+        }
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
         securityUtils.assertPatientAccess(uid);
         return ApiResponse.success(foodLogService.getLogsForRange(uid, from, to));
