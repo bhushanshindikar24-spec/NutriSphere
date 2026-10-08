@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.nutrisphere.exception.ForbiddenException;
 
 import java.util.List;
 
@@ -72,7 +71,7 @@ public class AdaptiveController {
             @RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
         securityUtils.assertPatientAccess(uid);
-        return ApiResponse.success(adaptiveEngineService.getForPatient(uid).stream(
+        return ApiResponse.success(adaptiveEngineService.getForPatient(uid).stream()
             .filter(r -> r.getStatus() == AdaptiveRecommendationStatus.PENDING_REVIEW).toList());
     }
 
