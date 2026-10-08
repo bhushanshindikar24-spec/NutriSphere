@@ -8,6 +8,7 @@ import com.nutrisphere.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.nutrisphere.exception.ForbiddenException;
 
 @RestController
 @RequestMapping("/api/ai")
@@ -23,6 +24,8 @@ public class AIController {
     public ApiResponse<AIResponse> query(@RequestBody AIRequest request) {
         if (request.getPatientUserId() == null) {
             request.setPatientUserId(securityUtils.getCurrentUserId());
+        } else if (securityUtils.hasRole("PATIENT") && !request.getPatientUserId().equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot query another patient's clinical data");
         }
         return ApiResponse.success(aiService.query(request));
     }
@@ -36,6 +39,9 @@ public class AIController {
     @GetMapping("/summary/{patientUserId}")
     @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR', 'PATIENT')")
     public ApiResponse<AISummaryResponse> getPatientSummary(@PathVariable Long patientUserId) {
+        if (securityUtils.hasRole("PATIENT") && !patientUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new ForbiddenException("Cannot access another patient's AI summary");
+        }
         return ApiResponse.success(aiService.getPatientSummary(patientUserId));
     }
 }
