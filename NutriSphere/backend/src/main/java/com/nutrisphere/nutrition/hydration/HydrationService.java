@@ -17,9 +17,12 @@ public class HydrationService {
 
     @Transactional
     public WaterLog logWater(Long patientUserId, WaterLogRequest req) {
-        LocalDate date = req.getLogDate() != null ? req.getLogDate() : LocalDate.now();
+        LocalDate date = req.getLogDate();
         LocalTime time = req.getLogTime() != null ? req.getLogTime() : LocalTime.now();
-        Double amount = req.getAmountMl() != null ? req.getAmountMl() : (req.getAmount() != null ? req.getAmount() : 250.0);
+        Double amount = req.getAmountMl() != null ? req.getAmountMl() : req.getAmount();
+        if (amount == null || amount <= 0) {
+            throw new com.nutrisphere.exception.BadRequestException("Water amount must be greater than zero");
+        }
         
         WaterLog log = WaterLog.builder()
             .patientUserId(patientUserId)
@@ -41,8 +44,8 @@ public class HydrationService {
         double total = waterLogRepo.sumAmountForDate(patientUserId, date);
         r.setTotalMl(total);
         double target = planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED)
-            .map(p -> p.getTargetWaterMl() != null ? p.getTargetWaterMl() * 1000 : 2500.0)
-            .orElse(2500.0);
+            .map(p -> p.getTargetWaterMl() != null ? p.getTargetWaterMl() : 0.0)
+            .orElse(0.0);
         r.setTargetMl(target);
         r.setPercentComplete(target > 0 ? Math.min(100, (total / target) * 100) : 0);
         r.setLogCount(waterLogRepo.findByPatientUserIdAndLogDateOrderByLogTime(patientUserId, date).size());
