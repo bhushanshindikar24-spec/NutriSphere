@@ -17,7 +17,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.time.Duration;
 import java.time.Instant;
-import com.nutrisphere.exception.RateLimitException;
 
 @Service
 @RequiredArgsConstructor
@@ -37,15 +36,19 @@ public class AuthService {
 
     @Transactional
     public RegistrationResponse register(RegisterRequest req) {
-        if (userRepository.existsByEmail(req.getEmail())) {
-            throw new DuplicateResourceException("Email already registered: " + req.getEmail());
+        String normalizedEmail = req.getEmail().trim().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new DuplicateResourceException("Email already registered");
+        }
+        if (req.getPassword() == null || req.getPassword().length() < 8) {
+            throw new BadRequestException("Password must contain at least 8 characters");
         }
 
         String verificationToken = UUID.randomUUID().toString();
         LocalDateTime verificationExpires = LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
 
         User user = User.builder()
-            .email(req.getEmail())
+            .email(normalizedEmail)
             .passwordHash(passwordEncoder.encode(req.getPassword()))
             .firstName(req.getFirstName())
             .lastName(req.getLastName())
