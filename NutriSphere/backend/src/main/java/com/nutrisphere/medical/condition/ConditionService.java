@@ -20,6 +20,11 @@ public class ConditionService {
         return patientConditionRepo.findByPatientUserIdAndActiveTrue(patientUserId);
     }
 
+    public PatientCondition getById(Long conditionId) {
+        return patientConditionRepo.findById(conditionId)
+            .orElseThrow(() -> new ResourceNotFoundException("PatientCondition", conditionId));
+    }
+
     @Transactional
     public PatientCondition addConditionToPatient(PatientCondition condition) {
         return patientConditionRepo.save(condition);
