@@ -4,6 +4,8 @@ import com.nutrisphere.exception.*;
 import com.nutrisphere.hotel.menu.HotelMeal;
 import com.nutrisphere.hotel.order.dto.*;
 import com.nutrisphere.notification.*;
+import com.nutrisphere.patient.PatientProfile;
+import com.nutrisphere.patient.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ public class OrderService {
     private final OrderStatusHistoryRepository historyRepo;
     private final NotificationService notifService;
     private final com.nutrisphere.hotel.menu.HotelMealRepository mealRepo;
+    private final PatientRepository patientRepository;
 
     @Transactional
     public OrderResponse placeOrder(Long patientUserId, OrderRequest req) {
@@ -31,6 +34,7 @@ public class OrderService {
 
         Long hotelUid = null;
         double total = 0.0;
+        PatientProfile patientProfile = patientRepository.findByUserId(patientUserId).orElse(null);
 
         for (var ir : req.getItems()) {
             if (ir.getMealId() == null) {
@@ -46,6 +50,7 @@ public class OrderService {
             if (!meal.isAvailable()) {
                 throw new BadRequestException("Meal is currently unavailable: " + meal.getName());
             }
+            assertMealCompatibleWithPatient(meal, patientProfile);
 
             if (hotelUid == null) {
                 hotelUid = meal.getHotelUserId();
@@ -95,6 +100,27 @@ public class OrderService {
             "New order #" + order.getId() + " received", "ORDER", order.getId());
 
         return toResponse(order);
+    }
+
+    private void assertMealCompatibleWithPatient(HotelMeal meal, PatientProfile profile) {
+        if (profile == null) return;
+
+        String restrictions = profile.getDietaryRestrictions() == null ? "" : profile.getDietaryRestrictions().toLowerCase();
+        if (meal.isVegan() && restrictions.contains("non-vegan")) {
+            throw new BadRequestException("Meal conflicts with the patient's dietary restrictions");
+        }
+        if (meal.isVegetarian() && restrictions.contains("vegetarian")) {
+            // Compatible.
+        }
+
+        String allergens = meal.getAllergens() == null ? "" : meal.getAllergens().toLowerCase();
+        String allergies = profile.getAllergies() == null ? "" : profile.getAllergies().toLowerCase();
+        for (String allergy : allergies.split("[,;]")) {
+            String token = allergy.trim();
+            if (!token.isEmpty() && (allergens.contains(token) || meal.getName().toLowerCase().contains(token))) {
+                throw new BadRequestException("Selected meal conflicts with a recorded patient allergy: " + token);
+            }
+        }
     }
 
     @Transactional
