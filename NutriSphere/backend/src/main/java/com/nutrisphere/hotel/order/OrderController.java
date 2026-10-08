@@ -2,6 +2,7 @@ package com.nutrisphere.hotel.order;
 import com.nutrisphere.common.ApiResponse;
 import com.nutrisphere.hotel.order.dto.*;
 import com.nutrisphere.security.SecurityUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,7 @@ public class OrderController {
 
     @PostMapping
     @PreAuthorize("hasRole('PATIENT')")
-    public ApiResponse<OrderResponse> placeOrder(@RequestBody OrderRequest req) {
+    public ApiResponse<OrderResponse> placeOrder(@Valid @RequestBody OrderRequest req) {
         return ApiResponse.success(orderService.placeOrder(securityUtils.getCurrentUserId(), req));
     }
 
