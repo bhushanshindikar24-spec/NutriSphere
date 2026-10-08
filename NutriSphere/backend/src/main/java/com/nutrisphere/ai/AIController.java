@@ -23,9 +23,8 @@ public class AIController {
     public ApiResponse<AIResponse> query(@RequestBody AIRequest request) {
         if (request.getPatientUserId() == null) {
             request.setPatientUserId(securityUtils.getCurrentUserId());
-        } else if (securityUtils.hasRole("PATIENT") && !request.getPatientUserId().equals(securityUtils.getCurrentUserId())) {
-            throw new ForbiddenException("Cannot query another patient's clinical data");
         }
+        securityUtils.assertPatientAccess(request.getPatientUserId());
         return ApiResponse.success(aiService.query(request));
     }
 
