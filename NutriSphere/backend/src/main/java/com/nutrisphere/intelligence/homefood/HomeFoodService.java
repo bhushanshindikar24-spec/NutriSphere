@@ -1,9 +1,10 @@
 package com.nutrisphere.intelligence.homefood;
 
+import com.nutrisphere.intelligence.homefood.*;
 import com.nutrisphere.nutrition.assessment.AssessmentRepository;
 import com.nutrisphere.nutrition.assessment.NutritionAssessment;
 import com.nutrisphere.nutrition.dietplan.*;
-import com.nutrisphere.nutrition.food.*;
+import com.nutrisphere.nutrition.food.FoodRepository;
 import com.nutrisphere.patient.PatientProfile;
 import com.nutrisphere.patient.PatientRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service 
+@Service
 @RequiredArgsConstructor
 public class HomeFoodService {
     private final HomeFoodInventoryRepository inventoryRepo;
@@ -20,6 +21,8 @@ public class HomeFoodService {
     private final DietPlanRepository planRepo;
     private final PatientRepository patientRepo;
     private final AssessmentRepository assessmentRepo;
+    private final DietPlanMealRepository dietPlanMealRepo;
+    private final MealItemRepository mealItemRepo;
 
     @Transactional
     public HomeFoodInventory addToInventory(Long patientUserId, String foodName, Double quantityG, String unit, Long foodItemId, String category) {
@@ -44,10 +47,6 @@ public class HomeFoodService {
         });
     }
 
-    /**
-     * Generate meal suggestions from available home food.
-     * Strictly respects patient allergies, dietary restrictions, approved diet plans, and clinical constraints.
-     */
     public List<HomeFoodSuggestion> generateSuggestions(Long patientUserId) {
         List<HomeFoodInventory> inventory = inventoryRepo.findByPatientUserIdAndAvailableTrue(patientUserId);
         if (inventory.isEmpty()) return List.of();
@@ -60,8 +59,7 @@ public class HomeFoodService {
         profileOpt.ifPresent(p -> {
             if (p.getAllergies() != null && !p.getAllergies().isBlank()) {
                 Arrays.stream(p.getAllergies().split("[,;]"))
-                    .map(s -> s.trim().toLowerCase())
-                    .filter(s -> !s.isEmpty())
+                    .map(String::trim).map(String::toLowerCase).filter(s -> !s.isEmpty())
                     .forEach(patientAllergies::add);
             }
         });
@@ -69,13 +67,16 @@ public class HomeFoodService {
             String fa = assessments.get(0).getFoodAllergies();
             if (fa != null && !fa.isBlank()) {
                 Arrays.stream(fa.split("[,;]"))
-                    .map(s -> s.trim().toLowerCase())
-                    .filter(s -> !s.isEmpty())
+                    .map(String::trim).map(String::toLowerCase).filter(s -> !s.isEmpty())
                     .forEach(patientAllergies::add);
             }
         }
 
-        List<String> availableNames = inventory.stream().map(i -> i.getFoodName().toLowerCase()).collect(Collectors.toList());
+        List<String> availableNames = inventory.stream()
+            .map(i -> i.getFoodName().toLowerCase())
+            .collect(Collectors.toList());
+
+        Set<String> approvedPlanIngredients = getApprovedPlanIngredients(plan);
         List<HomeFoodSuggestion> candidateSuggestions = new ArrayList<>();
 
         boolean hasEggs = availableNames.stream().anyMatch(n -> n.contains("egg"));
@@ -87,58 +88,96 @@ public class HomeFoodService {
 
         if (hasEggs && hasBread) {
             candidateSuggestions.add(createSuggestion("Eggs on Toast", "BREAKFAST",
-                List.of("Eggs", "Bread"), 250, 15, "Scramble or boil eggs, serve on toast", plan != null));
+                List.of("Eggs", "Bread"), "Scramble or boil eggs, serve on toast",
+                matchesPlan(List.of("Eggs", "Bread"), approvedPlanIngredients)));
         }
         if (hasMilk && hasBread) {
             candidateSuggestions.add(createSuggestion("Milk and Toast", "BREAKFAST",
-                List.of("Milk", "Bread"), 180, 8, "Warm milk with toasted bread", plan != null));
+                List.of("Milk", "Bread"), "Warm milk with toasted bread",
+                matchesPlan(List.of("Milk", "Bread"), approvedPlanIngredients)));
         }
         if (hasRice && hasProtein && hasVeg) {
             candidateSuggestions.add(createSuggestion("Rice Bowl with Protein", "LUNCH",
-                List.of("Rice", "Protein source", "Vegetables"), 450, 25, "Cook rice, add protein and vegetables", plan != null));
+                List.of("Rice", "Protein source", "Vegetables"), "Cook rice, add protein and vegetables",
+                matchesPlan(List.of("Rice", "Protein source", "Vegetables"), approvedPlanIngredients)));
         }
         if (hasVeg && hasProtein) {
             candidateSuggestions.add(createSuggestion("Protein and Vegetable Stir Fry", "DINNER",
-                List.of("Protein source", "Vegetables"), 350, 30, "Quick stir fry with available protein and vegetables", plan != null));
+                List.of("Protein source", "Vegetables"), "Quick stir fry with available protein and vegetables",
+                matchesPlan(List.of("Protein source", "Vegetables"), approvedPlanIngredients)));
         }
 
-        if (candidateSuggestions.isEmpty() && !inventory.isEmpty()) {
+        if (candidateSuggestions.isEmpty()) {
             candidateSuggestions.add(createSuggestion("Custom Meal from Available Items", "ANY",
-                availableNames, 300, 15,
-                "Combine available ingredients. Consult dietitian for specific proportions.", false));
+                availableNames,
+                "Combine available ingredients. Nutrition values depend on logged food data; consult dietitian for specific proportions.",
+                false));
         }
 
-        // CLINICAL GUARDRAIL FILTER: Filter out suggestions violating known patient allergies
-        List<HomeFoodSuggestion> safeSuggestions = candidateSuggestions.stream().filter(s -> {
+        return candidateSuggestions.stream().filter(s -> {
             String nameLower = s.getMealName().toLowerCase();
-            List<String> ingredientsLower = s.getIngredients().stream().map(String::toLowerCase).collect(Collectors.toList());
+            List<String> ingredientsLower = s.getIngredients().stream()
+                .map(String::toLowerCase).collect(Collectors.toList());
+
             for (String allergy : patientAllergies) {
                 if (nameLower.contains(allergy)) return false;
-                for (String ing : ingredientsLower) {
-                    if (ing.contains(allergy)) return false;
+                for (String ingredient : ingredientsLower) {
+                    if (ingredient.contains(allergy)) return false;
                 }
+            }
+            s.setClinicalSafetyValidated(false);
+            if (!patientAllergies.isEmpty()) {
+                s.setNutritionNote(s.getNutritionNote()
+                    + " Allergy-name filtering was applied; clinical validation still requires dietitian review.");
             }
             return true;
         }).collect(Collectors.toList());
-
-        for (HomeFoodSuggestion s : safeSuggestions) {
-            s.setClinicalSafetyValidated(true);
-            if (!patientAllergies.isEmpty()) {
-                s.setNutritionNote(s.getNutritionNote() + " (Validated safe for allergies: " + String.join(", ", patientAllergies) + ")");
-            }
-        }
-
-        return safeSuggestions;
     }
 
     private HomeFoodSuggestion createSuggestion(String name, String type, List<String> ingredients,
-            double cal, double protein, String prep, boolean matchesPlan) {
+            String prep, boolean matchesPlan) {
         HomeFoodSuggestion s = new HomeFoodSuggestion();
-        s.setMealName(name); s.setMealType(type); s.setIngredients(ingredients);
-        s.setEstimatedCalories(cal); s.setEstimatedProteinG(protein);
-        s.setPreparationNotes(prep); s.setMatchesDietPlan(matchesPlan);
-        s.setClinicalSafetyValidated(true);
-        s.setNutritionNote(matchesPlan ? "Consistent with approved diet plan" : "Consult dietitian for plan alignment");
+        s.setMealName(name);
+        s.setMealType(type);
+        s.setIngredients(ingredients);
+        s.setPreparationNotes(prep);
+        s.setMatchesDietPlan(matchesPlan);
+        s.setEstimatedCalories(0);
+        s.setEstimatedProteinG(0);
+        s.setClinicalSafetyValidated(false);
+        s.setNutritionNote(matchesPlan
+            ? "Ingredient names match the approved plan; dietitian review is still required."
+            : "Heuristic home-food suggestion; nutrition values are not calculated from a complete recipe.");
         return s;
+    }
+
+    private Set<String> getApprovedPlanIngredients(DietPlan plan) {
+        if (plan == null) return Set.of();
+        Set<String> names = new HashSet<>();
+        for (DietPlanMeal meal : dietPlanMealRepo.findByDietPlanIdOrderBySortOrder(plan.getId())) {
+            for (MealItem item : mealItemRepo.findByDietPlanMealId(meal.getId())) {
+                if (item.getFoodName() != null) names.add(item.getFoodName().toLowerCase());
+            }
+        }
+        return names;
+    }
+
+    private boolean matchesPlan(List<String> ingredients, Set<String> approvedNames) {
+        if (approvedNames.isEmpty()) return false;
+
+        return ingredients.stream().allMatch(ingredient -> {
+            String token = ingredient.toLowerCase();
+            if (token.equals("protein source")) {
+                return approvedNames.stream().anyMatch(n ->
+                    n.contains("chicken") || n.contains("fish") || n.contains("egg") ||
+                    n.contains("lentil") || n.contains("dal") || n.contains("paneer") || n.contains("tofu"));
+            }
+            if (token.equals("vegetables")) {
+                return approvedNames.stream().anyMatch(n ->
+                    n.contains("vegetable") || n.contains("spinach") || n.contains("tomato") ||
+                    n.contains("carrot") || n.contains("broccoli"));
+            }
+            return approvedNames.stream().anyMatch(n -> n.contains(token) || token.contains(n));
+        });
     }
 }
