@@ -15,38 +15,45 @@ public class MedicalReportController {
     private final SecurityUtils securityUtils;
 
     @GetMapping("/patient/{patientUserId}")
-    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT')")
+    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT','ADMIN')")
     public ApiResponse<List<MedicalReport>> getForPatient(@PathVariable Long patientUserId) {
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(reportService.getForPatient(patientUserId, securityUtils.getCurrentUserId(), securityUtils.hasRole("PATIENT")));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT')")
+    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT','ADMIN')")
     public ApiResponse<MedicalReport> getById(@PathVariable Long id) {
-        return ApiResponse.success(reportService.getById(id, securityUtils.getCurrentUserId(), securityUtils.hasRole("PATIENT")));
+        MedicalReport report = reportService.getById(id, securityUtils.getCurrentUserId(), securityUtils.hasRole("PATIENT"));
+        securityUtils.assertPatientAccess(report.getPatientUserId());
+        return ApiResponse.success(report);
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('DOCTOR','PATIENT')")
+    @PreAuthorize("hasAnyRole('DOCTOR','PATIENT','ADMIN')")
     public ApiResponse<MedicalReport> create(@RequestBody MedicalReport report) {
         Long currentUserId = securityUtils.getCurrentUserId();
+        Long patientUserId = securityUtils.hasRole("PATIENT") ? currentUserId : report.getPatientUserId();
+        securityUtils.assertPatientAccess(patientUserId);
+        report.setPatientUserId(patientUserId);
         report.setUploadedByUserId(currentUserId);
-        if (securityUtils.hasRole("PATIENT")) {
-            report.setPatientUserId(currentUserId);
-        }
         return ApiResponse.success(reportService.create(report));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ApiResponse<MedicalReport> update(@PathVariable Long id, @RequestBody MedicalReport updates) {
-        return ApiResponse.success(reportService.update(id, updates, securityUtils.getCurrentUserId(), securityUtils.hasRole("PATIENT")));
+        MedicalReport existing = reportService.getById(id, securityUtils.getCurrentUserId(), false);
+        securityUtils.assertPatientAccess(existing.getPatientUserId());
+        return ApiResponse.success(reportService.update(id, updates, securityUtils.getCurrentUserId(), false));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ApiResponse<Void> delete(@PathVariable Long id) {
-        reportService.delete(id, securityUtils.getCurrentUserId(), securityUtils.hasRole("PATIENT"));
+        MedicalReport existing = reportService.getById(id, securityUtils.getCurrentUserId(), false);
+        securityUtils.assertPatientAccess(existing.getPatientUserId());
+        reportService.delete(id, securityUtils.getCurrentUserId(), false);
         return ApiResponse.success("Deleted", null);
     }
 }
