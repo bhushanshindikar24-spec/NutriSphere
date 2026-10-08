@@ -33,8 +33,9 @@ public class PatientController {
     }
 
     @GetMapping("/{patientId}")
-    @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN')")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN', 'ADMIN')")
     public ApiResponse<PatientProfileResponse> getPatientById(@PathVariable Long patientId) {
+        securityUtils.assertPatientAccess(patientId);
         return ApiResponse.success(patientService.getProfileByPatientId(patientId));
     }
 }
