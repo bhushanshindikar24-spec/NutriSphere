@@ -15,6 +15,9 @@ public class RealityScoreController {
             @RequestParam(required = false) Long dietPlanId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
         assertPatientOwnsTarget(uid);
+        if (securityUtils.hasRole("PATIENT")) {
+            realityScoreService.assertDietPlanBelongsToPatient(dietPlanId, uid);
+        }
         return ApiResponse.success(realityScoreService.calculateAndSave(uid, dietPlanId));
     }
     @GetMapping("/history")
