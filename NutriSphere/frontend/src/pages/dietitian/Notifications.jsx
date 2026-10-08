@@ -1,50 +1,65 @@
-import {  useState, useEffect  } from "react";
+import { useEffect, useState } from "react";
 import NotificationCard from "../../components/notifications/NotificationCard";
 import { notificationService } from "../../services/notificationService";
+
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const fetchNotifs = async () => {
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadNotifications = async () => {
+      try {
+        const res = await notificationService.getMyNotifications();
+        const data = res.data?.data || res.data || [];
+        if (!cancelled) {
+          setNotifications(Array.isArray(data) ? data : []);
+          setError("");
+        }
+      } catch (_err) {
+        if (!cancelled) {
+          setNotifications([]);
+          setError("Unable to load notifications. Please try again.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadNotifications();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleMarkRead = async (id) => {
     try {
-      const res = await notificationService.getMyNotifications();
-      setNotifications(res.data?.data || res.data || []);
+      await notificationService.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true, read: true } : n))
+      );
     } catch (_err) {
-      setNotifications([
-        {
-          id: 1,
-          title: "Adherence Drop Alert: Robert Chen",
-          message: "Weekly compliance dropped to 42%. Adaptive Engine has generated protocol adjustments.",
-          type: "WARNING",
-          createdAt: new Date().toISOString(),
-          read: false,
-        },
-        {
-          id: 2,
-          title: "Meal Deviation Barrier Reported: Alex Morgan",
-          message: "Reported: Food Unavailable (salmon) for dinner slot. Substitute recommended.",
-          type: "INFO",
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-          read: false,
-        },
-      ]);
-    } finally {
-      setLoading(false);
+      setError("Unable to mark the notification as read.");
     }
   };
 
-  useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchNotifs();
-  }, []);
-
-  const handleMarkRead = (id) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true, read: true } : n)));
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
+    } catch (_err) {
+      setError("Unable to mark notifications as read.");
+    }
   };
 
-  const handleDelete = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await notificationService.deleteNotification(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (_err) {
+      setError("Unable to delete the notification.");
+    }
   };
 
   if (loading) return <div className="loading-screen">Loading Notifications...</div>;
@@ -53,16 +68,28 @@ export default function Notifications() {
     <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h2>Clinical Alerts & Notifications</h2>
-          <p className="text-muted">Real-time alerts regarding patient barriers, compliance drops, and adaptive suggestions.</p>
+          <h2>Dietitian Clinical Alerts</h2>
+          <p className="text-muted">Live updates from the NutriSphere care and operations workflow.</p>
         </div>
+        
       </div>
 
-      <div style={{ display: "grid", gap: "0.75rem" }}>
-        {notifications.map((n) => (
-          <NotificationCard key={n.id} notification={n} onMarkRead={handleMarkRead} onDelete={handleDelete} />
-        ))}
-      </div>
+      {error && (
+        <div className="alert alert-error" role="alert">{error}</div>
+      )}
+
+      {notifications.length === 0 ? (
+        <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", borderRadius: "var(--radius-lg)" }}>
+          
+          <p style={{ margin: 0 }}>No notifications are available.</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: "0.75rem" }}>
+          {notifications.map((n) => (
+            <NotificationCard key={n.id} notification={n} onMarkRead={handleMarkRead} onDelete={handleDelete} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
