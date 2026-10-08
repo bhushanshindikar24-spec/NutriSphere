@@ -14,12 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.time.Duration;
+import java.time.Instant;
+import com.nutrisphere.exception.RateLimitException;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     private static final int VERIFICATION_TOKEN_HOURS = 24;
     private static final int PASSWORD_RESET_TOKEN_HOURS = 1;
+    private static final Duration AUTH_EMAIL_COOLDOWN = Duration.ofSeconds(60);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -28,6 +33,7 @@ public class AuthService {
     private final UserMapper userMapper;
     private final AuditService auditService;
     private final EmailService emailService;
+    private final ConcurrentHashMap<String, Instant> emailActionTimes = new ConcurrentHashMap<>();
 
     @Transactional
     public RegistrationResponse register(RegisterRequest req) {
@@ -62,7 +68,9 @@ public class AuthService {
 
     @Transactional
     public void resendVerificationEmail(String email) {
-        userRepository.findByEmail(email).ifPresent(user -> {
+        String normalizedEmail = email.trim().toLowerCase();
+        enforceEmailCooldown(normalizedEmail);
+        userRepository.findByEmail(normalizedEmail).ifPresent(user -> {
             if (user.isEmailVerified()) {
                 return;
             }
@@ -113,7 +121,9 @@ public class AuthService {
 
     @Transactional
     public void forgotPassword(String email) {
-        userRepository.findByEmail(email).ifPresent(user -> {
+        String normalizedEmail = email.trim().toLowerCase();
+        enforceEmailCooldown(normalizedEmail);
+        userRepository.findByEmail(normalizedEmail).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
             user.setPasswordResetToken(token);
             user.setPasswordResetExpires(LocalDateTime.now().plusHours(PASSWORD_RESET_TOKEN_HOURS));
@@ -162,6 +172,15 @@ public class AuthService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         return userMapper.toResponse(user);
+    }
+
+    private void enforceEmailCooldown(String normalizedEmail) {
+        Instant now = Instant.now();
+        Instant previous = emailActionTimes.putIfAbsent(normalizedEmail, now);
+        if (previous != null && Duration.between(previous, now).compareTo(AUTH_EMAIL_COOLDOWN) < 0) {
+            throw new RateLimitException("Please wait before requesting another authentication email");
+        }
+        emailActionTimes.put(normalizedEmail, now);
     }
 
     private TokenResponse generateTokenResponse(User user, String refreshToken) {
