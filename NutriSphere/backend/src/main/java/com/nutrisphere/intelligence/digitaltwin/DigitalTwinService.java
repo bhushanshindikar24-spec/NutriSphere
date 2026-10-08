@@ -56,7 +56,8 @@ public class DigitalTwinService {
         // Water 7-day
         double totalWater = 0;
         for (int i=0; i<7; i++) {
-            totalWater += waterRepo.sumAmountForDate(patientUserId, today.minusDays(i));
+            Double amount = waterRepo.sumAmountForDate(patientUserId, today.minusDays(i));
+            totalWater += amount != null ? amount : 0.0;
         }
         twin.setAvgDailyWaterMl(totalWater / 7.0);
 
@@ -66,7 +67,7 @@ public class DigitalTwinService {
             twin.setTargetProteinG(plan.getTargetProteinG());
             twin.setTargetCarbsG(plan.getTargetCarbsG());
             twin.setTargetFatG(plan.getTargetFatG());
-            twin.setTargetWaterMl(plan.getTargetWaterMl() != null ? plan.getTargetWaterMl() : 2500.0);
+            twin.setTargetWaterMl(plan.getTargetWaterMl());
         });
 
         // Adherence
@@ -77,7 +78,8 @@ public class DigitalTwinService {
         // Barriers
         var barriers = barrierRepo.findByPatientUserIdOrderByBarrierDateDesc(patientUserId);
         twin.setTotalBarriers(barriers.size());
-        barrierRepo.countByBarrierType(patientUserId).stream().findFirst()
+        barrierRepo.countByBarrierType(patientUserId).stream()
+            .max(Comparator.comparingLong(row -> (Long) row[1]))
             .ifPresent(row -> twin.setDominantBarrier((String) row[0]));
 
         // Nutrition history (daily breakdown)
