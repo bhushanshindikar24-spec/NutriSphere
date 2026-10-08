@@ -89,8 +89,9 @@ public class AuthService {
 
     @Transactional
     public TokenResponse login(LoginRequest req) {
-        authManager.authenticate(new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
-        User user = userRepository.findByEmail(req.getEmail())
+        String normalizedEmail = req.getEmail().trim().toLowerCase();
+        authManager.authenticate(new UsernamePasswordAuthenticationToken(normalizedEmail, req.getPassword()));
+        User user = userRepository.findByEmail(normalizedEmail)
             .orElseThrow(() -> new ResourceNotFoundException("User", 0L));
 
         user.setLastLoginAt(LocalDateTime.now());
