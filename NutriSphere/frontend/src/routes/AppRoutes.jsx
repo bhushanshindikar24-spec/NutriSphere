@@ -4,6 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "../components/common/ProtectedRoute";
 
+import Home from "../pages/public/Home";
 import PublicRoutes from "./PublicRoutes";
 import AuthRoutes from "./AuthRoutes";
 import PatientRoutes from "./PatientRoutes";
@@ -17,7 +18,7 @@ const RoleBasedRedirect = () => {
   const { user, loading } = useContext(AuthContext);
 
   if (loading) return <div className="loading-screen">Authenticating Session...</div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Home />;
 
   switch (user.role) {
     case "PATIENT":
@@ -38,14 +39,15 @@ const RoleBasedRedirect = () => {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Root redirect */}
+      {/* Root Landing Page / Role-Based Redirect */}
       <Route path="/" element={<RoleBasedRedirect />} />
-
-      {/* Auth Routes */}
-      <Route path="/*" element={<AuthRoutes />} />
+      <Route path="/home" element={<Home />} />
 
       {/* Public Pages */}
       <Route path="/public/*" element={<PublicRoutes />} />
+
+      {/* Auth Routes */}
+      <Route path="/*" element={<AuthRoutes />} />
 
       {/* Unauthorized fallback */}
       <Route
