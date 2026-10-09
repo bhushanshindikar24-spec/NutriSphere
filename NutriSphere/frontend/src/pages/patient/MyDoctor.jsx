@@ -8,6 +8,7 @@ export default function MyDoctor() {
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState("");
   const [submittingId, setSubmittingId] = useState(null);
+  const [allDietitians, setAllDietitians] = useState([]);
 
   const fetchData = async () => {
     try {
@@ -21,6 +22,11 @@ export default function MyDoctor() {
       const dirRes = await api.get("/doctors/directory");
       const directory = dirRes.data?.data || dirRes.data || [];
       setAllDoctors(Array.isArray(directory) ? directory : []);
+
+      // Fetch dietitians to display affiliated team
+      const dietRes = await api.get("/dietitians/directory");
+      const dietDirectory = dietRes.data?.data || dietRes.data || [];
+      setAllDietitians(Array.isArray(dietDirectory) ? dietDirectory : []);
     } catch (err) {
       console.error("Failed to fetch doctors", err);
     } finally {
@@ -246,13 +252,52 @@ export default function MyDoctor() {
                           <span>{doc.email}</span>
                         </div>
                       )}
-                      {doc.phoneNumber && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <Phone size={14} color="var(--primary)" />
-                          <span>{doc.phoneNumber}</span>
-                        </div>
-                      )}
                     </div>
+
+                    {/* Affiliated Clinical Dietitians Team */}
+                    {(() => {
+                      const docLast = doc.lastName ? doc.lastName.toLowerCase() : "";
+                      const affiliated = allDietitians.filter(
+                        (d) =>
+                          (docLast && d.achievements && d.achievements.toLowerCase().includes(docLast)) ||
+                          (doc.hospitalName && d.clinicName && d.clinicName.toLowerCase().includes(doc.hospitalName.toLowerCase().slice(0, 10)))
+                      );
+                      if (affiliated.length === 0) return null;
+                      return (
+                        <div
+                          style={{
+                            background: "rgba(16, 185, 129, 0.05)",
+                            border: "1px dashed rgba(16, 185, 129, 0.25)",
+                            padding: "0.75rem",
+                            borderRadius: "8px",
+                            marginBottom: "1.25rem",
+                          }}
+                        >
+                          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--primary)", marginBottom: "0.4rem" }}>
+                            🌿 Clinical Dietitians Under Dr. {doc.lastName || "Physician"} ({affiliated.length}):
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                            {affiliated.map((ad) => (
+                              <div
+                                key={ad.id || ad.userId}
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#cbd5e1",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <span>
+                                  <strong>{ad.fullName || `${ad.firstName} ${ad.lastName}`}</strong> ({ad.degree || "RD"})
+                                </span>
+                                <span style={{ color: "var(--accent)", fontSize: "0.7rem", fontWeight: 600 }}>{ad.specialization}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Actions */}

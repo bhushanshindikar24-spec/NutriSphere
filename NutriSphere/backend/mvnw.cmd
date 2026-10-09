@@ -1,6 +1,10 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
+if exist "C:\Program Files\Java\jdk-17" (
+  set "JAVA_HOME=C:\Program Files\Java\jdk-17"
+)
+
 set "BASE_DIR=%~dp0"
 set "WRAPPER_DIR=%BASE_DIR%.mvn\wrapper"
 set "PROPS=%WRAPPER_DIR%\maven-wrapper.properties"

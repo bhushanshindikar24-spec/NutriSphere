@@ -205,6 +205,28 @@ export default function MyDietitian() {
                       </code>
                     </div>
 
+                    {/* Supervising Doctor Badge */}
+                    {diet.achievements && diet.achievements.includes("Supervising Physician:") && (
+                      <div
+                        style={{
+                          background: "rgba(16, 185, 129, 0.08)",
+                          border: "1px solid rgba(16, 185, 129, 0.25)",
+                          padding: "0.5rem 0.75rem",
+                          borderRadius: "8px",
+                          marginBottom: "0.75rem",
+                          fontSize: "0.8rem",
+                          color: "var(--primary)",
+                          fontWeight: 600,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.4rem",
+                        }}
+                      >
+                        <span>🩺</span>
+                        <span>{diet.achievements.split("•")[0].trim()}</span>
+                      </div>
+                    )}
+
                     {/* Achievements */}
                     {diet.achievements && (
                       <div
