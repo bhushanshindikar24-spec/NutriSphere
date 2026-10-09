@@ -41,6 +41,7 @@ export default function DietitianRoutes() {
       <Route path="/plans/:id/edit" element={<EditDietPlan />} />
       <Route path="/create-plan" element={<CreateDietPlan />} />
       <Route path="/plan-approval" element={<PlanApproval />} />
+      <Route path="/approvals" element={<PlanApproval />} />
       <Route path="/calculator" element={<RequirementCalculator />} />
       <Route path="/requirements" element={<Requirements />} />
       <Route path="/assessment" element={<Assessment />} />
@@ -50,6 +51,7 @@ export default function DietitianRoutes() {
       <Route path="/reality-score" element={<RealityScore />} />
       <Route path="/barriers" element={<BarrierAnalysis />} />
       <Route path="/adaptive-engine" element={<AdaptiveEngine />} />
+      <Route path="/adaptive" element={<AdaptiveEngine />} />
       <Route path="/recommendation-review" element={<RecommendationReview />} />
       <Route path="/digital-twin" element={<DigitalTwin />} />
       <Route path="/planned-vs-actual" element={<PlannedVsActual />} />

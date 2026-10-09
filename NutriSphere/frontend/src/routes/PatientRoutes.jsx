@@ -51,7 +51,9 @@ export default function PatientRoutes() {
       <Route path="/nutrition-analysis" element={<NutritionAnalysis />} />
       <Route path="/progress" element={<Progress />} />
       <Route path="/my-dietitian" element={<MyDietitian />} />
+      <Route path="/dietitian" element={<MyDietitian />} />
       <Route path="/my-doctor" element={<MyDoctor />} />
+      <Route path="/doctor" element={<MyDoctor />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile/edit" element={<EditProfile />} />
       <Route path="/notifications" element={<Notifications />} />
