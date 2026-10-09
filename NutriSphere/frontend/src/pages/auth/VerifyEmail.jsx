@@ -1,4 +1,4 @@
-import {  useEffect, useState  } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
@@ -33,20 +33,43 @@ export default function VerifyEmail() {
 
   return (
     <div className="auth-container">
-      <div className="glass-panel auth-card" style={{ textAlign: "center", padding: "2rem" }}>
+      <div className="auth-card" style={{ textAlign: "center", padding: "2.5rem", maxWidth: "460px", width: "100%", margin: "0 auto" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem", textDecoration: "none" }}>
+            <div style={{
+              width: "38px",
+              height: "38px",
+              background: "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)",
+              color: "#ffffff",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.4rem",
+              fontWeight: "800",
+              boxShadow: "0 4px 12px rgba(2, 132, 199, 0.28)"
+            }}>
+              +
+            </div>
+            <span style={{ fontSize: "1.5rem", fontWeight: "800", color: "#0284c7", letterSpacing: "-0.02em" }}>
+              NutriSphere
+            </span>
+          </Link>
+        </div>
+
         {status === "verifying" && (
           <div>
-            <Loader2 size={48} className="animate-spin" color="var(--primary)" style={{ margin: "0 auto 1rem" }} />
-            <h3>Verifying Email</h3>
-            <p className="text-muted">Please wait while we confirm your account...</p>
+            <Loader2 size={48} className="spinner" style={{ margin: "0 auto 1rem" }} />
+            <h3 style={{ fontSize: "1.3rem", fontWeight: 700, margin: "0 0 0.5rem 0" }}>Verifying Email</h3>
+            <p style={{ color: "#64748b", fontSize: "0.9rem" }}>Please wait while we confirm your clinical credentials...</p>
           </div>
         )}
 
         {status === "success" && (
           <div>
-            <CheckCircle size={48} color="#10B981" style={{ margin: "0 auto 1rem" }} />
-            <h3>Email Verified!</h3>
-            <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
+            <CheckCircle size={48} color="#10b981" style={{ margin: "0 auto 1rem" }} />
+            <h3 style={{ fontSize: "1.3rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "#065f46" }}>Email Verified!</h3>
+            <p style={{ color: "#047857", marginBottom: "1.5rem", fontSize: "0.9rem", lineHeight: 1.5 }}>
               Your email has been verified successfully. You can now access all NutriSphere features.
             </p>
             <Link to="/login" className="btn btn-primary" style={{ textDecoration: "none" }}>
@@ -57,9 +80,9 @@ export default function VerifyEmail() {
 
         {status === "error" && (
           <div>
-            <XCircle size={48} color="#EF4444" style={{ margin: "0 auto 1rem" }} />
-            <h3>Verification Failed</h3>
-            <p style={{ color: "#EF4444", marginBottom: "1.5rem" }}>{errorMsg}</p>
+            <XCircle size={48} color="#ef4444" style={{ margin: "0 auto 1rem" }} />
+            <h3 style={{ fontSize: "1.3rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "#991b1b" }}>Verification Failed</h3>
+            <p style={{ color: "#ef4444", marginBottom: "1.5rem", fontSize: "0.9rem" }}>{errorMsg}</p>
             <Link to="/login" className="btn btn-primary" style={{ textDecoration: "none" }}>
               Back to Sign In
             </Link>

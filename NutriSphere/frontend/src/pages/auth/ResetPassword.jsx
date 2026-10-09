@@ -1,7 +1,7 @@
-import {  useState  } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
-import { Lock, CheckCircle } from "lucide-react";
+import { Lock, CheckCircle, ArrowRight } from "lucide-react";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -44,34 +44,57 @@ export default function ResetPassword() {
 
   return (
     <div className="auth-container">
-      <div className="glass-panel auth-card">
-        <div className="text-center mb-6">
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
-            <div style={{ background: "var(--primary-light)", padding: "1rem", borderRadius: "50%", color: "var(--primary)" }}>
-              <Lock size={32} />
+      <div className="auth-card" style={{ maxWidth: "460px", width: "100%", margin: "0 auto" }}>
+        <div className="text-center" style={{ marginBottom: "2rem" }}>
+          <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem", textDecoration: "none", marginBottom: "1.25rem" }}>
+            <div style={{
+              width: "38px",
+              height: "38px",
+              background: "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)",
+              color: "#ffffff",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.4rem",
+              fontWeight: "800",
+              boxShadow: "0 4px 12px rgba(2, 132, 199, 0.28)"
+            }}>
+              +
             </div>
-          </div>
-          <h2>New Password</h2>
-          <p className="text-muted">Create a secure new password for your account</p>
+            <span style={{ fontSize: "1.5rem", fontWeight: "800", color: "#0284c7", letterSpacing: "-0.02em" }}>
+              NutriSphere
+            </span>
+          </Link>
+
+          <h2 style={{ fontSize: "1.65rem", fontWeight: "800", margin: "0 0 0.4rem 0", color: "#0f172a" }}>
+            New Password
+          </h2>
+          <p style={{ fontSize: "0.9rem", color: "#64748b", margin: 0 }}>
+            Create a secure new password for your clinical account
+          </p>
         </div>
 
         {error && (
-          <div style={{ color: "#EF4444", textAlign: "center", marginBottom: "1rem", fontSize: "0.875rem" }}>
+          <div className="alert alert-error" style={{ marginBottom: "1.25rem" }}>
             {error}
           </div>
         )}
 
         {success ? (
-          <div style={{ textAlign: "center", padding: "1rem" }}>
-            <CheckCircle size={48} color="#10B981" style={{ margin: "0 auto 1rem" }} />
-            <h3 style={{ marginBottom: "0.5rem" }}>Password Updated!</h3>
-            <p className="text-muted" style={{ fontSize: "0.875rem" }}>
-              Redirecting you to login...
+          <div style={{ textAlign: "center", padding: "1.5rem", background: "#ecfdf5", borderRadius: "16px", border: "1px solid #a7f3d0" }}>
+            <CheckCircle size={48} color="#10b981" style={{ margin: "0 auto 1rem" }} />
+            <h3 style={{ marginBottom: "0.5rem", color: "#065f46" }}>Password Updated!</h3>
+            <p style={{ fontSize: "0.9rem", color: "#047857", marginBottom: "1.5rem" }}>
+              Your credentials have been securely reset. Redirecting to login...
             </p>
+            <Link to="/login" className="btn btn-primary" style={{ display: "inline-block" }}>
+              Sign In Now <ArrowRight size={16} />
+            </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: "1.25rem" }}>
               <label className="form-label">New Password</label>
               <input
                 type="password"
@@ -79,11 +102,12 @@ export default function ResetPassword() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={8}
                 placeholder="At least 8 characters"
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: "1.5rem" }}>
               <label className="form-label">Confirm New Password</label>
               <input
                 type="password"
@@ -91,12 +115,12 @@ export default function ResetPassword() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                placeholder="Re-enter password"
+                placeholder="Repeat new password"
               />
             </div>
 
-            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-              {loading ? "Updating..." : "Update Password"}
+            <button type="submit" className="btn btn-primary btn-block" disabled={loading} style={{ padding: "0.85rem", borderRadius: "12px" }}>
+              {loading ? "Updating Password..." : "Set New Password"}
             </button>
           </form>
         )}

@@ -1,16 +1,19 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { UserPlus, Stethoscope, Apple, Utensils, User, ShieldCheck, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { Stethoscope, Apple, Utensils, User, ShieldCheck, Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import * as authService from "../../services/authService";
 import api from "../../services/api";
 
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const emailParam = searchParams.get("email") || "";
+
   const [selectedRole, setSelectedRole] = useState("PATIENT");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
+    email: emailParam,
     password: "",
     phoneNumber: "",
     licenseNumber: "",
@@ -88,72 +91,123 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-container" style={{ padding: "2rem 1rem" }}>
-      <div className="glass-panel auth-card" style={{ maxWidth: selectedRole === "PATIENT" ? "480px" : "680px", width: "100%", margin: "0 auto", padding: "2.5rem" }}>
+    <div className="auth-container" style={{ padding: "3rem 1.5rem" }}>
+      {/* Background Soft Curves */}
+      <div style={{
+        position: "absolute",
+        top: "-10%",
+        right: "-10%",
+        width: "50vw",
+        height: "60vh",
+        background: "radial-gradient(circle, rgba(224, 242, 254, 0.7) 0%, rgba(240, 249, 255, 0) 70%)",
+        pointerEvents: "none"
+      }} />
+
+      <div className="auth-card" style={{ maxWidth: selectedRole === "PATIENT" ? "520px" : "720px", width: "100%", margin: "0 auto", padding: "2.5rem" }}>
         
         {/* Header */}
-        <div className="text-center mb-6">
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.75rem" }}>
-            <div style={{ background: "rgba(16, 185, 129, 0.15)", padding: "1rem", borderRadius: "50%", color: "var(--primary)" }}>
-              <UserPlus size={32} />
+        <div className="text-center" style={{ marginBottom: "1.75rem" }}>
+          <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem", textDecoration: "none", marginBottom: "1rem" }}>
+            <div style={{
+              width: "38px",
+              height: "38px",
+              background: "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)",
+              color: "#ffffff",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.4rem",
+              fontWeight: "800",
+              boxShadow: "0 4px 12px rgba(2, 132, 199, 0.28)"
+            }}>
+              +
             </div>
-          </div>
-          <h2 style={{ margin: "0 0 0.5rem 0" }}>Join HealthyOne / NutriSphere</h2>
-          <p className="text-muted" style={{ margin: 0, fontSize: "0.9rem" }}>
-            Clinical Nutrition & Dietary Intelligence Ecosystem
+            <span style={{ fontSize: "1.5rem", fontWeight: "800", color: "#0284c7", letterSpacing: "-0.02em" }}>
+              NutriSphere
+            </span>
+          </Link>
+          <h2 style={{ fontSize: "1.65rem", fontWeight: "800", margin: "0 0 0.35rem 0", color: "#0f172a" }}>
+            Create Your Account
+          </h2>
+          <p style={{ margin: 0, fontSize: "0.9rem", color: "#64748b" }}>
+            Select your clinical role to join the NutriSphere healthcare network
           </p>
         </div>
 
         {/* Role Tabs */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem", marginBottom: "1.75rem", background: "rgba(255, 255, 255, 0.03)", padding: "0.4rem", borderRadius: "10px" }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "0.5rem",
+          marginBottom: "1.75rem",
+          background: "#f1f5f9",
+          padding: "0.4rem",
+          borderRadius: "14px"
+        }}>
           {[
-            { id: "PATIENT", label: "Patient", icon: <User size={15} /> },
-            { id: "DOCTOR", label: "Doctor", icon: <Stethoscope size={15} /> },
-            { id: "DIETITIAN", label: "Dietitian", icon: <Apple size={15} /> },
-            { id: "HOTEL", label: "Kitchen", icon: <Utensils size={15} /> },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => { setSelectedRole(tab.id); setError(""); }}
-              style={{
-                background: selectedRole === tab.id ? "var(--primary)" : "transparent",
-                color: selectedRole === tab.id ? "#0f172a" : "var(--text-muted)",
-                fontWeight: selectedRole === tab.id ? 700 : 500,
-                border: "none",
-                borderRadius: "8px",
-                padding: "0.6rem 0.2rem",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "0.25rem",
-                fontSize: "0.75rem",
-                transition: "all 0.2s ease",
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+            { id: "PATIENT", label: "Patient", icon: <User size={16} /> },
+            { id: "DOCTOR", label: "Doctor", icon: <Stethoscope size={16} /> },
+            { id: "DIETITIAN", label: "Dietitian", icon: <Apple size={16} /> },
+            { id: "HOTEL", label: "Kitchen", icon: <Utensils size={16} /> },
+          ].map((tab) => {
+            const isSelected = selectedRole === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => { setSelectedRole(tab.id); setError(""); }}
+                style={{
+                  background: isSelected ? "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)" : "transparent",
+                  color: isSelected ? "#ffffff" : "#475569",
+                  fontWeight: isSelected ? 700 : 500,
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "0.65rem 0.25rem",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  fontSize: "0.8rem",
+                  boxShadow: isSelected ? "0 4px 12px rgba(2, 132, 199, 0.25)" : "none",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Verification Notice for Professionals */}
         {selectedRole !== "PATIENT" && (
-          <div style={{ background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.25)", padding: "0.85rem 1rem", borderRadius: "8px", marginBottom: "1.5rem", fontSize: "0.82rem", color: "var(--accent)", display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
-            <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
+          <div style={{
+            background: "#fffbeb",
+            border: "1px solid #fde68a",
+            padding: "0.85rem 1rem",
+            borderRadius: "12px",
+            marginBottom: "1.5rem",
+            fontSize: "0.85rem",
+            color: "#b45309",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "0.6rem"
+          }}>
+            <ShieldCheck size={20} style={{ flexShrink: 0, marginTop: "0.05rem", color: "#d97706" }} />
             <div>
-              <strong>License Verification Required:</strong> Clinical practitioners and culinary partners must upload their operating license. An administrator will review and approve your credentials before granting access.
+              <strong>License Verification Required:</strong> Clinical practitioners and culinary partners must provide valid credentials. An administrator reviews every credential before activating full clinical privileges.
             </div>
           </div>
         )}
 
         {/* Success Modal/Notice */}
         {successInfo ? (
-          <div style={{ background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "1.5rem", borderRadius: "10px", textAlign: "center" }}>
-            <CheckCircle2 size={44} color="var(--primary)" style={{ marginBottom: "0.75rem" }} />
-            <h3 style={{ margin: "0 0 0.5rem 0", color: "#fff" }}>{successInfo.title}</h3>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", lineHeight: 1.5, margin: "0 0 1.25rem 0" }}>
+          <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "2rem", borderRadius: "16px", textAlign: "center" }}>
+            <CheckCircle2 size={48} color="#10b981" style={{ marginBottom: "0.75rem" }} />
+            <h3 style={{ margin: "0 0 0.5rem 0", color: "#065f46", fontSize: "1.3rem" }}>{successInfo.title}</h3>
+            <p style={{ color: "#047857", fontSize: "0.95rem", lineHeight: 1.5, margin: "0 0 1.5rem 0" }}>
               {successInfo.message}
             </p>
             <Link to="/login" className="btn btn-primary" style={{ display: "inline-block" }}>
@@ -161,10 +215,10 @@ export default function Register() {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem" }}>
+          <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.1rem" }}>
             {error && (
-              <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", padding: "0.75rem 1rem", borderRadius: "8px", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <AlertCircle size={16} />
+              <div className="alert alert-error">
+                <AlertCircle size={18} />
                 <span>{error}</span>
               </div>
             )}
@@ -172,99 +226,96 @@ export default function Register() {
             {/* Basic Info */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <div>
-                <label className="form-label" style={{ fontSize: "0.85rem" }}>First Name *</label>
+                <label className="form-label">First Name *</label>
                 <input
                   type="text"
-                  className="input-field"
+                  className="form-input"
                   required
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  style={{ width: "100%" }}
+                  placeholder="e.g. Marcus"
                 />
               </div>
               <div>
-                <label className="form-label" style={{ fontSize: "0.85rem" }}>Last Name *</label>
+                <label className="form-label">Last Name *</label>
                 <input
                   type="text"
-                  className="input-field"
+                  className="form-input"
                   required
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  style={{ width: "100%" }}
+                  placeholder="e.g. Sterling"
                 />
               </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: selectedRole === "PATIENT" ? "1fr" : "1fr 1fr", gap: "1rem" }}>
               <div>
-                <label className="form-label" style={{ fontSize: "0.85rem" }}>Email Address *</label>
+                <label className="form-label">Email Address *</label>
                 <input
                   type="email"
-                  className="input-field"
+                  className="form-input"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  style={{ width: "100%" }}
+                  placeholder="user@nutrisphere.com"
                 />
               </div>
               {selectedRole !== "PATIENT" && (
                 <div>
-                  <label className="form-label" style={{ fontSize: "0.85rem" }}>Phone Number</label>
+                  <label className="form-label">Phone Number</label>
                   <input
                     type="text"
-                    className="input-field"
+                    className="form-input"
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     placeholder="+1 (555) 000-0000"
-                    style={{ width: "100%" }}
                   />
                 </div>
               )}
             </div>
 
             <div>
-              <label className="form-label" style={{ fontSize: "0.85rem" }}>Password *</label>
+              <label className="form-label">Password *</label>
               <input
                 type="password"
-                className="input-field"
+                className="form-input"
                 required
                 minLength={6}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="At least 6 characters"
-                style={{ width: "100%" }}
               />
             </div>
 
             {/* Professional Specific Fields */}
             {selectedRole !== "PATIENT" && (
-              <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "1rem", marginTop: "0.5rem", display: "grid", gap: "1rem" }}>
-                <h4 style={{ margin: "0", fontSize: "0.95rem", color: "var(--primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                  <ShieldCheck size={16} /> Professional License & Credentials
+              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "1.25rem", marginTop: "0.5rem", display: "grid", gap: "1rem" }}>
+                <h4 style={{ margin: "0", fontSize: "0.95rem", color: "#0284c7", display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 700 }}>
+                  <ShieldCheck size={18} /> Professional License & Credentials
                 </h4>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                   <div>
-                    <label className="form-label" style={{ fontSize: "0.85rem" }}>
-                      {selectedRole === "DOCTOR" ? "Medical License Number *" : selectedRole === "DIETITIAN" ? "Dietetic License Number *" : "Culinary/FSSAI License *"}
+                    <label className="form-label">
+                      {selectedRole === "DOCTOR" ? "Medical License Number *" : selectedRole === "DIETITIAN" ? "Dietetic License Number *" : "Culinary/Operating License *"}
                     </label>
                     <input
                       type="text"
-                      className="input-field"
+                      className="form-input"
                       required
                       value={formData.licenseNumber}
                       onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
                       placeholder={selectedRole === "DOCTOR" ? "MD-98214" : selectedRole === "DIETITIAN" ? "RD-88412" : "FSSAI-2024-88"}
-                      style={{ width: "100%" }}
                     />
                   </div>
                   <div>
-                    <label className="form-label" style={{ fontSize: "0.85rem" }}>
-                      {selectedRole === "HOTEL" ? "Cuisine Specialty" : "Medical Degree / Qualifications *"}
+                    <label className="form-label">
+                      {selectedRole === "HOTEL" ? "Cuisine Specialty" : "Medical Qualifications *"}
                     </label>
                     <input
                       type="text"
-                      className="input-field"
+                      className="form-input"
                       required={selectedRole !== "HOTEL"}
                       value={selectedRole === "HOTEL" ? formData.cuisineType : formData.degree}
                       onChange={(e) =>
@@ -272,64 +323,66 @@ export default function Register() {
                           ? setFormData({ ...formData, cuisineType: e.target.value })
                           : setFormData({ ...formData, degree: e.target.value })
                       }
-                      placeholder={selectedRole === "DOCTOR" ? "MBBS, MD - Endocrinology" : selectedRole === "DIETITIAN" ? "M.Sc Nutrition, RD" : "Clinical & Therapeutic"}
-                      style={{ width: "100%" }}
+                      placeholder={selectedRole === "DOCTOR" ? "MBBS, MD - Cardiology" : selectedRole === "DIETITIAN" ? "M.Sc Clinical Nutrition, RD" : "Clinical & Therapeutic"}
                     />
                   </div>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                   <div>
-                    <label className="form-label" style={{ fontSize: "0.85rem" }}>Specialization</label>
+                    <label className="form-label">Specialization</label>
                     <input
                       type="text"
-                      className="input-field"
+                      className="form-input"
                       value={formData.specialization}
                       onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                      placeholder="e.g. Cardiometabolic, Renal, Diabetology"
-                      style={{ width: "100%" }}
+                      placeholder="e.g. Preventive Cardiology, Renal"
                     />
                   </div>
                   <div>
-                    <label className="form-label" style={{ fontSize: "0.85rem" }}>Hospital / Clinic / Kitchen Name</label>
+                    <label className="form-label">Hospital / Clinic / Kitchen Name</label>
                     <input
                       type="text"
-                      className="input-field"
+                      className="form-input"
                       value={formData.hospitalOrClinic}
                       onChange={(e) => setFormData({ ...formData, hospitalOrClinic: e.target.value })}
-                      placeholder="e.g. Metropolitan Medical Center"
-                      style={{ width: "100%" }}
+                      placeholder="e.g. Boston Medical Center"
                     />
                   </div>
                 </div>
 
                 {selectedRole !== "HOTEL" && (
                   <div>
-                    <label className="form-label" style={{ fontSize: "0.85rem" }}>Clinical Achievements & Accreditations</label>
+                    <label className="form-label">Clinical Accreditations & Honors</label>
                     <textarea
-                      className="input-field"
+                      className="form-input"
                       rows={2}
                       value={formData.achievements}
                       onChange={(e) => setFormData({ ...formData, achievements: e.target.value })}
-                      placeholder="e.g. Fellow of American College of Physicians, 12 years clinical practice, 20+ published studies..."
-                      style={{ width: "100%" }}
+                      placeholder="e.g. Fellow of American College of Cardiology (FACC), 12 years clinical practice..."
                     />
                   </div>
                 )}
 
                 {/* License Document Upload */}
                 <div>
-                  <label className="form-label" style={{ fontSize: "0.85rem" }}>Upload License Certificate / Document</label>
-                  <div style={{ border: "2px dashed rgba(255, 255, 255, 0.15)", padding: "1.25rem", borderRadius: "10px", textAlign: "center", background: "rgba(255, 255, 255, 0.02)" }}>
-                    <Upload size={24} color="var(--primary)" style={{ marginBottom: "0.5rem" }} />
-                    <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
+                  <label className="form-label">Upload License Certificate / Document</label>
+                  <div style={{
+                    border: "2px dashed #bae6fd",
+                    padding: "1.5rem",
+                    borderRadius: "14px",
+                    textAlign: "center",
+                    background: "#f0f9ff"
+                  }}>
+                    <Upload size={26} color="#0284c7" style={{ marginBottom: "0.5rem" }} />
+                    <div style={{ fontSize: "0.85rem", color: "#64748b", marginBottom: "0.6rem" }}>
                       {uploadedFileName ? (
-                        <span style={{ color: "var(--primary)", fontWeight: 600 }}>Uploaded: {uploadedFileName}</span>
+                        <span style={{ color: "#0284c7", fontWeight: 700 }}>Uploaded: {uploadedFileName}</span>
                       ) : (
-                        "Upload PDF or image of your medical/culinary license"
+                        "Upload PDF or scanned copy of your medical/operating license"
                       )}
                     </div>
-                    <label className="btn btn-outline" style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem", cursor: "pointer", display: "inline-block" }}>
+                    <label className="btn btn-outline" style={{ fontSize: "0.85rem", padding: "0.5rem 1rem", cursor: "pointer", display: "inline-block" }}>
                       {uploadingFile ? "Uploading Certificate..." : "Browse Certificate File"}
                       <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} style={{ display: "none" }} />
                     </label>
@@ -342,13 +395,13 @@ export default function Register() {
               type="submit"
               className="btn btn-primary"
               disabled={isLoading || uploadingFile}
-              style={{ width: "100%", marginTop: "0.5rem", padding: "0.85rem", fontSize: "0.95rem" }}
+              style={{ width: "100%", marginTop: "0.75rem", padding: "0.9rem", fontSize: "1rem", borderRadius: "12px" }}
             >
               {isLoading ? "Submitting Application..." : selectedRole === "PATIENT" ? "Create Patient Account" : "Submit Professional Application"}
             </button>
 
-            <p className="text-center text-muted" style={{ margin: "0.75rem 0 0 0", fontSize: "0.85rem", textAlign: "center" }}>
-              Already have an account? <Link to="/login" style={{ color: "var(--primary)", textDecoration: "none", fontWeight: 600 }}>Sign in</Link>
+            <p style={{ margin: "1rem 0 0 0", fontSize: "0.9rem", textAlign: "center", color: "#64748b" }}>
+              Already registered? <Link to="/login" style={{ color: "#0284c7", textDecoration: "none", fontWeight: 700 }}>Sign In</Link>
             </p>
           </form>
         )}
