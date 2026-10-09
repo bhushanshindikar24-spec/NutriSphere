@@ -42,57 +42,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Demo Accounts Quick-Select */}
-        <div style={{
-          background: "var(--bg-glass-card)",
-          border: "1px solid var(--border-subtle)",
-          padding: "0.85rem",
-          borderRadius: "10px",
-          marginBottom: "1.25rem",
-          fontSize: "0.78rem"
-        }}>
-          <div style={{ color: "var(--primary)", fontWeight: "700", marginBottom: "0.4rem" }}>
-            Demo Profiles (Password: Password123!):
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-            <button
-              type="button"
-              onClick={() => setFormData({ email: "patient@nutrisphere.com", password: "Password123!" })}
-              style={{ padding: "0.2rem 0.5rem", borderRadius: "6px", background: "rgba(16, 185, 129, 0.12)", color: "var(--primary)", border: "1px solid rgba(16, 185, 129, 0.3)", cursor: "pointer", fontSize: "0.75rem", fontWeight: "600" }}
-            >
-              Patient
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({ email: "doctor@nutrisphere.com", password: "Password123!" })}
-              style={{ padding: "0.2rem 0.5rem", borderRadius: "6px", background: "rgba(16, 185, 129, 0.12)", color: "var(--primary)", border: "1px solid rgba(16, 185, 129, 0.3)", cursor: "pointer", fontSize: "0.75rem", fontWeight: "600" }}
-            >
-              Doctor
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({ email: "dietitian@nutrisphere.com", password: "Password123!" })}
-              style={{ padding: "0.2rem 0.5rem", borderRadius: "6px", background: "rgba(16, 185, 129, 0.12)", color: "var(--primary)", border: "1px solid rgba(16, 185, 129, 0.3)", cursor: "pointer", fontSize: "0.75rem", fontWeight: "600" }}
-            >
-              Dietitian
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({ email: "hotel@nutrisphere.com", password: "Password123!" })}
-              style={{ padding: "0.2rem 0.5rem", borderRadius: "6px", background: "rgba(245, 158, 11, 0.12)", color: "#d97706", border: "1px solid rgba(245, 158, 11, 0.3)", cursor: "pointer", fontSize: "0.75rem", fontWeight: "600" }}
-            >
-              Hotel
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({ email: "admin@nutrisphere.com", password: "Password123!" })}
-              style={{ padding: "0.2rem 0.5rem", borderRadius: "6px", background: "rgba(139, 92, 246, 0.12)", color: "#8b5cf6", border: "1px solid rgba(139, 92, 246, 0.3)", cursor: "pointer", fontSize: "0.75rem", fontWeight: "600" }}
-            >
-              Admin
-            </button>
-          </div>
-        </div>
-
         {error && (
           <div style={{ color: "#EF4444", background: "rgba(239, 68, 68, 0.1)", padding: "0.75rem", borderRadius: "8px", textAlign: "center", marginBottom: "1rem", fontSize: "0.875rem" }}>
             {error}
