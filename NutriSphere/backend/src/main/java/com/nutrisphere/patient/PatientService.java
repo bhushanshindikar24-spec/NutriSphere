@@ -17,6 +17,7 @@ import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PatientService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
