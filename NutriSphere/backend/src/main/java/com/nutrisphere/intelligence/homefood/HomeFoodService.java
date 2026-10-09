@@ -165,6 +165,12 @@ public class HomeFoodService {
             ? "Estimated from linked food-data records and inventory quantities."
             : "Nutrition estimate unavailable because the selected inventory items have no linked food data.";
 
+        double score = matchesPlan ? 90.0 : 75.0;
+        if (nutrition[0] > 200 && nutrition[1] > 10) score += 8.0;
+        score = Math.min(100.0, Math.max(40.0, score));
+        s.setComplianceScore(Math.round(score * 10.0) / 10.0);
+        s.setComplianceGrade(score >= 85 ? "HIGH_COMPATIBILITY" : score >= 65 ? "MODERATE_COMPATIBILITY" : "LOW_COMPATIBILITY");
+
         if (matchesPlan) {
             nutritionNote += " Ingredient names match the approved plan; dietitian review is still required.";
         } else {

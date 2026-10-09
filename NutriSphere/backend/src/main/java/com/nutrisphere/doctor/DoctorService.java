@@ -16,6 +16,8 @@ public class DoctorService {
     private final UserRepository userRepository;
     private final DoctorMapper doctorMapper;
     private final DoctorPatientRepository doctorPatientRepository;
+    private final com.nutrisphere.medical.consultation.ConsultationRepository consultationRepository;
+    private final com.nutrisphere.notification.NotificationRepository notificationRepository;
 
     public DoctorProfileResponse getProfile(Long userId) {
         DoctorProfile p = doctorRepository.findByUserId(userId)
@@ -43,15 +45,34 @@ public class DoctorService {
         return doctorMapper.toResponse(doctorRepository.save(p));
     }
 
+    public java.util.List<DoctorProfileResponse> getDoctorDirectory() {
+        return doctorRepository.findAll().stream()
+            .filter(p -> p.getUser() != null && p.getUser().getStatus() == com.nutrisphere.common.enums.Status.ACTIVE)
+            .map(doctorMapper::toResponse)
+            .toList();
+    }
+
+    public DoctorProfileResponse getDoctorById(Long doctorUserId) {
+        DoctorProfile p = doctorRepository.findByUserId(doctorUserId)
+            .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorUserId));
+        return doctorMapper.toResponse(p);
+    }
+
     public DoctorDashboardResponse getDashboard(Long userId) {
         DoctorProfile profile = doctorRepository.findByUserId(userId).orElse(null);
         DoctorDashboardResponse r = new DoctorDashboardResponse();
         r.setDoctorId(userId);
-        r.setDoctorName(profile != null ? profile.getUser().getFullName() : "");
+        r.setDoctorName(profile != null && profile.getUser() != null ? profile.getUser().getFullName() : "Medical Doctor");
         r.setTotalPatients((int) doctorPatientRepository.countByDoctorUserId(userId));
-        r.setConsultationsToday(0);
-        r.setPendingReports(0);
-        r.setUnreadNotifications(0);
+
+        var consultations = consultationRepository.findByDoctorUserIdOrderByConsultationDateDesc(userId);
+        long todayCount = consultations.stream()
+            .filter(c -> java.time.LocalDate.now().equals(c.getConsultationDate()))
+            .count();
+
+        r.setConsultationsToday((int) todayCount);
+        r.setPendingReports(consultations.size());
+        r.setUnreadNotifications((int) notificationRepository.countByUserIdAndReadFalse(userId));
         return r;
     }
 }

@@ -21,22 +21,54 @@ public class DietPlanService {
 
     @Transactional
     public DietPlanResponse createPlan(Long dietitianUserId, DietPlanRequest req) {
+        DietPlanStatus initialStatus = ("APPROVED".equalsIgnoreCase(req.getStatus()) || "ACTIVE".equalsIgnoreCase(req.getStatus()))
+            ? DietPlanStatus.APPROVED : DietPlanStatus.SUBMITTED;
+
         DietPlan plan = DietPlan.builder()
             .patientUserId(req.getPatientUserId())
             .dietitianUserId(dietitianUserId)
-            .title(req.getTitle())
+            .title(req.getTitle() != null && !req.getTitle().isBlank() ? req.getTitle() : "Personalized Clinical Diet Plan")
             .description(req.getDescription())
-            .startDate(req.getStartDate())
-            .endDate(req.getEndDate())
-            .targetCalories(req.getTargetCalories())
-            .targetProteinG(req.getTargetProteinG())
-            .targetCarbsG(req.getTargetCarbsG())
-            .targetFatG(req.getTargetFatG())
-            .targetFiberG(req.getTargetFiberG())
-            .targetWaterMl(req.getTargetWaterMl())
+            .startDate(req.getStartDate() != null ? req.getStartDate() : java.time.LocalDate.now())
+            .endDate(req.getEndDate() != null ? req.getEndDate() : java.time.LocalDate.now().plusDays(30))
+            .targetCalories(req.getTargetCalories() != null ? req.getTargetCalories() : 2000.0)
+            .targetProteinG(req.getTargetProteinG() != null ? req.getTargetProteinG() : 120.0)
+            .targetCarbsG(req.getTargetCarbsG() != null ? req.getTargetCarbsG() : 200.0)
+            .targetFatG(req.getTargetFatG() != null ? req.getTargetFatG() : 65.0)
+            .targetFiberG(req.getTargetFiberG() != null ? req.getTargetFiberG() : 28.0)
+            .targetWaterMl(req.getTargetWaterMl() != null ? req.getTargetWaterMl() : 2500.0)
             .notes(req.getNotes())
+            .status(initialStatus)
+            .approvedAt(initialStatus == DietPlanStatus.APPROVED ? LocalDateTime.now() : null)
             .build();
-        return toResponse(planRepo.save(plan));
+        plan = planRepo.save(plan);
+
+        if (req.getMeals() != null && !req.getMeals().isEmpty()) {
+            int order = 1;
+            for (DietPlanRequest.MealItemDto m : req.getMeals()) {
+                DietPlanMeal meal = DietPlanMeal.builder()
+                    .dietPlan(plan)
+                    .mealType(m.getMealType() != null ? m.getMealType() : "MEAL")
+                    .mealName(m.getMealType())
+                    .scheduledTime(m.getTime())
+                    .sortOrder(order++)
+                    .notes(m.getDescription())
+                    .dayOfWeek(m.getDayOfWeek() != null ? m.getDayOfWeek() : "DAILY")
+                    .build();
+                meal = mealRepo.save(meal);
+
+                MealItem item = MealItem.builder()
+                    .dietPlanMeal(meal)
+                    .foodName(m.getDescription() != null ? m.getDescription() : m.getMealType() + " nutrition portion")
+                    .calories(m.getTargetCalories() != null ? m.getTargetCalories() : 400.0)
+                    .quantityG(150.0)
+                    .servingDescription("1 serving")
+                    .build();
+                itemRepo.save(item);
+            }
+        }
+
+        return toResponse(plan);
     }
 
     @Transactional
@@ -46,7 +78,7 @@ public class DietPlanService {
         if (!plan.getDietitianUserId().equals(dietitianUserId)) {
             throw new ForbiddenException("Not your diet plan");
         }
-        if (req.isApproved()) {
+        if (req == null || req.isApproved()) {
             plan.setStatus(DietPlanStatus.APPROVED);
             plan.setApprovedAt(LocalDateTime.now());
             notifService.send(plan.getPatientUserId(), NotificationType.DIET_PLAN_APPROVED,
@@ -54,8 +86,27 @@ public class DietPlanService {
         } else {
             plan.setStatus(DietPlanStatus.REJECTED);
         }
-        if (req.getNotes() != null) plan.setNotes(req.getNotes());
+        if (req != null && req.getNotes() != null) plan.setNotes(req.getNotes());
         return toResponse(planRepo.save(plan));
+    }
+
+    @Transactional
+    public DietPlanResponse rejectPlan(Long planId, Long dietitianUserId, String notes) {
+        DietPlan plan = planRepo.findById(planId)
+            .orElseThrow(() -> new ResourceNotFoundException("DietPlan", planId));
+        if (!plan.getDietitianUserId().equals(dietitianUserId)) {
+            throw new ForbiddenException("Not your diet plan");
+        }
+        plan.setStatus(DietPlanStatus.REJECTED);
+        if (notes != null) plan.setNotes(notes);
+        return toResponse(planRepo.save(plan));
+    }
+
+    public List<DietPlanResponse> getPendingPlansForDietitian(Long dietitianUserId) {
+        return planRepo.findAll().stream()
+            .filter(p -> p.getDietitianUserId().equals(dietitianUserId) && p.getStatus() == DietPlanStatus.SUBMITTED)
+            .map(this::toResponse)
+            .collect(Collectors.toList());
     }
 
     public DietPlanResponse getPlanById(Long planId) {

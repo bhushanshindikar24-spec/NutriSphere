@@ -5,6 +5,8 @@ public class RequirementResponse {
     private Long id;
     private Long patientUserId;
     private Double caloriesTarget;
+    private Double bmr;
+    private Double tdee;
     private Double proteinGTarget;
     private Double carbsGTarget;
     private Double fatGTarget;

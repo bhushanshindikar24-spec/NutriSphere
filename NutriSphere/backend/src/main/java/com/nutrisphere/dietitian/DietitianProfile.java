@@ -31,6 +31,19 @@ public class DietitianProfile extends BaseEntity {
     @Column(name = "bio", length = 1000)
     private String bio;
 
+    @Column(name = "degree")
+    private String degree;
+
+    @Column(name = "achievements", length = 1000)
+    private String achievements;
+
+    @Column(name = "license_document_url", length = 500)
+    private String licenseDocumentUrl;
+
+    @Column(name = "verification_status")
+    @Builder.Default
+    private String verificationStatus = "APPROVED";
+
     @Column(name = "consultation_fee")
     private Double consultationFee;
 }

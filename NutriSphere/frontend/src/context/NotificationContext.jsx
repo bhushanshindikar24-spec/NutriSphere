@@ -16,7 +16,7 @@ export const NotificationProvider = ({ children }) => {
     try {
       setLoading(true);
       const res = await notificationService.getNotifications(0, 10);
-      setNotifications(res?.content || []);
+      setNotifications(Array.isArray(res) ? res : (res?.content || []));
       const count = await notificationService.getUnreadCount();
       setUnreadCount(typeof count === "number" ? count : 0);
     } catch (err) {

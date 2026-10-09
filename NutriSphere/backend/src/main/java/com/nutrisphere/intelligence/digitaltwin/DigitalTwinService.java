@@ -74,12 +74,39 @@ public class DigitalTwinService {
             twin.setTargetWaterMl(plan.getTargetWaterMl());
         });
 
-        // Simple transparent 30-day energy-balance projection. It is only produced when
-        // both an approved calorie target and recorded intake are available.
+        // 30-day energy-balance projection per Specification Sections 33 & 34:
+        // Delta W = sum(CaloricIntake - TDEE) / 7700
         if (twin.getTargetCalories() != null && twin.getAvgDailyCalories() != null && twin.getCurrentWeightKg() != null) {
             double balance = twin.getTargetCalories() - twin.getAvgDailyCalories();
             twin.setNetCaloricDeficit(Math.round(balance * 10.0) / 10.0);
-            twin.setProjectedWeight30Days(Math.round((twin.getCurrentWeightKg() - (balance * 30.0 / 7700.0)) * 10.0) / 10.0);
+            double currentW = twin.getCurrentWeightKg();
+            double day1 = Math.round((currentW - (balance * 1.0 / 7700.0)) * 100.0) / 100.0;
+            double day7 = Math.round((currentW - (balance * 7.0 / 7700.0)) * 100.0) / 100.0;
+            double day14 = Math.round((currentW - (balance * 14.0 / 7700.0)) * 100.0) / 100.0;
+            double day30 = Math.round((currentW - (balance * 30.0 / 7700.0)) * 100.0) / 100.0;
+            twin.setProjectedWeight30Days(day30);
+
+            Map<String, Double> curve = new LinkedHashMap<>();
+            curve.put("Day 0 (Current)", currentW);
+            curve.put("Day 1", day1);
+            curve.put("Day 7", day7);
+            curve.put("Day 14", day14);
+            curve.put("Day 30", day30);
+            twin.setWeightProjectionCurve(curve);
+
+            // Metabolic Status per Section 34: OPTIMAL, STABLE, DEFICIT_WARNING, SURPLUS_WARNING
+            double ratio = twin.getAvgDailyCalories() / twin.getTargetCalories();
+            if (ratio < 0.70) {
+                twin.setMetabolicStatus("DEFICIT_WARNING");
+            } else if (ratio > 1.30) {
+                twin.setMetabolicStatus("SURPLUS_WARNING");
+            } else if (ratio >= 0.90 && ratio <= 1.10) {
+                twin.setMetabolicStatus("OPTIMAL");
+            } else {
+                twin.setMetabolicStatus("STABLE");
+            }
+        } else {
+            twin.setMetabolicStatus("STABLE");
         }
 
         // Adherence

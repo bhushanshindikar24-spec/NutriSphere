@@ -28,11 +28,40 @@ public class DietPlanController {
         return ApiResponse.success(plan);
     }
 
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('DIETITIAN')")
+    public ApiResponse<List<DietPlanResponse>> getPendingPlans() {
+        return ApiResponse.success(dietPlanService.getPendingPlansForDietitian(securityUtils.getCurrentUserId()));
+    }
+
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<DietPlanResponse> approve(@PathVariable Long id,
-            @RequestBody PlanApprovalRequest req) {
+            @RequestBody(required = false) PlanApprovalRequest req) {
         return ApiResponse.success(dietPlanService.approvePlan(id, securityUtils.getCurrentUserId(), req));
+    }
+
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasRole('DIETITIAN')")
+    public ApiResponse<DietPlanResponse> approvePut(@PathVariable Long id,
+            @RequestBody(required = false) PlanApprovalRequest req) {
+        return ApiResponse.success(dietPlanService.approvePlan(id, securityUtils.getCurrentUserId(), req));
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasRole('DIETITIAN')")
+    public ApiResponse<DietPlanResponse> reject(@PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        String notes = body != null ? body.get("notes") : "Rejected by dietitian";
+        return ApiResponse.success(dietPlanService.rejectPlan(id, securityUtils.getCurrentUserId(), notes));
+    }
+
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasRole('DIETITIAN')")
+    public ApiResponse<DietPlanResponse> rejectPut(@PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        String notes = body != null ? body.get("notes") : "Rejected by dietitian";
+        return ApiResponse.success(dietPlanService.rejectPlan(id, securityUtils.getCurrentUserId(), notes));
     }
 
     @GetMapping("/patient/{patientUserId}")
@@ -43,7 +72,7 @@ public class DietPlanController {
 
     @GetMapping("/patient/{patientUserId}/approved")
     public ApiResponse<List<DietPlanResponse>> getApprovedForPatient(@PathVariable Long patientUserId) {
-        assertPatientOwnsTarget(patientUserId);
+        securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(dietPlanService.getApprovedPlanForPatient(patientUserId));
     }
 

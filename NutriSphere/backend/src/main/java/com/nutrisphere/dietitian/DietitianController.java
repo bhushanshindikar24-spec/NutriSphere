@@ -23,8 +23,31 @@ public class DietitianController {
     public ApiResponse<DietitianDashboardResponse> getDashboard() {
         return ApiResponse.success(dietitianService.getDashboard(securityUtils.getCurrentUserId()));
     }
+    @GetMapping("/directory")
+    public ApiResponse<java.util.List<DietitianProfileResponse>> getDirectory() {
+        return ApiResponse.success(dietitianService.getDietitianDirectory());
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<DietitianProfileResponse> getDietitianById(@PathVariable Long id) {
+        return ApiResponse.success(dietitianService.getDietitianById(id));
+    }
+
     @GetMapping("/patients")
     public ApiResponse<java.util.List<com.nutrisphere.assignment.dto.AssignmentResponse>> getPatients() {
         return ApiResponse.success(assignmentService.getDietitianPatients(securityUtils.getCurrentUserId()));
+    }
+
+    @PostMapping("/patients")
+    public ApiResponse<com.nutrisphere.assignment.dto.AssignmentResponse> assignPatient(
+            @RequestBody java.util.Map<String, Object> body) {
+        Long patientId = null;
+        if (body.get("patientId") != null) {
+            patientId = Long.valueOf(body.get("patientId").toString());
+        } else if (body.get("patientUserId") != null) {
+            patientId = Long.valueOf(body.get("patientUserId").toString());
+        }
+        String notes = body.get("notes") != null ? body.get("notes").toString() : "Assigned via Dietitian portal";
+        return ApiResponse.success(assignmentService.assignPatientToDietitian(securityUtils.getCurrentUserId(), patientId, notes));
     }
 }

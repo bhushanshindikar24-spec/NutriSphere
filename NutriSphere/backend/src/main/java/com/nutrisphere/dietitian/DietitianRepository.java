@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface DietitianRepository extends JpaRepository<DietitianProfile, Long> {
     Optional<DietitianProfile> findByUserId(Long userId);
     boolean existsByUserId(Long userId);
+    java.util.List<DietitianProfile> findByVerificationStatus(String verificationStatus);
 }

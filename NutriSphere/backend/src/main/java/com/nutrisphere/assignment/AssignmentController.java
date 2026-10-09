@@ -49,4 +49,20 @@ public class AssignmentController {
     public ApiResponse<List<AssignmentResponse>> getPatientDietitians() {
         return ApiResponse.success(assignmentService.getPatientDietitians(securityUtils.getCurrentUserId()));
     }
+
+    @PostMapping("/patient/select-doctor")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<AssignmentResponse> selectDoctor(@RequestBody java.util.Map<String, Object> body) {
+        Long doctorId = Long.valueOf(body.get("doctorId").toString());
+        String notes = body.get("notes") != null ? body.get("notes").toString() : "Connected via Patient directory";
+        return ApiResponse.success(assignmentService.assignPatientToDoctor(doctorId, securityUtils.getCurrentUserId(), notes));
+    }
+
+    @PostMapping("/patient/select-dietitian")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<AssignmentResponse> selectDietitian(@RequestBody java.util.Map<String, Object> body) {
+        Long dietitianId = Long.valueOf(body.get("dietitianId").toString());
+        String notes = body.get("notes") != null ? body.get("notes").toString() : "Connected via Patient directory";
+        return ApiResponse.success(assignmentService.assignPatientToDietitian(dietitianId, securityUtils.getCurrentUserId(), notes));
+    }
 }

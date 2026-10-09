@@ -1,4 +1,4 @@
-﻿import { useContext } from "react";
+import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { LogOut, User as UserIcon, LayoutDashboard, Apple, Users, ClipboardList, Stethoscope, Utensils, ShoppingBag } from "lucide-react";
@@ -18,27 +18,41 @@ export default function MainLayout() {
     switch (user.role) {
       case "PATIENT":
         return [
-          { name: "Dashboard", path: "/patient", icon: <LayoutDashboard size={20} /> },
-          { name: "My Diet Plan", path: "/patient/diet-plan", icon: <ClipboardList size={20} /> },
-          { name: "Log Food", path: "/patient/log-food", icon: <Apple size={20} /> },
+          { name: "Dashboard", path: "/patient", icon: <LayoutDashboard size={18} /> },
+          { name: "My Diet Plan", path: "/patient/diet-plan", icon: <ClipboardList size={18} /> },
+          { name: "Log Food & Water", path: "/patient/log-food", icon: <Apple size={18} /> },
+          { name: "Doctors & Specialists", path: "/patient/doctor", icon: <Stethoscope size={18} /> },
+          { name: "Clinical Dietitians", path: "/patient/dietitian", icon: <Users size={18} /> },
+          { name: "Culinary Kitchen", path: "/patient/hotel/menu", icon: <Utensils size={18} /> },
+          { name: "Home Food Mode", path: "/patient/home-food", icon: <Apple size={18} /> },
+          { name: "Digital Twin", path: "/patient/digital-twin", icon: <ClipboardList size={18} /> },
+          { name: "Orders", path: "/patient/hotel/orders", icon: <ShoppingBag size={18} /> },
         ];
       case "DIETITIAN":
         return [
-          { name: "Dashboard", path: "/dietitian", icon: <LayoutDashboard size={20} /> },
-          { name: "Patients", path: "/dietitian/patients", icon: <Users size={20} /> },
-          { name: "Diet Plans", path: "/dietitian/plans", icon: <ClipboardList size={20} /> },
+          { name: "Dashboard", path: "/dietitian", icon: <LayoutDashboard size={18} /> },
+          { name: "Patients", path: "/dietitian/patients", icon: <Users size={18} /> },
+          { name: "Diet Plans", path: "/dietitian/plans", icon: <ClipboardList size={18} /> },
+          { name: "Plan Approvals", path: "/dietitian/approvals", icon: <ClipboardList size={18} /> },
+          { name: "Adaptive Engine", path: "/dietitian/adaptive", icon: <Apple size={18} /> },
         ];
       case "DOCTOR":
         return [
-          { name: "Dashboard", path: "/doctor", icon: <LayoutDashboard size={20} /> },
-          { name: "My Patients", path: "/doctor/patients", icon: <Users size={20} /> },
-          { name: "Consultations", path: "/doctor/consultations", icon: <Stethoscope size={20} /> },
+          { name: "Dashboard", path: "/doctor", icon: <LayoutDashboard size={18} /> },
+          { name: "My Patients", path: "/doctor/patients", icon: <Users size={18} /> },
+          { name: "Consultations", path: "/doctor/consultations", icon: <Stethoscope size={18} /> },
         ];
       case "HOTEL":
         return [
-          { name: "Dashboard", path: "/hotel", icon: <LayoutDashboard size={20} /> },
-          { name: "Orders", path: "/hotel/orders", icon: <ShoppingBag size={20} /> },
-          { name: "Menu", path: "/hotel/menu", icon: <Utensils size={20} /> },
+          { name: "Dashboard", path: "/hotel", icon: <LayoutDashboard size={18} /> },
+          { name: "Orders Queue", path: "/hotel/orders", icon: <ShoppingBag size={18} /> },
+          { name: "Culinary Menu", path: "/hotel/menu", icon: <Utensils size={18} /> },
+        ];
+      case "ADMIN":
+        return [
+          { name: "Overview", path: "/admin", icon: <LayoutDashboard size={18} /> },
+          { name: "License Verifications", path: "/admin/verifications", icon: <Stethoscope size={18} /> },
+          { name: "Users Directory", path: "/admin/users", icon: <Users size={18} /> },
         ];
       default:
         return [];
@@ -60,15 +74,26 @@ export default function MainLayout() {
         top: 0,
         zIndex: 50
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <h1 style={{ margin: 0, color: "var(--primary)", fontSize: "1.5rem" }}>NutriSphere</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ fontSize: "1.6rem" }}>🌿</span>
+            <div>
+              <h1 style={{ margin: 0, color: "var(--text-main)", fontSize: "1.35rem", fontWeight: "800", letterSpacing: "-0.02em" }}>
+                Healthy<span style={{ color: "var(--primary)" }}>One</span>
+              </h1>
+              <p style={{ margin: 0, fontSize: "0.65rem", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Clinical Nutrition OS
+              </p>
+            </div>
+          </div>
           <span style={{ 
             background: "var(--primary-light)", 
             color: "var(--primary)", 
-            padding: "0.25rem 0.75rem", 
+            padding: "0.2rem 0.65rem", 
             borderRadius: "9999px", 
-            fontSize: "0.875rem",
-            fontWeight: 500 
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            border: "1px solid rgba(16, 185, 129, 0.2)"
           }}>
             {user?.role}
           </span>

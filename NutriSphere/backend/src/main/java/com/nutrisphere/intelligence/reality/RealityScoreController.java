@@ -21,7 +21,7 @@ public class RealityScoreController {
     public ApiResponse<List<RealityScoreResult>> history(
             @RequestParam(required = false) Long patientUserId) {
         Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
-        assertPatientOwnsTarget(uid);
+        securityUtils.assertPatientAccess(uid);
         return ApiResponse.success(realityScoreService.getHistory(uid));
     }
 }

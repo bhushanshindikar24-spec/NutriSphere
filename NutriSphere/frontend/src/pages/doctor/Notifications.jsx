@@ -44,14 +44,6 @@ export default function Notifications() {
     }
   };
 
-  const handleMarkAllRead = async () => {
-    try {
-      await notificationService.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
-    } catch (_err) {
-      setError("Unable to mark notifications as read.");
-    }
-  };
 
   const handleDelete = async (id) => {
     try {
@@ -93,3 +85,4 @@ export default function Notifications() {
     </div>
   );
 }
+

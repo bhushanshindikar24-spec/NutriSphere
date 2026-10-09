@@ -13,4 +13,5 @@ public class RequirementCalculationRequest {
     @NotNull private Gender gender;
     @NotNull private ActivityLevel activityLevel;
     private String goal;
+    private String formula; // "MIFFLIN_ST_JEOR" or "HARRIS_BENEDICT"
 }

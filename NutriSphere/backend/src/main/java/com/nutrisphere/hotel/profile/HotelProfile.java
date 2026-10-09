@@ -14,5 +14,8 @@ public class HotelProfile extends BaseEntity {
     @Column(name = "phone_number") private String phoneNumber;
     @Column(name = "description", length = 500) private String description;
     @Column(name = "cuisine_type") private String cuisineType;
+    @Column(name = "license_number") private String licenseNumber;
+    @Column(name = "license_document_url", length = 500) private String licenseDocumentUrl;
+    @Column(name = "verification_status") @Builder.Default private String verificationStatus = "APPROVED";
     @Column(name = "is_active") @Builder.Default private boolean active = true;
 }

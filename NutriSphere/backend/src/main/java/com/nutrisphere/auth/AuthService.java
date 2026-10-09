@@ -1,12 +1,13 @@
 package com.nutrisphere.auth;
 
+import com.nutrisphere.common.enums.Status;
 import com.nutrisphere.audit.AuditService;
 import com.nutrisphere.exception.*;
-import com.nutrisphere.notification.EmailService;
 import com.nutrisphere.security.*;
 import com.nutrisphere.user.*;
 import com.nutrisphere.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,86 +15,150 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.time.Duration;
-import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
-    private static final int VERIFICATION_TOKEN_HOURS = 24;
-    private static final int PASSWORD_RESET_TOKEN_HOURS = 1;
-    private static final Duration AUTH_EMAIL_COOLDOWN = Duration.ofSeconds(60);
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authManager;
     private final UserMapper userMapper;
     private final AuditService auditService;
-    private final EmailService emailService;
-    private final ConcurrentHashMap<String, Instant> emailActionTimes = new ConcurrentHashMap<>();
+    private final com.nutrisphere.patient.PatientRepository patientRepository;
+    private final com.nutrisphere.doctor.DoctorRepository doctorRepository;
+    private final com.nutrisphere.dietitian.DietitianRepository dietitianRepository;
+    private final com.nutrisphere.hotel.profile.HotelRepository hotelRepository;
 
     @Transactional
-    public RegistrationResponse register(RegisterRequest req) {
-        String normalizedEmail = req.getEmail().trim().toLowerCase();
-        if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new DuplicateResourceException("Email already registered");
-        }
-        if (req.getPassword() == null || req.getPassword().length() < 8) {
-            throw new BadRequestException("Password must contain at least 8 characters");
+    public TokenResponse register(RegisterRequest req) {
+        String email = req.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
+        if (userRepository.existsByEmail(email)) {
+            throw new DuplicateResourceException("Email already registered: " + email);
         }
 
-        String verificationToken = UUID.randomUUID().toString();
-        LocalDateTime verificationExpires = LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
+        Role targetRole = req.getRole() != null ? req.getRole() : Role.PATIENT;
+        if (targetRole == Role.ADMIN) {
+            throw new BadRequestException("Administrator accounts cannot be self-registered.");
+        }
+
+        boolean isProfessional = (targetRole == Role.DOCTOR || targetRole == Role.DIETITIAN || targetRole == Role.HOTEL);
+        Status initialStatus = isProfessional ? Status.PENDING : Status.ACTIVE;
 
         User user = User.builder()
-            .email(normalizedEmail)
+            .email(email)
             .passwordHash(passwordEncoder.encode(req.getPassword()))
             .firstName(req.getFirstName())
             .lastName(req.getLastName())
             .phoneNumber(req.getPhoneNumber())
-            .role(Role.PATIENT)
-            .emailVerified(false)
-            .emailVerifyToken(verificationToken)
-            .emailVerifyExpires(verificationExpires)
+            .role(targetRole)
+            .status(initialStatus)
+            .emailVerified(true)
             .build();
-
         userRepository.save(user);
-        emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationToken);
-        auditService.log(user.getId(), "REGISTER", "USER", user.getId(), "User registered as PATIENT; email verification required");
 
-        return RegistrationResponse.builder()
-            .email(user.getEmail())
-            .verificationRequired(true)
-            .build();
-    }
+        if (targetRole == Role.PATIENT) {
+            com.nutrisphere.patient.PatientProfile patientProfile = com.nutrisphere.patient.PatientProfile.builder()
+                .user(user)
+                .gender(com.nutrisphere.common.enums.Gender.OTHER)
+                .activityLevel(com.nutrisphere.common.enums.ActivityLevel.MODERATELY_ACTIVE)
+                .build();
+            patientRepository.save(patientProfile);
+            auditService.log(user.getId(), "REGISTER", "USER", user.getId(), "User registered as PATIENT");
+            return generateTokenResponse(user);
+        } else if (targetRole == Role.DOCTOR) {
+            com.nutrisphere.doctor.DoctorProfile docProfile = com.nutrisphere.doctor.DoctorProfile.builder()
+                .user(user)
+                .licenseNumber(req.getLicenseNumber() != null && !req.getLicenseNumber().isBlank() ? req.getLicenseNumber() : "MD-" + user.getId() + "-LIC")
+                .degree(req.getDegree() != null && !req.getDegree().isBlank() ? req.getDegree() : "MBBS, MD")
+                .specialization(req.getSpecialization() != null && !req.getSpecialization().isBlank() ? req.getSpecialization() : "Clinical Medicine")
+                .achievements(req.getAchievements() != null ? req.getAchievements() : "Licensed Medical Practitioner")
+                .hospitalName(req.getHospitalOrClinic() != null ? req.getHospitalOrClinic() : "Clinical Medical Center")
+                .hospitalAddress(req.getAddress())
+                .yearsExperience(req.getYearsExperience() != null ? req.getYearsExperience() : 5)
+                .consultationFee(req.getConsultationFee() != null ? req.getConsultationFee() : 100.0)
+                .licenseDocumentUrl(req.getLicenseDocumentUrl())
+                .verificationStatus("PENDING")
+                .build();
+            doctorRepository.save(docProfile);
+            auditService.log(user.getId(), "REGISTER_PENDING", "DOCTOR", user.getId(), "Doctor registered with medical license, awaiting admin review");
+            return TokenResponse.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole())
+                .status("PENDING")
+                .message("Medical Doctor registration submitted with license. An administrator must verify and approve your medical credentials before account activation.")
+                .build();
+        } else if (targetRole == Role.DIETITIAN) {
+            com.nutrisphere.dietitian.DietitianProfile dietProfile = com.nutrisphere.dietitian.DietitianProfile.builder()
+                .user(user)
+                .licenseNumber(req.getLicenseNumber() != null && !req.getLicenseNumber().isBlank() ? req.getLicenseNumber() : "RD-" + user.getId() + "-LIC")
+                .degree(req.getDegree() != null && !req.getDegree().isBlank() ? req.getDegree() : "Registered Dietitian (RD), M.Sc Nutrition")
+                .specialization(req.getSpecialization() != null && !req.getSpecialization().isBlank() ? req.getSpecialization() : "Clinical Nutrition")
+                .achievements(req.getAchievements() != null ? req.getAchievements() : "Certified Dietetic Specialist")
+                .clinicName(req.getHospitalOrClinic() != null ? req.getHospitalOrClinic() : "Clinical Nutrition Clinic")
+                .clinicAddress(req.getAddress())
+                .yearsExperience(req.getYearsExperience() != null ? req.getYearsExperience() : 5)
+                .consultationFee(req.getConsultationFee() != null ? req.getConsultationFee() : 75.0)
+                .licenseDocumentUrl(req.getLicenseDocumentUrl())
+                .verificationStatus("PENDING")
+                .build();
+            dietitianRepository.save(dietProfile);
+            auditService.log(user.getId(), "REGISTER_PENDING", "DIETITIAN", user.getId(), "Dietitian registered with license, awaiting admin review");
+            return TokenResponse.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole())
+                .status("PENDING")
+                .message("Clinical Dietitian registration submitted with professional credentials. An administrator must verify and approve your license before account activation.")
+                .build();
+        } else if (targetRole == Role.HOTEL) {
+            com.nutrisphere.hotel.profile.HotelProfile hotelProfile = com.nutrisphere.hotel.profile.HotelProfile.builder()
+                .user(user)
+                .hotelName(req.getHospitalOrClinic() != null ? req.getHospitalOrClinic() : req.getFirstName() + "'s Culinary Kitchen")
+                .licenseNumber(req.getLicenseNumber() != null && !req.getLicenseNumber().isBlank() ? req.getLicenseNumber() : "FSSAI-" + user.getId() + "-CUL")
+                .licenseDocumentUrl(req.getLicenseDocumentUrl())
+                .verificationStatus("PENDING")
+                .cuisineType(req.getCuisineType() != null ? req.getCuisineType() : "Clinical & Therapeutic Catering")
+                .hotelAddress(req.getAddress())
+                .phoneNumber(req.getPhoneNumber())
+                .active(false)
+                .build();
+            hotelRepository.save(hotelProfile);
+            auditService.log(user.getId(), "REGISTER_PENDING", "HOTEL", user.getId(), "Culinary kitchen registered with food license, awaiting admin review");
+            return TokenResponse.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole())
+                .status("PENDING")
+                .message("Culinary Kitchen registration submitted with food safety license. An administrator must verify and approve your kitchen credentials before account activation.")
+                .build();
+        }
 
-    @Transactional
-    public void resendVerificationEmail(String email) {
-        String normalizedEmail = email.trim().toLowerCase();
-        enforceEmailCooldown(normalizedEmail);
-        userRepository.findByEmail(normalizedEmail).ifPresent(user -> {
-            if (user.isEmailVerified()) {
-                return;
-            }
-
-            String token = UUID.randomUUID().toString();
-            user.setEmailVerifyToken(token);
-            user.setEmailVerifyExpires(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS));
-            userRepository.save(user);
-
-            emailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), token);
-        });
+        return generateTokenResponse(user);
     }
 
     @Transactional
     public TokenResponse login(LoginRequest req) {
-        String normalizedEmail = req.getEmail().trim().toLowerCase();
-        authManager.authenticate(new UsernamePasswordAuthenticationToken(normalizedEmail, req.getPassword()));
-        User user = userRepository.findByEmail(normalizedEmail)
-            .orElseThrow(() -> new ResourceNotFoundException("User", 0L));
+        String email = req.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
+        if (user.getStatus() == Status.PENDING) {
+            throw new UnauthorizedException("Your account is currently PENDING administrator verification. Your submitted license and credentials are being reviewed by our clinical admin team.");
+        }
+        if (user.getStatus() == Status.SUSPENDED) {
+            throw new UnauthorizedException("Your account has been suspended or rejected. Please contact platform administration.");
+        }
+
+        authManager.authenticate(new UsernamePasswordAuthenticationToken(email, req.getPassword()));
         user.setLastLoginAt(LocalDateTime.now());
         String refreshToken = jwtService.generateRefreshToken(user.getEmail());
         user.setRefreshToken(refreshToken);
@@ -125,14 +190,13 @@ public class AuthService {
 
     @Transactional
     public void forgotPassword(String email) {
-        String normalizedEmail = email.trim().toLowerCase();
-        enforceEmailCooldown(normalizedEmail);
-        userRepository.findByEmail(normalizedEmail).ifPresent(user -> {
+        userRepository.findByEmail(email).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
             user.setPasswordResetToken(token);
-            user.setPasswordResetExpires(LocalDateTime.now().plusHours(PASSWORD_RESET_TOKEN_HOURS));
+            user.setPasswordResetExpires(LocalDateTime.now().plusHours(1));
             userRepository.save(user);
-            emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), token);
+            log.info("Password reset token for {}: {}", email, token);
+            // In production: send email with reset link
         });
     }
 
@@ -140,15 +204,13 @@ public class AuthService {
     public void resetPassword(String token, String newPassword) {
         User user = userRepository.findByPasswordResetToken(token)
             .orElseThrow(() -> new BadRequestException("Invalid reset token"));
-
-        if (user.getPasswordResetExpires() == null || user.getPasswordResetExpires().isBefore(LocalDateTime.now())) {
+        if (user.getPasswordResetExpires().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("Reset token expired");
         }
-
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setPasswordResetToken(null);
         user.setPasswordResetExpires(null);
-        user.setRefreshToken(null);
+        user.setRefreshToken(null); // Invalidate active sessions
         userRepository.save(user);
         auditService.log(user.getId(), "PASSWORD_RESET", "USER", user.getId(), "Password reset successfully");
     }
@@ -157,19 +219,9 @@ public class AuthService {
     public void verifyEmail(String token) {
         User user = userRepository.findByEmailVerifyToken(token)
             .orElseThrow(() -> new BadRequestException("Invalid verification token"));
-
-        if (user.getEmailVerifyExpires() == null || user.getEmailVerifyExpires().isBefore(LocalDateTime.now())) {
-            user.setEmailVerifyToken(null);
-            user.setEmailVerifyExpires(null);
-            userRepository.save(user);
-            throw new BadRequestException("Verification token expired");
-        }
-
         user.setEmailVerified(true);
         user.setEmailVerifyToken(null);
-        user.setEmailVerifyExpires(null);
         userRepository.save(user);
-        auditService.log(user.getId(), "EMAIL_VERIFIED", "USER", user.getId(), "Email address verified");
     }
 
     public UserResponse getMe(Long userId) {
@@ -178,13 +230,11 @@ public class AuthService {
         return userMapper.toResponse(user);
     }
 
-    private void enforceEmailCooldown(String normalizedEmail) {
-        Instant now = Instant.now();
-        Instant previous = emailActionTimes.putIfAbsent(normalizedEmail, now);
-        if (previous != null && Duration.between(previous, now).compareTo(AUTH_EMAIL_COOLDOWN) < 0) {
-            throw new RateLimitException("Please wait before requesting another authentication email");
-        }
-        emailActionTimes.put(normalizedEmail, now);
+    private TokenResponse generateTokenResponse(User user) {
+        String refresh = jwtService.generateRefreshToken(user.getEmail());
+        user.setRefreshToken(refresh);
+        userRepository.save(user);
+        return generateTokenResponse(user, refresh);
     }
 
     private TokenResponse generateTokenResponse(User user, String refreshToken) {

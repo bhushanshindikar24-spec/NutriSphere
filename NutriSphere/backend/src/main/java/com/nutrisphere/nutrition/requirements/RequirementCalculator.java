@@ -13,12 +13,22 @@ import org.springframework.stereotype.Component;
 public class RequirementCalculator {
 
     public RequirementResponse calculate(RequirementCalculationRequest req) {
-        // BMR (Mifflin-St Jeor)
+        // BMR Calculation: Mifflin-St Jeor (Default) or Harris-Benedict per Specification Section 7
         double bmr;
-        if (req.getGender() == Gender.MALE) {
-            bmr = (10 * req.getWeightKg()) + (6.25 * req.getHeightCm()) - (5 * req.getAgeYears()) + 5;
+        boolean useHarrisBenedict = "HARRIS_BENEDICT".equalsIgnoreCase(req.getFormula());
+        
+        if (useHarrisBenedict) {
+            if (req.getGender() == Gender.MALE) {
+                bmr = 88.362 + (13.397 * req.getWeightKg()) + (4.799 * req.getHeightCm()) - (5.677 * req.getAgeYears());
+            } else {
+                bmr = 447.593 + (9.247 * req.getWeightKg()) + (3.098 * req.getHeightCm()) - (4.330 * req.getAgeYears());
+            }
         } else {
-            bmr = (10 * req.getWeightKg()) + (6.25 * req.getHeightCm()) - (5 * req.getAgeYears()) - 161;
+            if (req.getGender() == Gender.MALE) {
+                bmr = (10 * req.getWeightKg()) + (6.25 * req.getHeightCm()) - (5 * req.getAgeYears()) + 5;
+            } else {
+                bmr = (10 * req.getWeightKg()) + (6.25 * req.getHeightCm()) - (5 * req.getAgeYears()) - 161;
+            }
         }
 
         // Activity multiplier
@@ -47,13 +57,15 @@ public class RequirementCalculator {
         double carbsG = (targetCal - (proteinG * 4) - (fatG * 9)) / 4;
 
         RequirementResponse r = new RequirementResponse();
+        r.setBmr(Math.round(bmr * 10.0) / 10.0);
+        r.setTdee(Math.round(tdee * 10.0) / 10.0);
         r.setCaloriesTarget((double) Math.round(targetCal));
         r.setProteinGTarget(Math.round(proteinG * 10.0) / 10.0);
         r.setCarbsGTarget(Math.round(carbsG * 10.0) / 10.0);
         r.setFatGTarget(Math.round(fatG * 10.0) / 10.0);
         r.setFiberGTarget(25.0);
         r.setWaterMlTarget(req.getWeightKg() * 35); // 35ml per kg
-        r.setCalculationMethod("Mifflin-St Jeor + Activity Factor");
+        r.setCalculationMethod(useHarrisBenedict ? "Harris-Benedict + Activity Factor" : "Mifflin-St Jeor + Activity Factor");
         return r;
     }
 }

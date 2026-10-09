@@ -1,16 +1,29 @@
 package com.nutrisphere.nutrition.hydration.dto;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
 public class WaterLogRequest {
-    @NotNull private LocalDate logDate;
-    private LocalTime logTime;
-    @Positive private Double amountMl;
-    @Positive private Double amount;
+    private LocalDate logDate = LocalDate.now();
+    private LocalTime logTime = LocalTime.now();
+
+    @JsonAlias({"amount", "waterAmount", "ml"})
+    private Double amountMl;
+
     private String notes;
+
+    public LocalDate getLogDate() {
+        return logDate != null ? logDate : LocalDate.now();
+    }
+
+    public Double getAmountMl() {
+        return amountMl != null ? amountMl : 250.0;
+    }
+
+    public Double getAmount() {
+        return getAmountMl();
+    }
 }

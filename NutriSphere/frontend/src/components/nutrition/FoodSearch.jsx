@@ -24,14 +24,16 @@ export default function FoodSearch({ onSelectFood, placeholder = "Search foods, 
         let items = [];
         if (source === "ALL" || source === "LOCAL") {
           const res = await foodService.searchFoods(query);
-          const localList = res.data?.content || res.data || [];
+          const raw = res.data?.data || res.data;
+          const localList = Array.isArray(raw) ? raw : (raw?.content || []);
           items = [...items, ...localList.map((f) => ({ ...f, source: f.source || "LOCAL" }))];
         }
 
         if (source === "USDA" || (source === "ALL" && items.length < 5)) {
           try {
             const usdaRes = await foodService.searchUSDA(query);
-            const usdaList = usdaRes.data || [];
+            const rawUsda = usdaRes.data?.data || usdaRes.data;
+            const usdaList = Array.isArray(rawUsda) ? rawUsda : (rawUsda?.content || []);
             items = [...items, ...usdaList.map((f) => ({ ...f, source: "USDA" }))];
           } catch (_e) {
             // fallback gracefully
@@ -41,7 +43,8 @@ export default function FoodSearch({ onSelectFood, placeholder = "Search foods, 
         if (source === "OPENFOODFACTS") {
           try {
             const offRes = await foodService.searchOpenFoodFacts(query);
-            const offList = offRes.data || [];
+            const rawOff = offRes.data?.data || offRes.data;
+            const offList = Array.isArray(rawOff) ? rawOff : (rawOff?.content || []);
             items = [...items, ...offList.map((f) => ({ ...f, source: "OpenFoodFacts" }))];
           } catch (_e) {
             // fallback gracefully

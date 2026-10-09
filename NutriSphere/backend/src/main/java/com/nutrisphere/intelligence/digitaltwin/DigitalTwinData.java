@@ -27,6 +27,8 @@ public class DigitalTwinData {
     private Double targetWaterMl;
     private Double netCaloricDeficit;
     private Double projectedWeight30Days;
+    private String metabolicStatus;
+    private Map<String, Double> weightProjectionCurve;
     // Adherence
     private Double adherencePercent;
     private Integer totalFoodLogs;

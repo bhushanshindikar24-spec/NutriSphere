@@ -1,0 +1,10 @@
+# Root ignores
+NutriSphere.zip
+NutriSphere_backup/
+**/.mvn/wrapper/apache-maven-*
+**/.mvn/wrapper/apache-maven-*.zip
+**/target/
+**/node_modules/
+**/dist/
+*.log
+.gemini/

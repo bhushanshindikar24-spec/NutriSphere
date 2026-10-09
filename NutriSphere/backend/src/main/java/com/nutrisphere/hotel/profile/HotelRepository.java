@@ -5,4 +5,5 @@ import java.util.Optional;
 @Repository
 public interface HotelRepository extends JpaRepository<HotelProfile, Long> {
     Optional<HotelProfile> findByUserId(Long userId);
+    java.util.List<HotelProfile> findByVerificationStatus(String verificationStatus);
 }

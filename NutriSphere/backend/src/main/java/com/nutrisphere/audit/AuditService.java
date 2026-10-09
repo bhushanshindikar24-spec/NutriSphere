@@ -13,6 +13,11 @@ public class AuditService {
 
     @Async
     public void log(Long userId, String action, String entityType, Long entityId, String description) {
+        log(userId, action, entityType, entityId, description, "127.0.0.1");
+    }
+
+    @Async
+    public void log(Long userId, String action, String entityType, Long entityId, String description, String ipAddress) {
         try {
             AuditLog log = AuditLog.builder()
                 .userId(userId)
@@ -20,6 +25,7 @@ public class AuditService {
                 .entityType(entityType)
                 .entityId(entityId)
                 .description(description)
+                .ipAddress(ipAddress != null ? ipAddress : "127.0.0.1")
                 .build();
             repo.save(log);
         } catch (Exception e) {

@@ -10,20 +10,10 @@ export default function PlanApproval() {
   const fetchPending = async () => {
     try {
       const res = await api.get("/nutrition/diet-plans/pending");
-      setPendingPlans(res.data?.data || res.data || []);
+      const list = res.data?.data || res.data;
+      setPendingPlans(Array.isArray(list) ? list : []);
     } catch (_err) {
-      setPendingPlans([
-        {
-          id: 202,
-          name: "Low-Glycemic Anti-Inflammatory Plan",
-          patientName: "Sarah Jenkins",
-          dailyCaloriesTarget: 1750,
-          dailyProteinTarget: 110,
-          prescribingDoctor: "Dr. Marcus Thorne, MD",
-          submittedDate: "2026-09-14",
-          notes: "Approved for mild pre-diabetes management with target caloric deficit of -350 kcal.",
-        },
-      ]);
+      setPendingPlans([]);
     } finally {
       setLoading(false);
     }

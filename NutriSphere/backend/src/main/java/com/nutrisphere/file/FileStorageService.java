@@ -94,8 +94,10 @@ public class FileStorageService {
         StoredFile sf = fileStoredRepository.findById(fileId)
             .orElseThrow(() -> new ResourceNotFoundException("File", fileId));
 
-        if (!sf.getUploaderUserId().equals(userId)) {
-            authorizeClinicalEntityForUser(sf.getEntityType(), sf.getEntityId(), userId);
+        if (sf.getUploaderUserId() != null && !sf.getUploaderUserId().equals(userId)) {
+            if (!"licenses".equalsIgnoreCase(sf.getCategory()) && !"profile-images".equalsIgnoreCase(sf.getCategory()) && !"food-images".equalsIgnoreCase(sf.getCategory())) {
+                authorizeClinicalEntityForUser(sf.getEntityType(), sf.getEntityId(), userId);
+            }
         }
 
         try {

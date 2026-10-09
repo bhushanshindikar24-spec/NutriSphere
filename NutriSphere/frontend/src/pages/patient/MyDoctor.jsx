@@ -1,83 +1,294 @@
-import {  useState, useEffect  } from "react";
-import { Stethoscope, Mail, Phone, Building, Calendar, MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Stethoscope, Mail, Phone, Building, Award, CheckCircle, ShieldCheck, UserCheck, Sparkles, ExternalLink } from "lucide-react";
 import api from "../../services/api";
 
 export default function MyDoctor() {
-  const [doctor, setDoctor] = useState(null);
+  const [assignedDoctors, setAssignedDoctors] = useState([]);
+  const [allDoctors, setAllDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionMsg, setActionMsg] = useState("");
+  const [submittingId, setSubmittingId] = useState(null);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // Fetch currently assigned doctor(s)
+      const assignedRes = await api.get("/assignments/patient/doctors");
+      const assigned = assignedRes.data?.data || assignedRes.data || [];
+      setAssignedDoctors(Array.isArray(assigned) ? assigned : []);
+
+      // Fetch directory of verified doctors
+      const dirRes = await api.get("/doctors/directory");
+      const directory = dirRes.data?.data || dirRes.data || [];
+      setAllDoctors(Array.isArray(directory) ? directory : []);
+    } catch (err) {
+      console.error("Failed to fetch doctors", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDoctor = async () => {
-      try {
-        const res = await api.get("/patient/doctor");
-        setDoctor(res.data?.data || res.data);
-      } catch (_err) {
-        setDoctor({
-          name: "Dr. Marcus Thorne, MD",
-          specialization: "Internal Medicine & Endocrinology",
-          hospital: "Metropolitan Academic Medical Center",
-          email: "marcus.thorne@nutrisphere.health",
-          phone: "+1 (555) 789-0123",
-          licenseNumber: "MD-67201-IM",
-          officeHours: "Tue, Thu, Fri: 8:30 AM - 3:00 PM EST",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDoctor();
+    fetchData();
   }, []);
 
-  if (loading) return <div className="loading-screen">Loading Physician Details...</div>;
+  const handleSelectDoctor = async (doctorId) => {
+    try {
+      setSubmittingId(doctorId);
+      setActionMsg("");
+      await api.post("/assignments/patient/select-doctor", {
+        doctorId: doctorId,
+        notes: "Selected by patient via Medical Directory",
+      });
+      setActionMsg("Successfully connected with your selected physician!");
+      await fetchData();
+    } catch (err) {
+      console.error("Failed to select doctor", err);
+      setActionMsg(err.response?.data?.message || "Failed to assign doctor.");
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  if (loading) return <div className="loading-screen">Loading Medical Directory & Physicians...</div>;
+
+  const assignedUserIds = new Set(assignedDoctors.map((a) => a.doctorUserId));
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>
+    <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gap: "2rem" }}>
       <div>
-        <h2>My Attending Physician</h2>
-        <p className="text-muted">Your supervising medical doctor managing clinical conditions, laboratory panels, and referrals.</p>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+          <div style={{ background: "rgba(16, 185, 129, 0.15)", padding: "0.5rem", borderRadius: "10px", color: "var(--primary)" }}>
+            <Stethoscope size={24} />
+          </div>
+          <h2 style={{ margin: 0 }}>Supervising Doctors & Clinical Specialists</h2>
+        </div>
+        <p className="text-muted" style={{ margin: 0 }}>
+          View board-certified clinical doctors, verify their medical licenses, achievements, and degrees, and assign your attending physician.
+        </p>
       </div>
 
-      <div className="glass-panel" style={{ padding: "2rem", borderRadius: "var(--radius-lg)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginBottom: "1.5rem" }}>
-          <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(16, 185, 129, 0.1)", color: "#10B981", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Stethoscope size={32} />
+      {actionMsg && (
+        <div style={{ background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "var(--primary)", padding: "1rem", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <CheckCircle size={18} />
+          <span>{actionMsg}</span>
+        </div>
+      )}
+
+      {/* Currently Assigned Doctor Section */}
+      {assignedDoctors.length > 0 && (
+        <div className="glass-panel" style={{ padding: "1.75rem", borderRadius: "var(--radius-lg)", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--primary)", fontWeight: 600, fontSize: "0.9rem", marginBottom: "1rem" }}>
+            <UserCheck size={18} /> Currently Assigned Physician
           </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: "1.25rem" }}>{doctor?.name}</h3>
-            <span style={{ color: "#10B981", fontSize: "0.85rem", fontWeight: 600 }}>
-              {doctor?.specialization}
-            </span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem" }}>
+            {assignedDoctors.map((doc) => (
+              <div key={doc.id} style={{ background: "rgba(255, 255, 255, 0.03)", padding: "1.25rem", borderRadius: "var(--radius-md)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.2rem" }}>{doc.doctorName || "Dr. Medical Supervisor"}</h3>
+                <div style={{ color: "var(--primary)", fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+                  {doc.doctorSpecialization || "Attending Medical Physician"}
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                  Assigned Date: {doc.assignedDate || "Active"}
+                </div>
+              </div>
+            ))}
           </div>
+        </div>
+      )}
+
+      {/* Directory of Multiple Doctors */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+          <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Verified Physicians Directory</h3>
+          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            Showing {allDoctors.length} Verified Specialist{allDoctors.length === 1 ? "" : "s"}
+          </span>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", background: "rgba(255, 255, 255, 0.02)", padding: "1rem", borderRadius: "var(--radius-md)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Building size={16} color="#10B981" />
-            <span>{doctor?.hospital}</span>
+        {allDoctors.length === 0 ? (
+          <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", borderRadius: "var(--radius-lg)" }}>
+            <Stethoscope size={48} style={{ opacity: 0.3, marginBottom: "1rem" }} />
+            <p>No verified doctors found in the directory at this moment.</p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Mail size={16} color="#10B981" />
-            <span>{doctor?.email}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Phone size={16} color="#10B981" />
-            <span>{doctor?.phone}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Calendar size={16} color="#10B981" />
-            <span>{doctor?.officeHours}</span>
-          </div>
-        </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1.5rem" }}>
+            {allDoctors.map((doc) => {
+              const isAssigned = assignedUserIds.has(doc.userId);
+              return (
+                <div
+                  key={doc.id || doc.userId}
+                  className="glass-panel"
+                  style={{
+                    padding: "1.75rem",
+                    borderRadius: "var(--radius-lg)",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    border: isAssigned ? "1px solid var(--primary)" : "1px solid rgba(255, 255, 255, 0.08)",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  {isAssigned && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        right: 0,
+                        background: "var(--primary)",
+                        color: "#0f172a",
+                        fontWeight: 700,
+                        fontSize: "0.75rem",
+                        padding: "0.3rem 0.8rem",
+                        borderBottomLeftRadius: "8px",
+                      }}
+                    >
+                      Assigned Doctor
+                    </div>
+                  )}
 
-        <div style={{ marginTop: "1.5rem", display: "flex", gap: "1rem" }}>
-          <a
-            href={`mailto:${doctor?.email}`}
-            className="btn btn-primary"
-            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
-          >
-            <MessageSquare size={16} /> Contact Physician
-          </a>
-        </div>
+                  <div>
+                    {/* Header: Name, Degree & Specialization */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", marginBottom: "1rem" }}>
+                      <div
+                        style={{
+                          width: "56px",
+                          height: "56px",
+                          borderRadius: "14px",
+                          background: "rgba(16, 185, 129, 0.12)",
+                          color: "var(--primary)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 700,
+                          fontSize: "1.2rem",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {doc.firstName ? doc.firstName.charAt(0) : "D"}
+                      </div>
+                      <div>
+                        <h4 style={{ margin: "0 0 0.25rem 0", fontSize: "1.15rem" }}>
+                          {doc.fullName || `Dr. ${doc.firstName} ${doc.lastName}`}
+                        </h4>
+                        <div style={{ color: "var(--primary)", fontSize: "0.85rem", fontWeight: 600 }}>
+                          {doc.specialization || "Clinical Medicine"}
+                        </div>
+                        {doc.degree && (
+                          <div style={{ fontSize: "0.8rem", color: "var(--accent)", fontWeight: 500, marginTop: "0.2rem" }}>
+                            Degree: {doc.degree}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* License Badge & Number */}
+                    <div
+                      style={{
+                        background: "rgba(16, 185, 129, 0.08)",
+                        border: "1px solid rgba(16, 185, 129, 0.2)",
+                        padding: "0.6rem 0.85rem",
+                        borderRadius: "8px",
+                        marginBottom: "1rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--primary)", fontWeight: 600 }}>
+                        <ShieldCheck size={16} /> Verified License:
+                      </div>
+                      <code style={{ background: "rgba(0, 0, 0, 0.2)", padding: "0.2rem 0.4rem", borderRadius: "4px", color: "#e2e8f0" }}>
+                        {doc.licenseNumber || "MD-CLIN-VERIFIED"}
+                      </code>
+                    </div>
+
+                    {/* Achievements */}
+                    {doc.achievements && (
+                      <div
+                        style={{
+                          background: "rgba(245, 158, 11, 0.06)",
+                          border: "1px solid rgba(245, 158, 11, 0.15)",
+                          padding: "0.75rem",
+                          borderRadius: "8px",
+                          marginBottom: "1rem",
+                          fontSize: "0.82rem",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--accent)", fontWeight: 600, marginBottom: "0.3rem" }}>
+                          <Award size={14} /> Clinical Achievements & Credentials:
+                        </div>
+                        <div style={{ color: "#cbd5e1", lineHeight: 1.4 }}>
+                          {doc.achievements}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Info Grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.5rem", fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
+                      {doc.hospitalName && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Building size={14} color="var(--primary)" />
+                          <span>{doc.hospitalName} {doc.hospitalAddress ? `(${doc.hospitalAddress})` : ""}</span>
+                        </div>
+                      )}
+                      {doc.yearsExperience && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Sparkles size={14} color="var(--accent)" />
+                          <span>Experience: {doc.yearsExperience} Years Clinical Practice</span>
+                        </div>
+                      )}
+                      {doc.email && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Mail size={14} color="var(--primary)" />
+                          <span>{doc.email}</span>
+                        </div>
+                      )}
+                      {doc.phoneNumber && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Phone size={14} color="var(--primary)" />
+                          <span>{doc.phoneNumber}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: "flex", gap: "0.75rem", marginTop: "auto" }}>
+                    {isAssigned ? (
+                      <button className="btn btn-outline" disabled style={{ flex: 1, borderColor: "var(--primary)", color: "var(--primary)" }}>
+                        <CheckCircle size={16} /> Currently Assigned
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleSelectDoctor(doc.userId)}
+                        className="btn btn-primary"
+                        disabled={submittingId === doc.userId}
+                        style={{ flex: 1 }}
+                      >
+                        {submittingId === doc.userId ? "Connecting..." : "Select as My Doctor"}
+                      </button>
+                    )}
+                    {doc.licenseDocumentUrl && (
+                      <a
+                        href={doc.licenseDocumentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-outline"
+                        title="View License Certificate"
+                        style={{ padding: "0.5rem 0.75rem", display: "inline-flex", alignItems: "center" }}
+                      >
+                        <ExternalLink size={16} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

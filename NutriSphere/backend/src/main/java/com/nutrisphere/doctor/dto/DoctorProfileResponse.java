@@ -20,5 +20,9 @@ public class DoctorProfileResponse {
     private Integer yearsExperience;
     private String bio;
     private Double consultationFee;
+    private String degree;
+    private String achievements;
+    private String licenseDocumentUrl;
+    private String verificationStatus;
     private LocalDateTime createdAt;
 }

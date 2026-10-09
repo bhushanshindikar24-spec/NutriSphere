@@ -7,6 +7,11 @@ public class AssignmentResponse {
     private Long patientUserId;
     private String patientName;
     private String patientEmail;
+    private Long doctorUserId;
+    private String doctorName;
+    private String doctorSpecialization;
+    private Long dietitianUserId;
+    private String dietitianName;
     private LocalDate assignedDate;
     private boolean active;
     private String notes;

@@ -10,6 +10,7 @@ import PatientRoutes from "./PatientRoutes";
 import DietitianRoutes from "./DietitianRoutes";
 import DoctorRoutes from "./DoctorRoutes";
 import HotelRoutes from "./HotelRoutes";
+import AdminRoutes from "./AdminRoutes";
 
 // Role-based redirect helper
 const RoleBasedRedirect = () => {
@@ -27,6 +28,8 @@ const RoleBasedRedirect = () => {
       return <Navigate to="/doctor" replace />;
     case "HOTEL":
       return <Navigate to="/hotel" replace />;
+    case "ADMIN":
+      return <Navigate to="/admin" replace />;
     default:
       return <Navigate to="/unauthorized" replace />;
   }
@@ -89,6 +92,15 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute roles={["HOTEL"]}>
               <HotelRoutes />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute roles={["ADMIN"]}>
+              <AdminRoutes />
             </ProtectedRoute>
           }
         />

@@ -27,28 +27,27 @@ export default function Checkout() {
     );
   }
 
+  const [orderError, setOrderError] = useState("");
+
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
+    setOrderError("");
     setLoading(true);
     try {
       const orderPayload = {
-        items: cartItems.map((i) => ({ mealId: i.mealId, quantity: i.quantity, price: i.price })),
-        totalPrice: totalAmount + 3.5,
+        items: cartItems.map((i) => ({ mealId: i.mealId, quantity: i.quantity, unitPrice: i.price })),
         deliveryAddress: address,
+        specialInstructions: deliveryNotes,
         notes: deliveryNotes,
-        paymentMethod,
       };
 
       const res = await api.post("/orders", orderPayload);
-      const placed = res.data?.data || res.data || { id: "ORD-" + Math.floor(1000 + Math.random() * 9000) };
+      const placed = res.data?.data || res.data;
       setSuccessOrder(placed);
       clearCart();
     } catch (err) {
       console.error("Order placement error", err);
-      // Graceful fallback for local test
-      const fallbackOrder = { id: "ORD-" + Math.floor(1000 + Math.random() * 9000), status: "CONFIRMED" };
-      setSuccessOrder(fallbackOrder);
-      clearCart();
+      setOrderError(err.response?.data?.message || "Failed to place culinary order. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -109,6 +108,12 @@ export default function Checkout() {
       </button>
 
       <h2>Delivery Checkout</h2>
+
+      {orderError && (
+        <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", padding: "1rem", borderRadius: "8px", fontSize: "0.9rem" }}>
+          {orderError}
+        </div>
+      )}
 
       <form onSubmit={handlePlaceOrder} style={{ display: "grid", gap: "1.5rem" }}>
         {/* Address */}

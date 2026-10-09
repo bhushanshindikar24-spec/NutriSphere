@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface DoctorRepository extends JpaRepository<DoctorProfile, Long> {
     Optional<DoctorProfile> findByUserId(Long userId);
     boolean existsByUserId(Long userId);
+    java.util.List<DoctorProfile> findByVerificationStatus(String verificationStatus);
 }

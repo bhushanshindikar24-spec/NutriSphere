@@ -31,6 +31,7 @@ export default function CreateDietPlan() {
   ]);
 
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -41,13 +42,8 @@ export default function CreateDietPlan() {
         if (!patientId && list.length > 0) {
           setPatientId(list[0].id || list[0].patientUserId);
         }
-      } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-          { id: 103, patientName: "Robert Chen" },
-        ]);
-        if (!patientId) setPatientId("101");
+      } catch (err) {
+        console.error("Failed to load dietitian patients", err);
       }
     };
     fetchPatients();
@@ -70,29 +66,36 @@ export default function CreateDietPlan() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
     setLoading(true);
     try {
       const payload = {
+        patientUserId: Number(patientId),
         patientId: Number(patientId),
+        title: name,
         name,
         startDate,
         endDate,
+        targetCalories: Number(dailyCaloriesTarget),
         dailyCaloriesTarget: Number(dailyCaloriesTarget),
+        targetProteinG: Number(dailyProteinTarget),
         dailyProteinTarget: Number(dailyProteinTarget),
+        targetCarbsG: Number(dailyCarbsTarget),
         dailyCarbsTarget: Number(dailyCarbsTarget),
+        targetFatG: Number(dailyFatTarget),
         dailyFatTarget: Number(dailyFatTarget),
+        targetWaterMl: Number(dailyWaterTarget),
         dailyWaterTarget: Number(dailyWaterTarget),
         notes,
         meals,
-        status: "ACTIVE",
+        status: "APPROVED",
       };
 
       await api.post("/nutrition/diet-plans", payload);
       navigate("/dietitian/plans");
     } catch (err) {
       console.error("Failed to create diet plan", err);
-      // Fallback navigate on local mock
-      navigate("/dietitian/plans");
+      setErrorMsg(err.response?.data?.message || "Failed to create diet plan. Please check patient selection.");
     } finally {
       setLoading(false);
     }
@@ -109,6 +112,12 @@ export default function CreateDietPlan() {
       </button>
 
       <h2>Create Clinical Diet Plan</h2>
+
+      {errorMsg && (
+        <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", padding: "1rem", borderRadius: "8px", fontSize: "0.9rem" }}>
+          {errorMsg}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         {/* Core Plan Details */}

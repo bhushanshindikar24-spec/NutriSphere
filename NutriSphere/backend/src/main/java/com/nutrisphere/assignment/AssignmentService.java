@@ -71,16 +71,36 @@ public class AssignmentService {
             .stream().map(this::toDietitianAssignmentResponse).collect(Collectors.toList());
     }
 
+    @Transactional
+    public AssignmentResponse assignPatientToDoctor(Long doctorUserId, Long patientUserId, String notes) {
+        AssignPatientRequest req = new AssignPatientRequest();
+        req.setPatientUserId(patientUserId);
+        req.setNotes(notes);
+        return assignPatientToDoctor(doctorUserId, req);
+    }
+
+    @Transactional
+    public AssignmentResponse assignPatientToDietitian(Long dietitianUserId, Long patientUserId, String notes) {
+        AssignPatientRequest req = new AssignPatientRequest();
+        req.setPatientUserId(patientUserId);
+        req.setNotes(notes);
+        return assignPatientToDietitian(dietitianUserId, req);
+    }
+
     private AssignmentResponse toDoctorAssignmentResponse(DoctorPatient a) {
         AssignmentResponse r = new AssignmentResponse();
         r.setId(a.getId());
         r.setPatientUserId(a.getPatientUserId());
+        r.setDoctorUserId(a.getDoctorUserId());
         r.setAssignedDate(a.getAssignedDate());
         r.setActive(a.isActive());
         r.setNotes(a.getNotes());
         userRepository.findById(a.getPatientUserId()).ifPresent(u -> {
             r.setPatientName(u.getFullName());
             r.setPatientEmail(u.getEmail());
+        });
+        userRepository.findById(a.getDoctorUserId()).ifPresent(u -> {
+            r.setDoctorName(u.getFullName());
         });
         return r;
     }
@@ -97,12 +117,16 @@ public class AssignmentService {
         AssignmentResponse r = new AssignmentResponse();
         r.setId(a.getId());
         r.setPatientUserId(a.getPatientUserId());
+        r.setDietitianUserId(a.getDietitianUserId());
         r.setAssignedDate(a.getAssignedDate());
         r.setActive(a.isActive());
         r.setNotes(a.getNotes());
         userRepository.findById(a.getPatientUserId()).ifPresent(u -> {
             r.setPatientName(u.getFullName());
             r.setPatientEmail(u.getEmail());
+        });
+        userRepository.findById(a.getDietitianUserId()).ifPresent(u -> {
+            r.setDietitianName(u.getFullName());
         });
         return r;
     }

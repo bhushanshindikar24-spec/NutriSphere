@@ -14,4 +14,6 @@ public class TokenResponse {
     private String firstName;
     private String lastName;
     private Role role;
+    private String status;
+    private String message;
 }

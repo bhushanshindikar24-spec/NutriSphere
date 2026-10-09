@@ -47,27 +47,31 @@ public class RealityScoreService {
             totalBarriers += (Long) row[1];
         }
 
-        // Score each dimension 0-100 (100 = best)
-        double foodAvail = calcDimensionScore(counts.getOrDefault("FOOD_UNAVAILABLE", 0L), totalBarriers);
-        double afford = calcDimensionScore(counts.getOrDefault("TOO_EXPENSIVE", 0L), totalBarriers);
-        double cooking = calcDimensionScore(counts.getOrDefault("COOKING_PROBLEM", 0L), totalBarriers);
-        double preference = calcDimensionScore(counts.getOrDefault("TASTE", 0L), totalBarriers);
-        double schedule = calcDimensionScore(counts.getOrDefault("BUSY_SCHEDULE", 0L), totalBarriers);
-        double accessibility = (foodAvail + afford + cooking + preference + schedule) / 5.0;
+        // 6 Dimensions from Specification Section 17:
+        // Food Availability: 20%, Affordability: 20%, Cooking Complexity: 15%, Preference: 15%, Schedule Alignment: 15%, Historical Adherence: 15%
+        long unavailCount = counts.getOrDefault("FOOD_UNAVAILABLE", 0L);
+        long costCount = counts.getOrDefault("COST", 0L) + counts.getOrDefault("TOO_EXPENSIVE", 0L);
+        long cookingCount = counts.getOrDefault("COOKING_SKILL", 0L) + counts.getOrDefault("COOKING_PROBLEM", 0L);
+        long preferenceCount = counts.getOrDefault("CRAVINGS_HUNGER", 0L) + counts.getOrDefault("TASTE", 0L);
+        long scheduleCount = counts.getOrDefault("TIME_CONSTRAINT", 0L) + counts.getOrDefault("BUSY_SCHEDULE", 0L);
 
-        // Historical adherence
+        double foodAvail = calcDimensionScore(unavailCount, totalBarriers);
+        double afford = calcDimensionScore(costCount, totalBarriers);
+        double cooking = calcDimensionScore(cookingCount, totalBarriers);
+        double preference = calcDimensionScore(preferenceCount, totalBarriers);
+        double schedule = calcDimensionScore(scheduleCount, totalBarriers);
         double adherence = calcHistoricalAdherence(patientUserId, dietPlanId);
 
-        // Weighted overall
-        double overall = (foodAvail * 0.2 + afford * 0.15 + cooking * 0.15 + preference * 0.15 +
-                          schedule * 0.15 + accessibility * 0.1 + adherence * 0.1);
+        // Weighted overall sum = 0.20 + 0.20 + 0.15 + 0.15 + 0.15 + 0.15 = 1.00 (100%)
+        double overall = (foodAvail * 0.20 + afford * 0.20 + cooking * 0.15 + preference * 0.15 +
+                          schedule * 0.15 + adherence * 0.15);
 
         RealityScore score = RealityScore.builder()
             .patientUserId(patientUserId).dietPlanId(dietPlanId)
             .overallScore(Math.round(overall * 10.0) / 10.0)
             .foodAvailabilityScore(foodAvail).affordabilityScore(afford)
             .cookingComplexityScore(cooking).preferenceScore(preference)
-            .scheduleScore(schedule).accessibilityScore(accessibility)
+            .scheduleScore(schedule).accessibilityScore((foodAvail + afford) / 2.0)
             .historicalAdherenceScore(adherence)
             .explanation(buildExplanation(foodAvail, afford, cooking, preference, schedule, adherence))
             .build();
@@ -130,7 +134,7 @@ public class RealityScoreService {
         dims.put("Historical Adherence", s.getHistoricalAdherenceScore());
         r.setDimensionScores(dims);
         double score = r.getOverallScore();
-        r.setInterpretation(score >= 75 ? "High Feasibility" : score >= 50 ? "Moderate Feasibility" : "Low Feasibility - Review Recommended");
+        r.setInterpretation(score >= 80 ? "High Feasibility" : score >= 60 ? "Moderate Feasibility" : "High Friction Risk - Reassessment Recommended");
         return r;
     }
 }

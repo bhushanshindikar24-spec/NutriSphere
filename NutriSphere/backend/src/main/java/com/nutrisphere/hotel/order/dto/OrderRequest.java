@@ -10,6 +10,7 @@ import java.util.List;
 public class OrderRequest {
     private Long hotelUserId;
     @NotBlank private String deliveryAddress;
+    @com.fasterxml.jackson.annotation.JsonAlias({"notes", "deliveryNotes"})
     private String specialInstructions;
     @NotEmpty @Valid private List<OrderItemRequest> items;
 }

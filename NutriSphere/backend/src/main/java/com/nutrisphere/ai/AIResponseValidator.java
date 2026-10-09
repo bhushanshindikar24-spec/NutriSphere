@@ -12,11 +12,15 @@ public class AIResponseValidator {
         List<String> warnings = new ArrayList<>();
         String content = rawContent != null ? rawContent.trim() : "";
 
-        if (content.toLowerCase().contains("cure") || content.toLowerCase().contains("stop taking medication")) {
+        String lower = content.toLowerCase();
+        if (lower.contains("cure") || lower.contains("stop taking medication") || lower.contains("discontinue insulin")) {
             warnings.add("Potential clinical claim detected; dietary advice is supportive, not medicinal.");
         }
+        if (lower.contains("replace prescription") || lower.contains("replace medical advice")) {
+            warnings.add("Advisory reminder: Clinical prescription changes must be prescribed directly by attending physician.");
+        }
 
-        String disclaimer = "Disclaimer: AI-generated nutritional suggestions are for clinical decision support and educational reference only. All diet plans must be reviewed and approved by a qualified dietitian or physician.";
+        String disclaimer = "Clinical Safety Disclaimer: AI-generated nutritional suggestions are for clinical decision support and educational reference only. Per HealthyOne Safety Rules (Section 26), adaptive recommendations require human-in-the-loop review by the attending Dietitian or Physician prior to execution.";
 
         return AIResponse.builder()
                 .content(content)

@@ -23,6 +23,12 @@ public class FileController {
         return ApiResponse.success(fileStorageService.store(file, securityUtils.getCurrentUserId(), category, entityType, entityId));
     }
 
+    @PostMapping("/upload-license")
+    public ApiResponse<FileUploadResponse> uploadLicense(
+            @RequestParam("file") MultipartFile file) {
+        return ApiResponse.success(fileStorageService.store(file, null, "licenses", "LICENSE", null));
+    }
+
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
         Resource resource = fileStorageService.loadAsResource(id, securityUtils.getCurrentUserId());

@@ -1,87 +1,288 @@
-import {  useState, useEffect  } from "react";
-import { User, Mail, Phone, Calendar, Award, MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
+import { UserCheck, Mail, Phone, Building, Award, CheckCircle, ShieldCheck, Sparkles, ExternalLink, Apple } from "lucide-react";
 import api from "../../services/api";
 
 export default function MyDietitian() {
-  const [dietitian, setDietitian] = useState(null);
+  const [assignedDietitians, setAssignedDietitians] = useState([]);
+  const [allDietitians, setAllDietitians] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionMsg, setActionMsg] = useState("");
+  const [submittingId, setSubmittingId] = useState(null);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // Fetch assigned dietitian
+      const assignedRes = await api.get("/assignments/patient/dietitians");
+      const assigned = assignedRes.data?.data || assignedRes.data || [];
+      setAssignedDietitians(Array.isArray(assigned) ? assigned : []);
+
+      // Fetch directory of verified dietitians
+      const dirRes = await api.get("/dietitians/directory");
+      const directory = dirRes.data?.data || dirRes.data || [];
+      setAllDietitians(Array.isArray(directory) ? directory : []);
+    } catch (err) {
+      console.error("Failed to fetch dietitians", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDietitian = async () => {
-      try {
-        const res = await api.get("/patient/dietitian");
-        setDietitian(res.data?.data || res.data);
-      } catch (_err) {
-        setDietitian({
-          name: "Dr. Elena Vance, RD, LDN",
-          specialization: "Clinical Nutrition & Metabolic Optimization",
-          email: "elena.vance@nutrisphere.health",
-          phone: "+1 (555) 234-8901",
-          licenseNumber: "RD-98214-MET",
-          bio: "Specialist in glycemic management, renal nutrition, and bioenergetic digital twin modeling with 12+ years of clinical practice.",
-          officeHours: "Mon-Thu: 9:00 AM - 4:00 PM EST",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDietitian();
+    fetchData();
   }, []);
 
-  if (loading) return <div className="loading-screen">Loading Dietitian Information...</div>;
+  const handleSelectDietitian = async (dietitianId) => {
+    try {
+      setSubmittingId(dietitianId);
+      setActionMsg("");
+      await api.post("/assignments/patient/select-dietitian", {
+        dietitianId: dietitianId,
+        notes: "Selected by patient via Dietetics Directory",
+      });
+      setActionMsg("Successfully assigned your clinical dietitian!");
+      await fetchData();
+    } catch (err) {
+      console.error("Failed to assign dietitian", err);
+      setActionMsg(err.response?.data?.message || "Failed to assign dietitian.");
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  if (loading) return <div className="loading-screen">Loading Clinical Dietitians Directory...</div>;
+
+  const assignedUserIds = new Set(assignedDietitians.map((a) => a.dietitianUserId));
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>
+    <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gap: "2rem" }}>
       <div>
-        <h2>My Clinical Dietitian</h2>
-        <p className="text-muted">Your dedicated nutritionist managing your dietary prescriptions and adaptive interventions.</p>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+          <div style={{ background: "rgba(16, 185, 129, 0.15)", padding: "0.5rem", borderRadius: "10px", color: "var(--primary)" }}>
+            <Apple size={24} />
+          </div>
+          <h2 style={{ margin: 0 }}>Supervising Clinical Dietitians & Nutritionists</h2>
+        </div>
+        <p className="text-muted" style={{ margin: 0 }}>
+          Connect with registered dietitians (RD) specializing in clinical dietary management, adaptive meal protocols, and metabolic optimization.
+        </p>
       </div>
 
-      <div className="glass-panel" style={{ padding: "2rem", borderRadius: "var(--radius-lg)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginBottom: "1.5rem" }}>
-          <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "var(--primary-light)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <User size={32} />
+      {actionMsg && (
+        <div style={{ background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "var(--primary)", padding: "1rem", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <CheckCircle size={18} />
+          <span>{actionMsg}</span>
+        </div>
+      )}
+
+      {/* Currently Assigned Dietitians */}
+      {assignedDietitians.length > 0 && (
+        <div className="glass-panel" style={{ padding: "1.75rem", borderRadius: "var(--radius-lg)", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--primary)", fontWeight: 600, fontSize: "0.9rem", marginBottom: "1rem" }}>
+            <UserCheck size={18} /> Currently Assigned Dietitian
           </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: "1.25rem" }}>{dietitian?.name}</h3>
-            <span style={{ color: "var(--primary)", fontSize: "0.85rem", fontWeight: 600 }}>
-              {dietitian?.specialization}
-            </span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem" }}>
+            {assignedDietitians.map((d) => (
+              <div key={d.id} style={{ background: "rgba(255, 255, 255, 0.03)", padding: "1.25rem", borderRadius: "var(--radius-md)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.2rem" }}>{d.dietitianName || "Clinical Dietitian"}</h3>
+                <div style={{ color: "var(--primary)", fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+                  Clinical Prescribing Dietitian
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                  Assigned Date: {d.assignedDate || "Active"}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+      )}
 
-        <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: "1.5rem" }}>
-          {dietitian?.bio}
-        </p>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", background: "rgba(255, 255, 255, 0.02)", padding: "1rem", borderRadius: "var(--radius-md)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Mail size={16} color="var(--primary)" />
-            <span>{dietitian?.email}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Phone size={16} color="var(--primary)" />
-            <span>{dietitian?.phone}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Award size={16} color="var(--primary)" />
-            <span>License: {dietitian?.licenseNumber}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Calendar size={16} color="var(--primary)" />
-            <span>{dietitian?.officeHours}</span>
-          </div>
+      {/* Directory of Dietitians */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+          <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Verified Dietitians Directory</h3>
+          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            Showing {allDietitians.length} Verified Specialist{allDietitians.length === 1 ? "" : "s"}
+          </span>
         </div>
 
-        <div style={{ marginTop: "1.5rem", display: "flex", gap: "1rem" }}>
-          <a
-            href={`mailto:${dietitian?.email}`}
-            className="btn btn-primary"
-            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
-          >
-            <MessageSquare size={16} /> Send Message to Dietitian
-          </a>
-        </div>
+        {allDietitians.length === 0 ? (
+          <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", borderRadius: "var(--radius-lg)" }}>
+            <Apple size={48} style={{ opacity: 0.3, marginBottom: "1rem" }} />
+            <p>No registered dietitians currently available in the directory.</p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1.5rem" }}>
+            {allDietitians.map((diet) => {
+              const isAssigned = assignedUserIds.has(diet.userId);
+              return (
+                <div
+                  key={diet.id || diet.userId}
+                  className="glass-panel"
+                  style={{
+                    padding: "1.75rem",
+                    borderRadius: "var(--radius-lg)",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    border: isAssigned ? "1px solid var(--primary)" : "1px solid rgba(255, 255, 255, 0.08)",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  {isAssigned && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        right: 0,
+                        background: "var(--primary)",
+                        color: "#0f172a",
+                        fontWeight: 700,
+                        fontSize: "0.75rem",
+                        padding: "0.3rem 0.8rem",
+                        borderBottomLeftRadius: "8px",
+                      }}
+                    >
+                      Assigned Dietitian
+                    </div>
+                  )}
+
+                  <div>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", marginBottom: "1rem" }}>
+                      <div
+                        style={{
+                          width: "56px",
+                          height: "56px",
+                          borderRadius: "14px",
+                          background: "rgba(16, 185, 129, 0.12)",
+                          color: "var(--primary)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 700,
+                          fontSize: "1.2rem",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {diet.firstName ? diet.firstName.charAt(0) : "N"}
+                      </div>
+                      <div>
+                        <h4 style={{ margin: "0 0 0.25rem 0", fontSize: "1.15rem" }}>
+                          {diet.fullName || `${diet.firstName} ${diet.lastName}, RD`}
+                        </h4>
+                        <div style={{ color: "var(--primary)", fontSize: "0.85rem", fontWeight: 600 }}>
+                          {diet.specialization || "Clinical Nutrition"}
+                        </div>
+                        {diet.degree && (
+                          <div style={{ fontSize: "0.8rem", color: "var(--accent)", fontWeight: 500, marginTop: "0.2rem" }}>
+                            Credentials: {diet.degree}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* License Badge */}
+                    <div
+                      style={{
+                        background: "rgba(16, 185, 129, 0.08)",
+                        border: "1px solid rgba(16, 185, 129, 0.2)",
+                        padding: "0.6rem 0.85rem",
+                        borderRadius: "8px",
+                        marginBottom: "1rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--primary)", fontWeight: 600 }}>
+                        <ShieldCheck size={16} /> Verified Dietetic License:
+                      </div>
+                      <code style={{ background: "rgba(0, 0, 0, 0.2)", padding: "0.2rem 0.4rem", borderRadius: "4px", color: "#e2e8f0" }}>
+                        {diet.licenseNumber || "RD-CLIN-VERIFIED"}
+                      </code>
+                    </div>
+
+                    {/* Achievements */}
+                    {diet.achievements && (
+                      <div
+                        style={{
+                          background: "rgba(245, 158, 11, 0.06)",
+                          border: "1px solid rgba(245, 158, 11, 0.15)",
+                          padding: "0.75rem",
+                          borderRadius: "8px",
+                          marginBottom: "1rem",
+                          fontSize: "0.82rem",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--accent)", fontWeight: 600, marginBottom: "0.3rem" }}>
+                          <Award size={14} /> Clinical Certifications & Focus:
+                        </div>
+                        <div style={{ color: "#cbd5e1", lineHeight: 1.4 }}>
+                          {diet.achievements}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Info */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.5rem", fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
+                      {diet.clinicName && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Building size={14} color="var(--primary)" />
+                          <span>{diet.clinicName}</span>
+                        </div>
+                      )}
+                      {diet.yearsExperience && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Sparkles size={14} color="var(--accent)" />
+                          <span>Experience: {diet.yearsExperience} Years Clinical Practice</span>
+                        </div>
+                      )}
+                      {diet.email && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Mail size={14} color="var(--primary)" />
+                          <span>{diet.email}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: "flex", gap: "0.75rem", marginTop: "auto" }}>
+                    {isAssigned ? (
+                      <button className="btn btn-outline" disabled style={{ flex: 1, borderColor: "var(--primary)", color: "var(--primary)" }}>
+                        <CheckCircle size={16} /> Currently Assigned
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleSelectDietitian(diet.userId)}
+                        className="btn btn-primary"
+                        disabled={submittingId === diet.userId}
+                        style={{ flex: 1 }}
+                      >
+                        {submittingId === diet.userId ? "Connecting..." : "Assign as My Dietitian"}
+                      </button>
+                    )}
+                    {diet.licenseDocumentUrl && (
+                      <a
+                        href={diet.licenseDocumentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-outline"
+                        title="View License Certificate"
+                        style={{ padding: "0.5rem 0.75rem", display: "inline-flex", alignItems: "center" }}
+                      >
+                        <ExternalLink size={16} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

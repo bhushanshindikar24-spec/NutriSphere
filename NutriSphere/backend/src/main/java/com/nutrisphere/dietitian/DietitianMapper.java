@@ -20,6 +20,10 @@ public class DietitianMapper {
         r.setYearsExperience(p.getYearsExperience());
         r.setBio(p.getBio());
         r.setConsultationFee(p.getConsultationFee());
+        r.setDegree(p.getDegree());
+        r.setAchievements(p.getAchievements());
+        r.setLicenseDocumentUrl(p.getLicenseDocumentUrl());
+        r.setVerificationStatus(p.getVerificationStatus());
         r.setCreatedAt(p.getCreatedAt());
         return r;
     }
