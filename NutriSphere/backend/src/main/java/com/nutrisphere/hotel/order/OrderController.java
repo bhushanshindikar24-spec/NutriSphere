@@ -18,7 +18,7 @@ public class OrderController {
         return ApiResponse.success(orderService.placeOrder(securityUtils.getCurrentUserId(), req));
     }
 
-    @GetMapping("/my")
+    @GetMapping({"/my", "/my-orders"})
     @PreAuthorize("hasRole('PATIENT')")
     public ApiResponse<List<OrderResponse>> getMyOrders() {
         return ApiResponse.success(orderService.getPatientOrders(securityUtils.getCurrentUserId()));

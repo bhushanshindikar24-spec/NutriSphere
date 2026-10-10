@@ -24,4 +24,13 @@ public class RealityScoreController {
         securityUtils.assertPatientAccess(uid);
         return ApiResponse.success(realityScoreService.getHistory(uid));
     }
+
+    @GetMapping("/latest")
+    public ApiResponse<RealityScoreResult> latest(
+            @RequestParam(required = false) Long patientUserId) {
+        Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
+        securityUtils.assertPatientAccess(uid);
+        List<RealityScoreResult> list = realityScoreService.getHistory(uid);
+        return ApiResponse.success(!list.isEmpty() ? list.get(0) : null);
+    }
 }

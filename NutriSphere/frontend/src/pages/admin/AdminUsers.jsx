@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Shield, CheckCircle, Clock, AlertTriangle, Search } from "lucide-react";
+import { Users, CheckCircle, Clock, AlertTriangle, Search } from "lucide-react";
 import api from "../../services/api";
 
 export default function AdminUsers() {

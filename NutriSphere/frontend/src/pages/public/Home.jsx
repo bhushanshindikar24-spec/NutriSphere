@@ -1,9 +1,9 @@
 import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
-  Stethoscope, ShieldCheck, HeartPulse, Sparkles, ArrowRight, 
-  PhoneOff, Video, MessageSquare, Star, Smile, Users, Award, 
-  Utensils, Activity, Brain, CheckCircle
+  Stethoscope, Sparkles, ArrowRight, 
+  PhoneOff, Video, MessageSquare, Star, Smile, Users, 
+  Utensils, Brain
 } from "lucide-react";
 import { AuthContext } from "../../context/AuthContext";
 import "./Home.css";

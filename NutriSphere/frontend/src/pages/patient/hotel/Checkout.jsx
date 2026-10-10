@@ -13,6 +13,7 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState("CREDIT_CARD");
   const [loading, setLoading] = useState(false);
   const [successOrder, setSuccessOrder] = useState(null);
+  const [orderError, setOrderError] = useState("");
 
   if (cartItems.length === 0 && !successOrder) {
     return (
@@ -26,8 +27,6 @@ export default function Checkout() {
       </div>
     );
   }
-
-  const [orderError, setOrderError] = useState("");
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();

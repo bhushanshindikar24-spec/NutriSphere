@@ -21,7 +21,7 @@ public class ConsultationController {
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
 
-    @GetMapping
+    @GetMapping({"", "/doctor"})
     @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN', 'ADMIN')")
     public ApiResponse<List<Consultation>> getAllForDoctor() {
         Long currentUserId = securityUtils.getCurrentUserId();

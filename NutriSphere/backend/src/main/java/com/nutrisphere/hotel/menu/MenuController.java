@@ -24,7 +24,7 @@ public class MenuController {
         return ApiResponse.success(menuService.getMenu(securityUtils.getCurrentUserId()));
     }
 
-    @GetMapping("/public")
+    @GetMapping({"/public", "/available"})
     public ApiResponse<List<MealResponse>> getAllMenus() {
         return ApiResponse.success(menuService.getAllMenus());
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ShieldCheck, CheckCircle2, XCircle, FileText, ExternalLink, Building, Award, Mail, Phone, Clock, AlertCircle } from "lucide-react";
+import { ShieldCheck, CheckCircle2, XCircle, FileText, ExternalLink, Award, Clock, AlertCircle } from "lucide-react";
 import api from "../../services/api";
 
 export default function AdminVerifications() {

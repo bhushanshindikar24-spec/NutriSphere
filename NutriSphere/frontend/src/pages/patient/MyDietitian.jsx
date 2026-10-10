@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { UserCheck, Mail, Phone, Building, Award, CheckCircle, ShieldCheck, Sparkles, ExternalLink, Apple } from "lucide-react";
+import { UserCheck, Mail, Building, Award, CheckCircle, ShieldCheck, Sparkles, ExternalLink, Apple } from "lucide-react";
 import api from "../../services/api";
 
 export default function MyDietitian() {
@@ -11,7 +11,6 @@ export default function MyDietitian() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
       // Fetch assigned dietitian
       const assignedRes = await api.get("/assignments/patient/dietitians");
       const assigned = assignedRes.data?.data || assignedRes.data || [];
@@ -41,6 +40,7 @@ export default function MyDietitian() {
         notes: "Selected by patient via Dietetics Directory",
       });
       setActionMsg("Successfully assigned your clinical dietitian!");
+      setLoading(true);
       await fetchData();
     } catch (err) {
       console.error("Failed to assign dietitian", err);

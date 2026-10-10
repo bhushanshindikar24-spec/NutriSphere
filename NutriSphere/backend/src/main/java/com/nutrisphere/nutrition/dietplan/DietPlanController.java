@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@RestController @RequestMapping("/api/nutrition/diet-plans") @RequiredArgsConstructor
+@RestController @RequestMapping({"/api/nutrition/diet-plans", "/api/diet-plans"}) @RequiredArgsConstructor
 public class DietPlanController {
     private final DietPlanService dietPlanService;
     private final SecurityUtils securityUtils;
@@ -21,47 +21,22 @@ public class DietPlanController {
         return ApiResponse.success(dietPlanService.createPlan(securityUtils.getCurrentUserId(), req));
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<DietPlanResponse> getById(@PathVariable Long id) {
-        DietPlanResponse plan = dietPlanService.getPlanById(id);
-        securityUtils.assertPatientAccess(plan.getPatientUserId());
-        return ApiResponse.success(plan);
-    }
-
     @GetMapping("/pending")
     @PreAuthorize("hasRole('DIETITIAN')")
     public ApiResponse<List<DietPlanResponse>> getPendingPlans() {
         return ApiResponse.success(dietPlanService.getPendingPlansForDietitian(securityUtils.getCurrentUserId()));
     }
 
-    @PostMapping("/{id}/approve")
-    @PreAuthorize("hasRole('DIETITIAN')")
-    public ApiResponse<DietPlanResponse> approve(@PathVariable Long id,
-            @RequestBody(required = false) PlanApprovalRequest req) {
-        return ApiResponse.success(dietPlanService.approvePlan(id, securityUtils.getCurrentUserId(), req));
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<List<DietPlanResponse>> getMyPlans() {
+        return ApiResponse.success(dietPlanService.getApprovedPlanForPatient(securityUtils.getCurrentUserId()));
     }
 
-    @PutMapping("/{id}/approve")
+    @GetMapping("/dietitian")
     @PreAuthorize("hasRole('DIETITIAN')")
-    public ApiResponse<DietPlanResponse> approvePut(@PathVariable Long id,
-            @RequestBody(required = false) PlanApprovalRequest req) {
-        return ApiResponse.success(dietPlanService.approvePlan(id, securityUtils.getCurrentUserId(), req));
-    }
-
-    @PostMapping("/{id}/reject")
-    @PreAuthorize("hasRole('DIETITIAN')")
-    public ApiResponse<DietPlanResponse> reject(@PathVariable Long id,
-            @RequestBody(required = false) java.util.Map<String, String> body) {
-        String notes = body != null ? body.get("notes") : "Rejected by dietitian";
-        return ApiResponse.success(dietPlanService.rejectPlan(id, securityUtils.getCurrentUserId(), notes));
-    }
-
-    @PutMapping("/{id}/reject")
-    @PreAuthorize("hasRole('DIETITIAN')")
-    public ApiResponse<DietPlanResponse> rejectPut(@PathVariable Long id,
-            @RequestBody(required = false) java.util.Map<String, String> body) {
-        String notes = body != null ? body.get("notes") : "Rejected by dietitian";
-        return ApiResponse.success(dietPlanService.rejectPlan(id, securityUtils.getCurrentUserId(), notes));
+    public ApiResponse<List<DietPlanResponse>> getForDietitian() {
+        return ApiResponse.success(dietPlanService.getPlansForDietitian(securityUtils.getCurrentUserId()));
     }
 
     @GetMapping("/patient/{patientUserId}")
@@ -76,16 +51,11 @@ public class DietPlanController {
         return ApiResponse.success(dietPlanService.getApprovedPlanForPatient(patientUserId));
     }
 
-    @GetMapping("/my")
-    @PreAuthorize("hasRole('PATIENT')")
-    public ApiResponse<List<DietPlanResponse>> getMyPlans() {
-        return ApiResponse.success(dietPlanService.getApprovedPlanForPatient(securityUtils.getCurrentUserId()));
-    }
-
-    @GetMapping("/dietitian")
-    @PreAuthorize("hasRole('DIETITIAN')")
-    public ApiResponse<List<DietPlanResponse>> getForDietitian() {
-        return ApiResponse.success(dietPlanService.getPlansForDietitian(securityUtils.getCurrentUserId()));
+    @GetMapping("/{id}")
+    public ApiResponse<DietPlanResponse> getById(@PathVariable Long id) {
+        DietPlanResponse plan = dietPlanService.getPlanById(id);
+        securityUtils.assertPatientAccess(plan.getPatientUserId());
+        return ApiResponse.success(plan);
     }
 
     @PostMapping("/{id}/meals")

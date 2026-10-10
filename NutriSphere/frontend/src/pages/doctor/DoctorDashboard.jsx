@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
-import { Users, Stethoscope, Activity, UserCheck, Clock, ArrowRight, Bell } from "lucide-react";
+import { Users, Stethoscope, UserCheck, Clock, ArrowRight, Bell } from "lucide-react";
 
 export default function DoctorDashboard() {
   const [stats, setStats] = useState(null);
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchDoctorData();
-  }, []);
 
   const fetchDoctorData = async () => {
     setLoading(true);
@@ -32,6 +28,10 @@ export default function DoctorDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDoctorData();
+  }, []);
 
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "350px", gap: "0.75rem", color: "#0284c7" }}>

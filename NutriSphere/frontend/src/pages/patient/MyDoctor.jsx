@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Stethoscope, Mail, Phone, Building, Award, CheckCircle, ShieldCheck, UserCheck, Sparkles, ExternalLink } from "lucide-react";
+import { Stethoscope, Mail, Building, Award, CheckCircle, ShieldCheck, UserCheck, Sparkles, ExternalLink } from "lucide-react";
 import api from "../../services/api";
 
 export default function MyDoctor() {
@@ -12,7 +12,6 @@ export default function MyDoctor() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
       // Fetch currently assigned doctor(s)
       const assignedRes = await api.get("/assignments/patient/doctors");
       const assigned = assignedRes.data?.data || assignedRes.data || [];
@@ -47,6 +46,7 @@ export default function MyDoctor() {
         notes: "Selected by patient via Medical Directory",
       });
       setActionMsg("Successfully connected with your selected physician!");
+      setLoading(true);
       await fetchData();
     } catch (err) {
       console.error("Failed to select doctor", err);

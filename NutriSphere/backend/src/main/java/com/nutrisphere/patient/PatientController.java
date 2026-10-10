@@ -14,7 +14,7 @@ public class PatientController {
     private final PatientService patientService;
     private final SecurityUtils securityUtils;
 
-    @GetMapping("/profile")
+    @GetMapping({"/profile", "/me"})
     @PreAuthorize("hasRole('PATIENT')")
     public ApiResponse<PatientProfileResponse> getProfile() {
         return ApiResponse.success(patientService.getProfile(securityUtils.getCurrentUserId()));

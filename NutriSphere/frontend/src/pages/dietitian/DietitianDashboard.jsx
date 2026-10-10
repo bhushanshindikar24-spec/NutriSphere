@@ -9,10 +9,6 @@ export default function DietitianDashboard() {
   const [pendingPlans, setPendingPlans] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
@@ -37,6 +33,10 @@ export default function DietitianDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   const handleApprovePlan = async (planId) => {
     try {
