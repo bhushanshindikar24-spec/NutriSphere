@@ -50,7 +50,7 @@ export default function Menu() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     fetchMeals();
   }, []);
 

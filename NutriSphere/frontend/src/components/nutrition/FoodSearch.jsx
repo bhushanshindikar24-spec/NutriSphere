@@ -12,7 +12,7 @@ export default function FoodSearch({ onSelectFood, placeholder = "Search foods, 
 
   useEffect(() => {
     if (!query.trim() || query.length < 2) {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
       setResults([]);
       return;
     }

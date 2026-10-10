@@ -58,7 +58,7 @@ export default function HealthConditions() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     if (selectedPatientId) fetchConditions();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId]);

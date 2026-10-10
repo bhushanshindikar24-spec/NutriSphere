@@ -59,7 +59,7 @@ export default function FoodLogs() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     if (selectedPatientId) fetchLogs();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId]);

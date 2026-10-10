@@ -49,7 +49,7 @@ export default function Measurements() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     if (selectedPatientId) fetchMeasurements();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId]);

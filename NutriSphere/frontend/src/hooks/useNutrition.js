@@ -28,7 +28,7 @@ export const useNutrition = (patientUserId = null) => {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     fetchNutrition();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientUserId]);

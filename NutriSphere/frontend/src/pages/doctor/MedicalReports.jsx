@@ -51,7 +51,7 @@ export default function MedicalReports() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     if (selectedPatientId) fetchReports();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId]);

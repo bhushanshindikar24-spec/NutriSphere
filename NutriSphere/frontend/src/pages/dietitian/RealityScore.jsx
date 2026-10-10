@@ -56,7 +56,7 @@ export default function RealityScore() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     if (selectedPatientId) fetchScore();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId]);

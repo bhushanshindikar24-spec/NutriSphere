@@ -24,7 +24,7 @@ export const useFoodLogs = (date = getTodayDate(), patientUserId = null) => {
   }, [date, patientUserId]);
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     fetchLogs();
   }, [fetchLogs]);
 

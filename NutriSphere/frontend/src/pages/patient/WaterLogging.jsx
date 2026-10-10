@@ -27,7 +27,7 @@ export default function WaterLogging() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line
+     
     fetchWater();
   }, []);
 

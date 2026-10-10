@@ -66,7 +66,7 @@ export default function AdaptiveEngine() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     if (selectedPatientId) fetchRecommendations();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId]);

@@ -73,7 +73,7 @@ export default function LaboratoryReports() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     if (selectedPatientId) fetchLabs();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId]);

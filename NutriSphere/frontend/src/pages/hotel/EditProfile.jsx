@@ -19,7 +19,7 @@ export default function EditProfile() {
 
   useEffect(() => {
     if (user) {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
       setFormData({
         kitchenName: user.hotelName || "NutriKitchen Downtown Hub",
         phone: user.phone || "+1 (555) 456-7890",

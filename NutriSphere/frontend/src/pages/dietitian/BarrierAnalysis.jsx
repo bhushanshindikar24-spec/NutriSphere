@@ -70,7 +70,7 @@ export default function BarrierAnalysis() {
   };
 
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+ 
     if (selectedPatientId) fetchBarriers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId]);
