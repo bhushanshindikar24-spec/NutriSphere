@@ -1,10 +1,43 @@
-# Root ignores
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+target/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Temporary uploads
+uploads/temporary/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Runtime/generated files
+*.tmp
+*.temp
+
+# Local databases / dumps
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage
+coverage/
+
+# Local project backups & wrapper caches
 NutriSphere.zip
 NutriSphere_backup/
 **/.mvn/wrapper/apache-maven-*
 **/.mvn/wrapper/apache-maven-*.zip
-**/target/
-**/node_modules/
-**/dist/
-*.log
 .gemini/
