@@ -60,8 +60,8 @@ export default function HomeFoodMode() {
       setError("");
       await homeFoodService.addInventoryItem(item);
       await loadData();
-    } catch (_err) {
-      setError("Unable to add the pantry item.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to add the pantry item.");
     }
   };
 

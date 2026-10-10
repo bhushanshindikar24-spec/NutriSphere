@@ -16,9 +16,35 @@ export default function HomeFoodInventory({
     e.preventDefault();
     if (!newItemName.trim()) return;
     if (onAddItem) {
+      const rawQty = quantity.trim();
+      let parsedG = null;
+      let parsedUnit = "g";
+
+      if (rawQty) {
+        const match = rawQty.match(/^([\d.]+)\s*([a-zA-Z]*)$/);
+        if (match) {
+          const num = parseFloat(match[1]);
+          const u = match[2].toLowerCase();
+          if (!isNaN(num)) {
+            if (u === "kg") {
+              parsedG = num * 1000;
+              parsedUnit = "kg";
+            } else if (u === "mg") {
+              parsedG = num / 1000;
+              parsedUnit = "mg";
+            } else {
+              parsedG = num;
+              parsedUnit = u || "g";
+            }
+          }
+        }
+      }
+
       onAddItem({
         foodName: newItemName.trim(),
-        quantity: quantity.trim() || "1 unit",
+        quantity: rawQty || "1 unit",
+        quantityG: parsedG,
+        unit: parsedUnit,
         category,
       });
     }
@@ -130,7 +156,7 @@ export default function HomeFoodInventory({
                   {item.foodName || item.name}
                 </strong>
                 <span className="text-muted" style={{ fontSize: "0.75rem" }}>
-                  {item.quantity || "In stock"} {item.category ? `• ${item.category}` : ""}
+                  {item.quantityG ? `${item.quantityG} ${item.unit || "g"}` : (item.quantity || "In stock")} {item.category ? `• ${item.category}` : ""}
                 </span>
               </div>
               {onRemoveItem && (
