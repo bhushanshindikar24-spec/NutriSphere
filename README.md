@@ -62,6 +62,51 @@ npm run dev
 
 ---
 
+## 🧪 Running Tests
+
+NutriSphere features a comprehensive suite of 180+ isolated unit tests verifying authentication, security filters, clinical nutrition calculators, adaptive engine decision support, catering safety guards, digital twin projections, and exception handling.
+
+### Run All Backend Tests
+```bash
+cd backend
+mvn test
+```
+*Or using the Maven Wrapper:*
+```powershell
+# Windows PowerShell
+.\mvnw.cmd test
+
+# Linux / macOS
+./mvnw test
+```
+
+### Run a Specific Test Class
+```bash
+cd backend
+mvn test -Dtest=AuthServiceTest
+```
+
+### Run a Single Test Method
+```bash
+cd backend
+mvn test -Dtest=AuthServiceTest#registerPatient_Success
+```
+
+### Run Tests by Domain / Package
+```bash
+# Nutrition & Requirement Calculators
+mvn test -Dtest="com.nutrisphere.nutrition.**.*Test"
+
+# Intelligence (Reality Score, Adaptive Engine, Digital Twin)
+mvn test -Dtest="com.nutrisphere.intelligence.**.*Test"
+
+# Security & Authentication
+mvn test -Dtest="com.nutrisphere.security.*Test,com.nutrisphere.auth.*Test"
+
+# Hotel Orders & Clinical Safety Checks
+mvn test -Dtest="com.nutrisphere.hotel.**.*Test"
+```
+
 ## 🔐 Authentication and Demo Data
 
 - Public registration always creates a **PATIENT** account.
