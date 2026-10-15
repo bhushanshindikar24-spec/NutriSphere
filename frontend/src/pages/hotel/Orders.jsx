@@ -41,7 +41,9 @@ export default function Orders() {
     } catch (_err) {
       try {
         await api.put(`/orders/${orderId}/status`, { status: newStatus });
-      } catch (_putErr) {}
+      } catch (putErr) {
+        console.warn("Unable to update order status:", putErr);
+      }
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
