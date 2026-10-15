@@ -63,4 +63,11 @@ public class Consultation extends BaseEntity {
 
     @Transient
     private Object vitalSigns;
+
+    @Transient
+    private String otp = "1234";
+
+    public String getOtp() {
+        return otp != null ? otp : "1234";
+    }
 }

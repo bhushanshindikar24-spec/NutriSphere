@@ -6,6 +6,7 @@ public class MealResponse {
     private Long id;
     private Long hotelUserId;
     private Long categoryId;
+    private String category;
     private String name;
     private String description;
     private Double price;

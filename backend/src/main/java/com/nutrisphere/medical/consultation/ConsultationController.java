@@ -35,6 +35,15 @@ public class ConsultationController {
         return ApiResponse.success(list);
     }
 
+    @GetMapping({"/patient", "/my-consultations", "/my"})
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'DIETITIAN', 'ADMIN')")
+    public ApiResponse<List<Consultation>> getMyConsultations() {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        List<Consultation> list = repo.findByPatientUserIdOrderByConsultationDateDesc(currentUserId);
+        populateTransientFields(list);
+        return ApiResponse.success(list);
+    }
+
     @GetMapping("/patient/{patientUserId}")
     @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN', 'PATIENT', 'ADMIN')")
     public ApiResponse<List<Consultation>> getForPatient(@PathVariable Long patientUserId) {
@@ -57,13 +66,18 @@ public class ConsultationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN', 'PATIENT')")
     public ApiResponse<Consultation> create(@RequestBody ConsultationRequest request) {
         Long currentUserId = securityUtils.getCurrentUserId();
         Consultation c = new Consultation();
-        c.setPatientUserId(request.getPatientId() != null ? request.getPatientId() : request.getPatientUserId());
-        securityUtils.assertPatientAccess(c.getPatientUserId());
-        c.setDoctorUserId(currentUserId);
+        Long patientId = request.getPatientId() != null ? request.getPatientId() : request.getPatientUserId();
+        if (patientId == null) {
+            patientId = currentUserId;
+        }
+        c.setPatientUserId(patientId);
+
+        Long doctorId = request.getDoctorUserId() != null ? request.getDoctorUserId() : currentUserId;
+        c.setDoctorUserId(doctorId);
         c.setConsultationDate(request.getConsultationDate() != null ? request.getConsultationDate() : LocalDateTime.now());
         c.setChiefComplaint(request.getChiefComplaint());
         c.setDiagnosis(request.getDiagnosis());
@@ -76,8 +90,28 @@ public class ConsultationController {
         }
         if (c.getBloodPressure() == null) c.setBloodPressure(request.getBloodPressure());
         if (c.getHeartRate() == null) c.setHeartRate(request.getHeartRate());
-        c.setStatus("COMPLETED");
+        
+        // Status defaults to PENDING (with dummy OTP 1234)
+        c.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus() : "PENDING");
+        c.setOtp("1234");
 
+        Consultation saved = repo.save(c);
+        populateTransientFields(List.of(saved));
+        return ApiResponse.success(saved);
+    }
+
+    @PostMapping("/{id}/verify-otp")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public ApiResponse<Consultation> verifyOtpAndComplete(
+            @PathVariable Long id, 
+            @RequestBody Map<String, String> body) {
+        Consultation c = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Consultation not found with id: " + id));
+        String enteredOtp = body.get("otp");
+        if (enteredOtp == null || !enteredOtp.trim().equals("1234")) {
+            throw new RuntimeException("Invalid consultation verification OTP. Please provide the patient's 4-digit OTP (1234).");
+        }
+        c.setStatus("COMPLETED");
         Consultation saved = repo.save(c);
         populateTransientFields(List.of(saved));
         return ApiResponse.success(saved);
@@ -85,6 +119,10 @@ public class ConsultationController {
 
     private void populateTransientFields(List<Consultation> list) {
         for (Consultation c : list) {
+            c.setOtp("1234");
+            if (c.getStatus() == null || c.getStatus().isBlank()) {
+                c.setStatus("PENDING");
+            }
             if (c.getPatientUserId() != null) {
                 userRepository.findById(c.getPatientUserId()).ifPresent(u -> {
                     c.setPatientName(u.getFirstName() + " " + u.getLastName());
@@ -108,6 +146,7 @@ public class ConsultationController {
     public static class ConsultationRequest {
         private Long patientId;
         private Long patientUserId;
+        private Long doctorUserId;
         private LocalDateTime consultationDate;
         private String chiefComplaint;
         private String diagnosis;
@@ -116,6 +155,7 @@ public class ConsultationController {
         private String dietaryDirectives;
         private String bloodPressure;
         private String heartRate;
+        private String status;
         private VitalSignsDto vitalSigns;
     }
 

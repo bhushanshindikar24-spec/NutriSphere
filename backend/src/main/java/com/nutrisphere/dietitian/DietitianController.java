@@ -10,6 +10,7 @@ public class DietitianController {
     private final SecurityUtils securityUtils;
 
     private final com.nutrisphere.assignment.AssignmentService assignmentService;
+    private final com.nutrisphere.patient.PatientService patientService;
 
     @GetMapping("/profile")
     public ApiResponse<DietitianProfileResponse> getProfile() {
@@ -36,6 +37,11 @@ public class DietitianController {
     @GetMapping("/patients")
     public ApiResponse<java.util.List<com.nutrisphere.assignment.dto.AssignmentResponse>> getPatients() {
         return ApiResponse.success(assignmentService.getDietitianPatients(securityUtils.getCurrentUserId()));
+    }
+
+    @GetMapping("/patients/{patientId}")
+    public ApiResponse<com.nutrisphere.patient.dto.PatientProfileResponse> getPatientDetail(@PathVariable Long patientId) {
+        return ApiResponse.success(patientService.getProfileByPatientId(patientId));
     }
 
     @PostMapping("/patients")

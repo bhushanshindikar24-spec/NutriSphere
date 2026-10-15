@@ -36,7 +36,7 @@ export default function EditProfile() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.put("/patient/profile", formData);
+      await api.put("/patients/profile", formData);
       setSuccess(true);
       setTimeout(() => navigate("/patient/profile"), 1200);
     } catch (err) {

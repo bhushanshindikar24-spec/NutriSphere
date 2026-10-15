@@ -13,21 +13,21 @@ export default function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await api.get("/patient/profile");
+        const res = await api.get("/patients/profile");
         setProfileData(res.data?.data || res.data);
       } catch (_err) {
         setProfileData({
-          firstName: user?.firstName || "Alex",
-          lastName: user?.lastName || "Morgan",
-          email: user?.email || "patient@nutrisphere.health",
-          dateOfBirth: "1994-06-15",
-          gender: "Male",
-          heightCm: 178,
-          weightKg: 78.5,
-          bloodGroup: "O+",
+          firstName: user?.firstName || "",
+          lastName: user?.lastName || "",
+          email: user?.email || "",
+          dateOfBirth: "--",
+          gender: "--",
+          heightCm: user?.heightCm || null,
+          weightKg: user?.weightKg || null,
+          bloodGroup: "--",
           activityLevel: "MODERATE",
-          allergies: ["Peanuts", "Shellfish"],
-          chronicConditions: ["Mild Dyslipidemia"],
+          allergies: [],
+          chronicConditions: [],
         });
       } finally {
         setLoading(false);

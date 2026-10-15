@@ -4,6 +4,48 @@ import { CartContext } from "../../../context/CartContext";
 import HotelMealCard from "../../../components/hotel/HotelMealCard";
 import { hotelService } from "../../../services/hotelService";
 import { ShoppingBag, Search } from "lucide-react";
+const fallbackMeals = [
+  {
+    id: 1,
+    name: "Mediterranean Herb Chicken Bowl",
+    category: "LUNCH",
+    price: 14.5,
+    calories: 480,
+    proteinG: 42,
+    description: "Grilled organic chicken breast, quinoa, roast Mediterranean vegetables, tahini dressing.",
+    imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500",
+  },
+  {
+    id: 2,
+    name: "Wild Salmon & Steamed Asparagus",
+    category: "DINNER",
+    price: 18.0,
+    calories: 520,
+    proteinG: 38,
+    description: "Pan-seared Alaskan sockeye salmon with lemon zest and garlic-steamed tender asparagus.",
+    imageUrl: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500",
+  },
+  {
+    id: 3,
+    name: "Steel-Cut Berry Protein Oatmeal",
+    category: "BREAKFAST",
+    price: 9.0,
+    calories: 360,
+    proteinG: 18,
+    description: "Slow-simmered organic oats topped with fresh blueberries, chia seeds, and clean whey isolate.",
+    imageUrl: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=500",
+  },
+  {
+    id: 4,
+    name: "Crispy Tofu & Edamame Power Salad",
+    category: "LUNCH",
+    price: 13.0,
+    calories: 410,
+    proteinG: 26,
+    description: "Baked sesame tofu cubes, baby kale, shelled edamame, and ginger-miso glaze.",
+    imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500",
+  },
+];
 
 export default function Menu() {
   const navigate = useNavigate();
@@ -18,51 +60,36 @@ export default function Menu() {
     const fetchMeals = async () => {
       try {
         const res = await hotelService.getAvailableMeals();
-        setMeals(res.data?.data || res.data || []);
+        const items = res.data?.data || res.data || [];
+        if (Array.isArray(items) && items.length > 0) {
+          const formatted = items.map((m) => {
+            let cat = (m.category || "").toUpperCase();
+            if (!cat) {
+              if (m.categoryId === 1) cat = "BREAKFAST";
+              else if (m.categoryId === 2) cat = "LUNCH";
+              else if (m.categoryId === 3) cat = "DINNER";
+              else cat = "LUNCH";
+            }
+            return {
+              ...m,
+              category: cat,
+              imageUrl: m.imageUrl || (
+                cat === "BREAKFAST"
+                  ? "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=500"
+                  : cat === "DINNER"
+                  ? "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500"
+                  : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500"
+              ),
+            };
+          });
+          setMeals(formatted);
+          return;
+        }
+        // If DB is empty, use default culinary items
+        setMeals(fallbackMeals);
       } catch (_err) {
         // Fallback clinical menu
-        setMeals([
-          {
-            id: 1,
-            name: "Mediterranean Herb Chicken Bowl",
-            category: "LUNCH",
-            price: 14.5,
-            calories: 480,
-            proteinG: 42,
-            description: "Grilled organic chicken breast, quinoa, roast Mediterranean vegetables, tahini dressing.",
-            imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500",
-          },
-          {
-            id: 2,
-            name: "Wild Salmon & Steamed Asparagus",
-            category: "DINNER",
-            price: 18.0,
-            calories: 520,
-            proteinG: 38,
-            description: "Pan-seared Alaskan sockeye salmon with lemon zest and garlic-steamed tender asparagus.",
-            imageUrl: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500",
-          },
-          {
-            id: 3,
-            name: "Steel-Cut Berry Protein Oatmeal",
-            category: "BREAKFAST",
-            price: 9.0,
-            calories: 360,
-            proteinG: 18,
-            description: "Slow-simmered organic oats topped with fresh blueberries, chia seeds, and clean whey isolate.",
-            imageUrl: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=500",
-          },
-          {
-            id: 4,
-            name: "Crispy Tofu & Edamame Power Salad",
-            category: "LUNCH",
-            price: 13.0,
-            calories: 410,
-            proteinG: 26,
-            description: "Baked sesame tofu cubes, baby kale, shelled edamame, and ginger-miso glaze.",
-            imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500",
-          },
-        ]);
+        setMeals(fallbackMeals);
       } finally {
         setLoading(false);
       }

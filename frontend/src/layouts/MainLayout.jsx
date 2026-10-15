@@ -22,6 +22,7 @@ export default function MainLayout() {
           { name: "My Diet Plan", path: "/patient/diet-plan", icon: <ClipboardList size={18} /> },
           { name: "Log Food & Water", path: "/patient/log-food", icon: <Apple size={18} /> },
           { name: "Doctors & Specialists", path: "/patient/doctor", icon: <Stethoscope size={18} /> },
+          { name: "My Consultations", path: "/patient/consultations", icon: <Stethoscope size={18} /> },
           { name: "Clinical Dietitians", path: "/patient/dietitian", icon: <Users size={18} /> },
           { name: "Culinary Kitchen", path: "/patient/hotel/menu", icon: <Utensils size={18} /> },
           { name: "Home Food Mode", path: "/patient/home-food", icon: <Apple size={18} /> },
@@ -40,6 +41,7 @@ export default function MainLayout() {
         return [
           { name: "Dashboard", path: "/doctor", icon: <LayoutDashboard size={18} /> },
           { name: "My Patients", path: "/doctor/patients", icon: <Users size={18} /> },
+          { name: "Assign Dietitian", path: "/doctor/assign-dietitian", icon: <Users size={18} /> },
           { name: "Consultations", path: "/doctor/consultations", icon: <Stethoscope size={18} /> },
         ];
       case "HOTEL":

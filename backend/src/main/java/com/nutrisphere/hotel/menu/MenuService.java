@@ -12,15 +12,43 @@ public class MenuService {
 
     @Transactional
     public MealResponse addMeal(Long hotelUserId, MealRequest req) {
+        Long catId = req.getCategoryId();
+        if (catId == null && req.getCategory() != null) {
+            String cat = req.getCategory().toUpperCase();
+            if (cat.contains("BREAKFAST")) catId = 1L;
+            else if (cat.contains("LUNCH")) catId = 2L;
+            else if (cat.contains("DINNER")) catId = 3L;
+            else catId = 4L;
+        }
+
+        String img = req.getImageUrl();
+        if (img == null || img.isBlank()) {
+            if (req.getCategory() != null && req.getCategory().equalsIgnoreCase("BREAKFAST")) {
+                img = "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=500";
+            } else if (req.getCategory() != null && req.getCategory().equalsIgnoreCase("DINNER")) {
+                img = "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500";
+            } else {
+                img = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
+            }
+        }
+
         HotelMeal meal = HotelMeal.builder()
-            .hotelUserId(hotelUserId).categoryId(req.getCategoryId())
-            .name(req.getName()).description(req.getDescription())
-            .price(req.getPrice()).calories(req.getCalories())
-            .proteinG(req.getProteinG()).carbsG(req.getCarbsG())
-            .fatG(req.getFatG()).allergens(req.getAllergens())
-            .vegetarian(req.getVegetarian()).vegan(req.getVegan())
+            .hotelUserId(hotelUserId)
+            .categoryId(catId)
+            .name(req.getName())
+            .description(req.getDescription())
+            .price(req.getPrice())
+            .calories(req.getCalories())
+            .proteinG(req.getProteinG())
+            .carbsG(req.getCarbsG())
+            .fatG(req.getFatG())
+            .allergens(req.getAllergens())
+            .vegetarian(req.getVegetarian())
+            .vegan(req.getVegan())
             .preparationTimeMin(req.getPreparationTimeMin())
-            .available(req.isAvailable()).build();
+            .imageUrl(img)
+            .available(req.isAvailable())
+            .build();
         return toResponse(mealRepo.save(meal));
     }
 
@@ -81,13 +109,25 @@ public class MenuService {
     private MealResponse toResponse(HotelMeal m) {
         MealResponse r = new MealResponse();
         r.setId(m.getId()); r.setHotelUserId(m.getHotelUserId());
-        r.setCategoryId(m.getCategoryId()); r.setName(m.getName());
+        r.setCategoryId(m.getCategoryId());
+        if (m.getCategoryId() != null) {
+            if (m.getCategoryId() == 1L) r.setCategory("BREAKFAST");
+            else if (m.getCategoryId() == 2L) r.setCategory("LUNCH");
+            else if (m.getCategoryId() == 3L) r.setCategory("DINNER");
+            else r.setCategory("SNACK");
+        } else {
+            r.setCategory("LUNCH");
+        }
+        r.setName(m.getName());
         r.setDescription(m.getDescription()); r.setPrice(m.getPrice());
         r.setCalories(m.getCalories()); r.setProteinG(m.getProteinG());
         r.setCarbsG(m.getCarbsG()); r.setFatG(m.getFatG());
         r.setAllergens(m.getAllergens()); r.setVegetarian(m.getVegetarian());
         r.setVegan(m.getVegan()); r.setPreparationTimeMin(m.getPreparationTimeMin());
-        r.setImageUrl(m.getImageUrl()); r.setAvailable(m.isAvailable());
+        r.setImageUrl(m.getImageUrl() != null && !m.getImageUrl().isBlank()
+            ? m.getImageUrl()
+            : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500");
+        r.setAvailable(m.isAvailable());
         return r;
     }
 }

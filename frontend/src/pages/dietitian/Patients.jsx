@@ -16,45 +16,9 @@ export default function Patients() {
       try {
         const res = await api.get("/dietitians/patients");
         setPatients(res.data?.data || res.data || []);
-      } catch (_err) {
-        setPatients([
-          {
-            id: 1,
-            patientUserId: 101,
-            patientName: "Alex Morgan",
-            age: 32,
-            gender: "Male",
-            weightKg: 78.5,
-            status: "ACTIVE",
-            adherenceRate: 88,
-            realityScore: 84,
-            activeCondition: "Mild Dyslipidemia",
-          },
-          {
-            id: 2,
-            patientUserId: 102,
-            patientName: "Sarah Jenkins",
-            age: 45,
-            gender: "Female",
-            weightKg: 84.0,
-            status: "ACTIVE",
-            adherenceRate: 64,
-            realityScore: 58,
-            activeCondition: "Type 2 Diabetes (Pre-diabetic)",
-          },
-          {
-            id: 3,
-            patientUserId: 103,
-            patientName: "Robert Chen",
-            age: 58,
-            gender: "Male",
-            weightKg: 92.3,
-            status: "ATTENTION_NEEDED",
-            adherenceRate: 42,
-            realityScore: 45,
-            activeCondition: "Stage 1 Hypertension",
-          },
-        ]);
+      } catch (err) {
+        console.error("Failed to fetch dietitian patients", err);
+        setPatients([]);
       } finally {
         setLoading(false);
       }
@@ -123,7 +87,7 @@ export default function Patients() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem" }}>
           {filtered.map((patient) => (
             <div
-              key={patient.id || patient.patientUserId}
+              key={patient.patientUserId || patient.userId || patient.id}
               className="glass-panel"
               style={{
                 padding: "1.25rem",
@@ -155,7 +119,7 @@ export default function Patients() {
               </div>
 
               <button
-                onClick={() => navigate(`/dietitian/patients/${patient.id || patient.patientUserId}`)}
+                onClick={() => navigate(`/dietitian/patients/${patient.patientUserId || patient.userId || patient.id}`)}
                 className="btn btn-outline"
                 style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}
               >

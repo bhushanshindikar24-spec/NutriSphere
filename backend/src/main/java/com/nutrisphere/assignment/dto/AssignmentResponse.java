@@ -15,4 +15,12 @@ public class AssignmentResponse {
     private LocalDate assignedDate;
     private boolean active;
     private String notes;
+    private Integer age;
+    private String gender;
+    private Double weightKg;
+    private Double heightCm;
+    private String activeCondition;
+    private String assignedDietitian;
+    private String assignedDoctor;
+    private String status;
 }

@@ -12,9 +12,17 @@ export const createConsultation = (data) =>
 export const getConsultationById = (id) => 
   api.get(`/medical/consultations/${id}`).then(r => r.data?.data || r.data);
 
+export const getMyConsultations = () => 
+  api.get("/medical/consultations/patient").then(r => r.data?.data || r.data);
+
+export const verifyConsultationOtp = (id, otp) =>
+  api.post(`/medical/consultations/${id}/verify-otp`, { otp }).then(r => r.data?.data || r.data);
+
 export default {
   getDoctorConsultations,
   getPatientConsultations,
+  getMyConsultations,
   createConsultation,
   getConsultationById,
+  verifyConsultationOtp,
 };

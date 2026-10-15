@@ -16,20 +16,10 @@ export default function PatientProfile() {
   useEffect(() => {
     const fetchPatientData = async () => {
       try {
-        const res = await api.get(`/doctors/patients/${id || 1}`);
+        const res = await api.get(`/doctors/patients/${id}`);
         setPatient(res.data?.data || res.data);
-      } catch (_err) {
-        setPatient({
-          id: id || 1,
-          firstName: "Alex",
-          lastName: "Morgan",
-          age: 32,
-          gender: "Male",
-          weightKg: 78.5,
-          heightCm: 178,
-          bloodGroup: "O+",
-          assignedDietitian: "Dr. Elena Vance, RD",
-        });
+      } catch (err) {
+        console.error("Failed to fetch patient", err);
       }
 
       try {
@@ -92,11 +82,15 @@ export default function PatientProfile() {
             <User size={28} />
           </div>
           <div>
-            <h2 style={{ margin: 0 }}>{patient.firstName} {patient.lastName}</h2>
-            <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-              <span>{patient.age} yrs • {patient.gender}</span>
+            <h2 style={{ margin: 0 }}>
+              {patient.fullName || `${patient.firstName || ""} ${patient.lastName || ""}`.trim() || `Patient #${patient.userId || patient.id}`}
+            </h2>
+            <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "0.25rem", flexWrap: "wrap" }}>
+              <span>{patient.age ? `${patient.age} yrs` : "Age: N/A"} • {patient.gender || "Gender: N/A"}</span>
               <span>•</span>
-              <span>Weight: {patient.weightKg} kg</span>
+              <span>Weight: {patient.weightKg ? `${patient.weightKg} kg` : "N/A"}</span>
+              <span>•</span>
+              <span>Blood Group: {patient.bloodGroup || patient.bloodType || "N/A"}</span>
               <span>•</span>
               <span>Assigned Dietitian: <strong>{patient.assignedDietitian || "None"}</strong></span>
             </div>
@@ -105,14 +99,14 @@ export default function PatientProfile() {
 
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <button
-            onClick={() => navigate(`/doctor/add-consultation?patientId=${patient.id}`)}
+            onClick={() => navigate(`/doctor/add-consultation?patientId=${patient.userId || patient.id}`)}
             className="btn btn-primary"
             style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
           >
             <Stethoscope size={16} /> Record Consultation
           </button>
           <button
-            onClick={() => navigate(`/doctor/patients/${patient.id}/progress`)}
+            onClick={() => navigate(`/doctor/patients/${patient.userId || patient.id}/progress`)}
             className="btn btn-outline"
             style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
           >
@@ -126,7 +120,7 @@ export default function PatientProfile() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
           <h4 style={{ margin: 0 }}>Diagnosed Clinical Conditions ({conditions.length})</h4>
           <button
-            onClick={() => navigate(`/doctor/conditions?patientId=${patient.id}`)}
+            onClick={() => navigate(`/doctor/conditions?patientId=${patient.userId || patient.id}`)}
             className="btn btn-sm btn-outline"
           >
             Manage Conditions

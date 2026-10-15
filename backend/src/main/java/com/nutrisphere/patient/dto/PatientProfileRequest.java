@@ -6,6 +6,8 @@ import java.time.LocalDate;
 
 @Data
 public class PatientProfileRequest {
+    private String firstName;
+    private String lastName;
     private LocalDate dateOfBirth;
     private Gender gender;
     private Double heightCm;

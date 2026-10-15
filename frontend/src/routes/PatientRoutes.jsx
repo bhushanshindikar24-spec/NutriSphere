@@ -21,6 +21,7 @@ import EditProfile from "../pages/patient/EditProfile";
 import Notifications from "../pages/patient/Notifications";
 import Reports from "../pages/patient/Reports";
 import UploadReport from "../pages/patient/UploadReport";
+import PatientConsultations from "../pages/patient/Consultations";
 
 // Patient Hotel & Meal Delivery
 import HotelMenu from "../pages/patient/hotel/Menu";
@@ -54,6 +55,7 @@ export default function PatientRoutes() {
       <Route path="/dietitian" element={<MyDietitian />} />
       <Route path="/my-doctor" element={<MyDoctor />} />
       <Route path="/doctor" element={<MyDoctor />} />
+      <Route path="/consultations" element={<PatientConsultations />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile/edit" element={<EditProfile />} />
       <Route path="/notifications" element={<Notifications />} />

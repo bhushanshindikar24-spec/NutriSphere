@@ -65,4 +65,25 @@ public class AssignmentController {
         String notes = body.get("notes") != null ? body.get("notes").toString() : "Connected via Patient directory";
         return ApiResponse.success(assignmentService.assignPatientToDietitian(dietitianId, securityUtils.getCurrentUserId(), notes));
     }
+
+    @PostMapping("/doctor/assign-dietitian")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public ApiResponse<AssignmentResponse> doctorAssignDietitian(@RequestBody java.util.Map<String, Object> body) {
+        Long patientId = null;
+        if (body.get("patientId") != null) {
+            patientId = Long.valueOf(body.get("patientId").toString());
+        } else if (body.get("patientUserId") != null) {
+            patientId = Long.valueOf(body.get("patientUserId").toString());
+        }
+
+        Long dietitianId = null;
+        if (body.get("dietitianId") != null) {
+            dietitianId = Long.valueOf(body.get("dietitianId").toString());
+        } else if (body.get("dietitianUserId") != null) {
+            dietitianId = Long.valueOf(body.get("dietitianUserId").toString());
+        }
+
+        String notes = body.get("notes") != null ? body.get("notes").toString() : "Assigned by Doctor referral";
+        return ApiResponse.success(assignmentService.assignPatientToDietitian(dietitianId, patientId, notes));
+    }
 }

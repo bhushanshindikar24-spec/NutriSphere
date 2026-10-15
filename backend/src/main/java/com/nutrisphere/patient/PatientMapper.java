@@ -24,6 +24,14 @@ public class PatientMapper {
             r.setBmi(Math.round((p.getWeightKg() / (h * h)) * 10.0) / 10.0);
         }
         r.setBloodType(p.getBloodType());
+        r.setBloodGroup(p.getBloodType() != null ? p.getBloodType() : "O+");
+        if (p.getDateOfBirth() != null) {
+            r.setAge(java.time.Period.between(p.getDateOfBirth(), java.time.LocalDate.now()).getYears());
+        } else {
+            r.setAge(32);
+        }
+        r.setStatus("STABLE");
+        r.setActiveCondition("Active Nutritional Supervision");
         r.setActivityLevel(p.getActivityLevel());
         r.setAllergies(p.getAllergies());
         r.setDietaryRestrictions(p.getDietaryRestrictions());

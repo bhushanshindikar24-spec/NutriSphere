@@ -18,24 +18,32 @@ export default function AddMeal() {
     isAvailable: true,
   });
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg("");
     try {
+      const catMap = { BREAKFAST: 1, LUNCH: 2, DINNER: 3, SNACK: 4 };
       await api.post("/hotel/meals", {
-        ...formData,
+        name: formData.name,
+        category: formData.category,
+        categoryId: catMap[formData.category] || 2,
         price: Number(formData.price),
         calories: Number(formData.calories),
         proteinG: Number(formData.proteinG),
         carbsG: Number(formData.carbsG),
         fatG: Number(formData.fatG),
-        ingredients: formData.ingredients.split(",").map((i) => i.trim()),
+        description: formData.description,
+        available: Boolean(formData.isAvailable),
+        isAvailable: Boolean(formData.isAvailable),
+        allergens: formData.allergens || "None",
       });
       navigate("/hotel/menu");
     } catch (err) {
       console.error("Failed to add meal", err);
-      navigate("/hotel/menu");
+      setErrorMsg(err.response?.data?.message || "Failed to add culinary meal. Please check fields.");
     } finally {
       setLoading(false);
     }
@@ -52,6 +60,12 @@ export default function AddMeal() {
       </button>
 
       <h2>Add Commercial Kitchen Meal</h2>
+
+      {errorMsg && (
+        <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", padding: "0.75rem 1rem", borderRadius: "8px", marginTop: "1rem" }}>
+          {errorMsg}
+        </div>
+      )}
 
       <div className="glass-panel" style={{ padding: "2rem", borderRadius: "var(--radius-lg)", marginTop: "1rem" }}>
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.25rem" }}>

@@ -24,13 +24,11 @@ export default function AddPatient() {
   useEffect(() => {
     const fetchDietitians = async () => {
       try {
-        const res = await api.get("/dietitians");
+        const res = await api.get("/dietitians/directory");
         setDietitians(res.data?.data || res.data || []);
-      } catch (_err) {
-        setDietitians([
-          { id: 2, name: "Dr. Elena Vance, RD (Clinical Nutrition)" },
-          { id: 3, name: "Dr. Marcus Thorne, RD (Pediatric Nutrition)" },
-        ]);
+      } catch (err) {
+        console.error("Failed to fetch dietitians directory", err);
+        setDietitians([]);
       }
     };
     fetchDietitians();
@@ -188,11 +186,16 @@ export default function AddPatient() {
               style={{ width: "100%" }}
             >
               <option value="">-- Select Dietitian for Protocol Assignment --</option>
-              {dietitians.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name || `${d.firstName} ${d.lastName}`}
-                </option>
-              ))}
+              {dietitians.map((d) => {
+                const dietId = d.userId || d.id;
+                const name = d.fullName || d.name || `${d.firstName || ""} ${d.lastName || ""}`.trim();
+                const spec = d.specialization ? ` (${d.specialization})` : "";
+                return (
+                  <option key={dietId} value={dietId}>
+                    [Dietitian ID: #{dietId}] {name}{spec}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

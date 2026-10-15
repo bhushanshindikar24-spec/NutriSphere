@@ -18,28 +18,10 @@ export default function PatientProfile() {
   useEffect(() => {
     const fetchPatientData = async () => {
       try {
-        const res = await api.get(`/dietitians/patients/${id || 1}`);
+        const res = await api.get(`/dietitians/patients/${id}`);
         setPatient(res.data?.data || res.data);
-      } catch (_err) {
-        setPatient({
-          id: id || 1,
-          firstName: "Alex",
-          lastName: "Morgan",
-          age: 32,
-          gender: "Male",
-          weightKg: 78.5,
-          targetWeightKg: 72.0,
-          heightCm: 178,
-          activeCondition: "Mild Dyslipidemia",
-          allergies: ["Peanuts", "Shellfish"],
-          adherenceRate: 88,
-          activePlan: {
-            id: 201,
-            name: "Phase 2 Mediterranean Fat-Loss",
-            dailyCalories: 1950,
-            status: "ACTIVE",
-          },
-        });
+      } catch (err) {
+        console.error("Failed to fetch dietitian patient dossier", err);
       }
 
       try {
@@ -92,27 +74,29 @@ export default function PatientProfile() {
             <User size={28} />
           </div>
           <div>
-            <h2 style={{ margin: 0 }}>{patient.firstName} {patient.lastName}</h2>
-            <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-              <span>{patient.age} yrs • {patient.gender}</span>
+            <h2 style={{ margin: 0 }}>
+              {patient.fullName || `${patient.firstName || ""} ${patient.lastName || ""}`.trim() || `Patient #${patient.userId || patient.id}`}
+            </h2>
+            <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "0.25rem", flexWrap: "wrap" }}>
+              <span>{patient.age ? `${patient.age} yrs` : "Age: N/A"} • {patient.gender || "Gender: N/A"}</span>
               <span>•</span>
-              <span>Weight: {patient.weightKg} kg (Target: {patient.targetWeightKg} kg)</span>
+              <span>Weight: {patient.weightKg ? `${patient.weightKg} kg` : "N/A"} {patient.targetWeightKg ? `(Target: ${patient.targetWeightKg} kg)` : ""}</span>
               <span>•</span>
-              <span>Height: {patient.heightCm} cm</span>
+              <span>Height: {patient.heightCm ? `${patient.heightCm} cm` : "N/A"}</span>
             </div>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <button
-            onClick={() => navigate(`/dietitian/create-plan?patientId=${patient.id}`)}
+            onClick={() => navigate(`/dietitian/create-plan?patientId=${patient.userId || patient.id}`)}
             className="btn btn-outline"
             style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
           >
             <Plus size={16} /> Prescribe Diet Plan
           </button>
           <button
-            onClick={() => navigate(`/dietitian/adaptive-engine?patientId=${patient.id}`)}
+            onClick={() => navigate(`/dietitian/adaptive-engine?patientId=${patient.userId || patient.id}`)}
             className="btn btn-primary"
             style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
           >

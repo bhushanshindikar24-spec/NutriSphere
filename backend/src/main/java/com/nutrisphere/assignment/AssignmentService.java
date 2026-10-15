@@ -19,6 +19,12 @@ public class AssignmentService {
     private final UserRepository userRepository;
     private final PatientRepository patientRepository;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.nutrisphere.doctor.DoctorRepository doctorRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.nutrisphere.dietitian.DietitianRepository dietitianRepository;
+
     @Transactional
     public AssignmentResponse assignPatientToDoctor(Long doctorUserId, AssignPatientRequest req) {
         assertUserRole(doctorUserId, Role.DOCTOR);
@@ -95,12 +101,41 @@ public class AssignmentService {
         r.setAssignedDate(a.getAssignedDate());
         r.setActive(a.isActive());
         r.setNotes(a.getNotes());
+        r.setStatus("STABLE");
+        r.setActiveCondition("Clinical Nutrition Supervision");
         userRepository.findById(a.getPatientUserId()).ifPresent(u -> {
             r.setPatientName(u.getFullName());
             r.setPatientEmail(u.getEmail());
         });
         userRepository.findById(a.getDoctorUserId()).ifPresent(u -> {
             r.setDoctorName(u.getFullName());
+        });
+        if (doctorRepository != null) {
+            doctorRepository.findByUserId(a.getDoctorUserId()).ifPresent(d -> {
+                r.setDoctorSpecialization(d.getSpecialization());
+            });
+        }
+        patientRepository.findByUserId(a.getPatientUserId()).ifPresent(p -> {
+            if (p.getDateOfBirth() != null) {
+                r.setAge(java.time.Period.between(p.getDateOfBirth(), LocalDate.now()).getYears());
+            }
+            if (p.getGender() != null) {
+                r.setGender(p.getGender().name());
+            }
+            if (p.getWeightKg() != null) {
+                r.setWeightKg(p.getWeightKg());
+            }
+            if (p.getHeightCm() != null) {
+                r.setHeightCm(p.getHeightCm());
+            }
+            if (p.getAllergies() != null && !p.getAllergies().isBlank()) {
+                r.setActiveCondition(p.getAllergies());
+            }
+        });
+        dietitianPatientRepo.findByPatientUserIdAndActiveTrue(a.getPatientUserId()).stream().findFirst().ifPresent(dp -> {
+            userRepository.findById(dp.getDietitianUserId()).ifPresent(u -> {
+                r.setAssignedDietitian(u.getFullName());
+            });
         });
         return r;
     }
@@ -121,12 +156,41 @@ public class AssignmentService {
         r.setAssignedDate(a.getAssignedDate());
         r.setActive(a.isActive());
         r.setNotes(a.getNotes());
+        r.setStatus("ACTIVE");
+        r.setActiveCondition("Therapeutic Nutrition Care");
         userRepository.findById(a.getPatientUserId()).ifPresent(u -> {
             r.setPatientName(u.getFullName());
             r.setPatientEmail(u.getEmail());
         });
         userRepository.findById(a.getDietitianUserId()).ifPresent(u -> {
             r.setDietitianName(u.getFullName());
+        });
+        if (dietitianRepository != null) {
+            dietitianRepository.findByUserId(a.getDietitianUserId()).ifPresent(d -> {
+                r.setDoctorSpecialization(d.getSpecialization());
+            });
+        }
+        patientRepository.findByUserId(a.getPatientUserId()).ifPresent(p -> {
+            if (p.getDateOfBirth() != null) {
+                r.setAge(java.time.Period.between(p.getDateOfBirth(), LocalDate.now()).getYears());
+            }
+            if (p.getGender() != null) {
+                r.setGender(p.getGender().name());
+            }
+            if (p.getWeightKg() != null) {
+                r.setWeightKg(p.getWeightKg());
+            }
+            if (p.getHeightCm() != null) {
+                r.setHeightCm(p.getHeightCm());
+            }
+            if (p.getAllergies() != null && !p.getAllergies().isBlank()) {
+                r.setActiveCondition(p.getAllergies());
+            }
+        });
+        doctorPatientRepo.findByPatientUserIdAndActiveTrue(a.getPatientUserId()).stream().findFirst().ifPresent(dp -> {
+            userRepository.findById(dp.getDoctorUserId()).ifPresent(u -> {
+                r.setAssignedDoctor(u.getFullName());
+            });
         });
         return r;
     }

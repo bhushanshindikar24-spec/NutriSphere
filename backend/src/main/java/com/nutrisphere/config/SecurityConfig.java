@@ -52,7 +52,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/assignments/**").authenticated()
                 .requestMatchers("/api/doctors/**").hasAnyRole("DOCTOR", "ADMIN")
                 .requestMatchers("/api/dietitians/**").hasAnyRole("DIETITIAN", "ADMIN")
-                .requestMatchers("/api/patients/**").authenticated()
+                .requestMatchers("/api/patients/**", "/api/patient/**").authenticated()
                 .requestMatchers("/api/medical/**").hasAnyRole("DOCTOR", "DIETITIAN", "PATIENT", "ADMIN")
                 .requestMatchers("/api/nutrition/**").hasAnyRole("DIETITIAN", "PATIENT", "ADMIN")
                 .requestMatchers("/api/food-logs/**").hasAnyRole("PATIENT", "DIETITIAN", "ADMIN")

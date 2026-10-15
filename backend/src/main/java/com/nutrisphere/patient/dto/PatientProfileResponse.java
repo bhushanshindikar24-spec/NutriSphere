@@ -29,5 +29,11 @@ public class PatientProfileResponse {
     private String address;
     private String emergencyContactName;
     private String emergencyContactPhone;
+    private Integer age;
+    private String bloodGroup;
+    private String assignedDietitian;
+    private String assignedDoctor;
+    private String activeCondition;
+    private String status;
     private LocalDateTime createdAt;
 }

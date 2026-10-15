@@ -40,30 +40,58 @@ public class PatientService {
     }
 
     public PatientProfileResponse getProfileByPatientId(Long patientId) {
-        PatientProfile p = patientRepository.findById(patientId)
-            .orElseThrow(() -> new ResourceNotFoundException("Patient", patientId));
-        return patientMapper.toResponse(p);
+        PatientProfile p = patientRepository.findByUserId(patientId)
+            .or(() -> patientRepository.findById(patientId))
+            .orElseGet(() -> {
+                var user = userRepository.findById(patientId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Patient", patientId));
+                return PatientProfile.builder().user(user).build();
+            });
+        PatientProfileResponse res = patientMapper.toResponse(p);
+        if (p.getUser() != null) {
+            dietitianPatientRepository.findByPatientUserIdAndActiveTrue(p.getUser().getId())
+                .stream().findFirst().ifPresent(dp -> {
+                    userRepository.findById(dp.getDietitianUserId()).ifPresent(u -> {
+                        res.setAssignedDietitian(u.getFullName());
+                    });
+                });
+            doctorPatientRepository.findByPatientUserIdAndActiveTrue(p.getUser().getId())
+                .stream().findFirst().ifPresent(dp -> {
+                    userRepository.findById(dp.getDoctorUserId()).ifPresent(u -> {
+                        res.setAssignedDoctor(u.getFullName());
+                    });
+                });
+        }
+        return res;
     }
 
     @Transactional
     public PatientProfileResponse updateProfile(Long userId, PatientProfileRequest req) {
         var user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        if (req.getFirstName() != null && !req.getFirstName().isBlank()) {
+            user.setFirstName(req.getFirstName());
+        }
+        if (req.getLastName() != null && !req.getLastName().isBlank()) {
+            user.setLastName(req.getLastName());
+        }
+        userRepository.save(user);
+
         PatientProfile p = patientRepository.findByUserId(userId).orElse(new PatientProfile());
         p.setUser(user);
-        p.setDateOfBirth(req.getDateOfBirth());
-        p.setGender(req.getGender());
-        p.setHeightCm(req.getHeightCm());
-        p.setWeightKg(req.getWeightKg());
-        p.setBloodType(req.getBloodType());
-        p.setActivityLevel(req.getActivityLevel());
-        p.setAllergies(req.getAllergies());
-        p.setDietaryRestrictions(req.getDietaryRestrictions());
-        p.setFoodPreferences(req.getFoodPreferences());
-        p.setOccupation(req.getOccupation());
-        p.setAddress(req.getAddress());
-        p.setEmergencyContactName(req.getEmergencyContactName());
-        p.setEmergencyContactPhone(req.getEmergencyContactPhone());
+        if (req.getDateOfBirth() != null) p.setDateOfBirth(req.getDateOfBirth());
+        if (req.getGender() != null) p.setGender(req.getGender());
+        if (req.getHeightCm() != null) p.setHeightCm(req.getHeightCm());
+        if (req.getWeightKg() != null) p.setWeightKg(req.getWeightKg());
+        if (req.getBloodType() != null) p.setBloodType(req.getBloodType());
+        if (req.getActivityLevel() != null) p.setActivityLevel(req.getActivityLevel());
+        if (req.getAllergies() != null) p.setAllergies(req.getAllergies());
+        if (req.getDietaryRestrictions() != null) p.setDietaryRestrictions(req.getDietaryRestrictions());
+        if (req.getFoodPreferences() != null) p.setFoodPreferences(req.getFoodPreferences());
+        if (req.getOccupation() != null) p.setOccupation(req.getOccupation());
+        if (req.getAddress() != null) p.setAddress(req.getAddress());
+        if (req.getEmergencyContactName() != null) p.setEmergencyContactName(req.getEmergencyContactName());
+        if (req.getEmergencyContactPhone() != null) p.setEmergencyContactPhone(req.getEmergencyContactPhone());
         return patientMapper.toResponse(patientRepository.save(p));
     }
 

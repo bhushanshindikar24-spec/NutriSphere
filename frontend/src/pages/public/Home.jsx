@@ -1,5 +1,5 @@
-import { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { Link } from "react-router-dom";
 import { 
   Stethoscope, Sparkles, ArrowRight, 
   PhoneOff, Video, MessageSquare, Star, Smile, Users, 
@@ -10,17 +10,6 @@ import "./Home.css";
 
 export default function Home() {
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-
-  const handleGetStarted = (e) => {
-    e.preventDefault();
-    if (email.trim()) {
-      navigate(`/register?email=${encodeURIComponent(email.trim())}`);
-    } else {
-      navigate("/register");
-    }
-  };
 
   return (
     <div className="landing-wrapper">
@@ -71,19 +60,25 @@ export default function Home() {
             Now you do not need to download thousands of applications when there is one unified clinical ecosystem for doctors, dietitians, and precision medical nutrition.
           </p>
 
-          {/* Email CTA Pill Input */}
-          <form onSubmit={handleGetStarted} className="hero-cta-pill">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="hero-cta-input"
-            />
-            <button type="submit" className="hero-cta-submit">
-              Get Started
-            </button>
-          </form>
+          {/* Get Started CTA Button */}
+          <div style={{ marginBottom: "3.5rem" }}>
+            <Link
+              to={user ? `/${user.role.toLowerCase()}` : "/register"}
+              className="hero-cta-submit"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                textDecoration: "none",
+                fontSize: "1.05rem",
+                padding: "0.95rem 2.25rem",
+                boxShadow: "0 10px 25px rgba(2, 132, 199, 0.35)",
+                transition: "all 0.25s ease",
+              }}
+            >
+              Get Started <ArrowRight size={18} />
+            </Link>
+          </div>
 
           {/* Metrics Social Proof */}
           <div className="hero-metrics-row">

@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import DoctorDashboard from "../pages/doctor/DoctorDashboard";
 import Patients from "../pages/doctor/Patients";
 import AddPatient from "../pages/doctor/AddPatient";
+import AssignDietitian from "../pages/doctor/AssignDietitian";
 import PatientProfile from "../pages/doctor/PatientProfile";
 import PatientProgress from "../pages/doctor/PatientProgress";
 import Consultations from "../pages/doctor/Consultations";
@@ -25,6 +26,7 @@ export default function DoctorRoutes() {
       <Route path="/dashboard" element={<DoctorDashboard />} />
       <Route path="/patients" element={<Patients />} />
       <Route path="/add-patient" element={<AddPatient />} />
+      <Route path="/assign-dietitian" element={<AssignDietitian />} />
       <Route path="/patients/:id" element={<PatientProfile />} />
       <Route path="/patients/:id/progress" element={<PatientProgress />} />
       <Route path="/consultations" element={<Consultations />} />

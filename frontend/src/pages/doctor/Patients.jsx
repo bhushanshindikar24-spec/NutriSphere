@@ -15,42 +15,9 @@ export default function Patients() {
       try {
         const res = await api.get("/doctors/patients");
         setPatients(res.data?.data || res.data || []);
-      } catch (_err) {
-        setPatients([
-          {
-            id: 1,
-            patientUserId: 101,
-            patientName: "Alex Morgan",
-            age: 32,
-            gender: "Male",
-            weightKg: 78.5,
-            activeCondition: "Mild Dyslipidemia",
-            assignedDietitian: "Dr. Elena Vance, RD",
-            status: "STABLE",
-          },
-          {
-            id: 2,
-            patientUserId: 102,
-            patientName: "Sarah Jenkins",
-            age: 45,
-            gender: "Female",
-            weightKg: 84.0,
-            activeCondition: "Type 2 Diabetes (Pre-diabetic)",
-            assignedDietitian: "Dr. Elena Vance, RD",
-            status: "MONITORING",
-          },
-          {
-            id: 3,
-            patientUserId: 103,
-            patientName: "Robert Chen",
-            age: 58,
-            gender: "Male",
-            weightKg: 92.3,
-            activeCondition: "Stage 1 Hypertension",
-            assignedDietitian: "Unassigned",
-            status: "ACTION_REQUIRED",
-          },
-        ]);
+      } catch (err) {
+        console.error("Failed to fetch doctor patients", err);
+        setPatients([]);
       } finally {
         setLoading(false);
       }
@@ -94,47 +61,53 @@ export default function Patients() {
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem" }}>
-        {filtered.map((patient) => (
-          <div
-            key={patient.id || patient.patientUserId}
-            className="glass-panel"
-            style={{
-              padding: "1.25rem",
-              borderRadius: "var(--radius-lg)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              gap: "1rem",
-            }}
-          >
-            <div>
-              <PatientCard patient={patient} />
+      {filtered.length === 0 ? (
+        <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", borderRadius: "var(--radius-lg)" }}>
+          <p style={{ margin: 0, fontSize: "1rem" }}>No patients found. Enroll a new clinical patient to begin supervision.</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem" }}>
+          {filtered.map((patient) => (
+            <div
+              key={patient.patientUserId || patient.userId || patient.id}
+              className="glass-panel"
+              style={{
+                padding: "1.25rem",
+                borderRadius: "var(--radius-lg)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                gap: "1rem",
+              }}
+            >
+              <div>
+                <PatientCard patient={patient} />
 
-              <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: "0.75rem", borderRadius: "8px", marginTop: "0.75rem", fontSize: "0.8rem", display: "grid", gap: "0.25rem" }}>
-                <div>
-                  <span className="text-muted">Dietitian: </span>
-                  <strong>{patient.assignedDietitian || "None Assigned"}</strong>
-                </div>
-                <div>
-                  <span className="text-muted">Status: </span>
-                  <span style={{ fontWeight: 600, color: patient.status === "ACTION_REQUIRED" ? "#EF4444" : "#10B981" }}>
-                    {patient.status}
-                  </span>
+                <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: "0.75rem", borderRadius: "8px", marginTop: "0.75rem", fontSize: "0.8rem", display: "grid", gap: "0.25rem" }}>
+                  <div>
+                    <span className="text-muted">Dietitian: </span>
+                    <strong>{patient.assignedDietitian || "None Assigned"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted">Status: </span>
+                    <span style={{ fontWeight: 600, color: patient.status === "ACTION_REQUIRED" ? "#EF4444" : "#10B981" }}>
+                      {patient.status || "STABLE"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              onClick={() => navigate(`/doctor/patients/${patient.id || patient.patientUserId}`)}
-              className="btn btn-outline"
-              style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}
-            >
-              Open Medical Dossier <ArrowRight size={14} />
-            </button>
-          </div>
-        ))}
-      </div>
+              <button
+                onClick={() => navigate(`/doctor/patients/${patient.patientUserId || patient.userId || patient.id}`)}
+                className="btn btn-outline"
+                style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}
+              >
+                Open Medical Dossier <ArrowRight size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

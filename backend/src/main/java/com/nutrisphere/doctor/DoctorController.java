@@ -15,6 +15,7 @@ public class DoctorController {
     private final SecurityUtils securityUtils;
 
     private final com.nutrisphere.assignment.AssignmentService assignmentService;
+    private final com.nutrisphere.patient.PatientService patientService;
 
     @GetMapping("/profile")
     public ApiResponse<DoctorProfileResponse> getProfile() {
@@ -46,6 +47,11 @@ public class DoctorController {
         return ApiResponse.success(assignmentService.getDoctorPatients(securityUtils.getCurrentUserId()));
     }
 
+    @GetMapping("/patients/{patientId}")
+    public ApiResponse<com.nutrisphere.patient.dto.PatientProfileResponse> getPatientDetail(@PathVariable Long patientId) {
+        return ApiResponse.success(patientService.getProfileByPatientId(patientId));
+    }
+
     @PostMapping("/patients")
     public ApiResponse<com.nutrisphere.assignment.dto.AssignmentResponse> assignPatient(
             @RequestBody java.util.Map<String, Object> body) {
@@ -56,6 +62,13 @@ public class DoctorController {
             patientId = Long.valueOf(body.get("patientUserId").toString());
         }
         String notes = body.get("notes") != null ? body.get("notes").toString() : "Assigned via Doctor portal";
-        return ApiResponse.success(assignmentService.assignPatientToDoctor(securityUtils.getCurrentUserId(), patientId, notes));
+        var resp = assignmentService.assignPatientToDoctor(securityUtils.getCurrentUserId(), patientId, notes);
+        if (body.get("assignedDietitianId") != null && !body.get("assignedDietitianId").toString().isBlank()) {
+            try {
+                Long dietId = Long.valueOf(body.get("assignedDietitianId").toString());
+                assignmentService.assignPatientToDietitian(dietId, patientId, "Assigned during intake by Doctor");
+            } catch (Exception ignored) {}
+        }
+        return ApiResponse.success(resp);
     }
 }
