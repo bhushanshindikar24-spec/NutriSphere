@@ -13,30 +13,60 @@ export default function EditProfile() {
     specialization: "",
     phone: "",
     clinic: "",
+    clinicName: "",
+    consultationFee: 75,
     bio: "",
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (user) {
- 
-      setFormData({
-        firstName: user.firstName || "Elena",
-        lastName: user.lastName || "Vance",
-        specialization: user.specialization || "Clinical Nutrition & Metabolic Optimization",
-        phone: user.phone || "+1 (555) 234-8901",
-        clinic: user.clinic || "Metropolitan Academic Medical Center",
-        bio: user.bio || "Specialist in glycemic management, renal nutrition, and bioenergetic digital twin modeling.",
-      });
-    }
+    const loadProfile = async () => {
+      try {
+        const res = await api.get("/dietitians/profile");
+        const p = res.data?.data || res.data;
+        if (p) {
+          setFormData({
+            firstName: p.firstName || user?.firstName || "",
+            lastName: p.lastName || user?.lastName || "",
+            specialization: p.specialization || "",
+            phone: p.phoneNumber || p.phone || user?.phoneNumber || "",
+            clinic: p.clinicName || p.clinic || "",
+            clinicName: p.clinicName || p.clinic || "",
+            consultationFee: p.consultationFee != null ? p.consultationFee : 75,
+            bio: p.bio || "",
+          });
+          return;
+        }
+      } catch (_e) {
+        // fallback
+      }
+
+      if (user) {
+        setFormData({
+          firstName: user.firstName || "Elena",
+          lastName: user.lastName || "Vance",
+          specialization: user.specialization || "Clinical Nutrition & Metabolic Optimization",
+          phone: user.phone || "+1 (555) 234-8901",
+          clinic: user.clinic || "Metropolitan Academic Medical Center",
+          clinicName: user.clinic || "Metropolitan Academic Medical Center",
+          consultationFee: 75,
+          bio: user.bio || "Specialist in glycemic management, renal nutrition, and bioenergetic digital twin modeling.",
+        });
+      }
+    };
+    loadProfile();
   }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.put("/dietitians/profile", formData);
+      await api.put("/dietitians/profile", {
+        ...formData,
+        clinicName: formData.clinic || formData.clinicName,
+        consultationFee: Number(formData.consultationFee) || 0,
+      });
       setSuccess(true);
       setTimeout(() => navigate("/dietitian/profile"), 1200);
     } catch (_err) {
@@ -119,15 +149,30 @@ export default function EditProfile() {
               />
             </div>
             <div>
-              <label className="form-label">Clinic / Hospital Affiliation</label>
+              <label className="form-label">Consultation Fee ($ USD) *</label>
               <input
-                type="text"
+                type="number"
+                min="0"
+                step="5"
                 className="input-field"
-                value={formData.clinic}
-                onChange={(e) => setFormData({ ...formData, clinic: e.target.value })}
+                required
+                value={formData.consultationFee}
+                onChange={(e) => setFormData({ ...formData, consultationFee: e.target.value })}
+                placeholder="e.g. 75"
                 style={{ width: "100%" }}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="form-label">Clinic / Hospital Affiliation</label>
+            <input
+              type="text"
+              className="input-field"
+              value={formData.clinic}
+              onChange={(e) => setFormData({ ...formData, clinic: e.target.value })}
+              style={{ width: "100%" }}
+            />
           </div>
 
           <div>

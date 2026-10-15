@@ -1,7 +1,7 @@
 import {  useContext, useState, useEffect  } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { User, Mail, Award, Edit3, Phone, Building } from "lucide-react";
+import { User, Mail, Award, Edit3, Phone, Building, DollarSign } from "lucide-react";
 import api from "../../services/api";
 
 export default function Profile() {
@@ -24,6 +24,8 @@ export default function Profile() {
           specialization: "Clinical Nutrition & Metabolic Optimization",
           phone: "+1 (555) 234-8901",
           clinic: "Metropolitan Academic Medical Center",
+          clinicName: "Metropolitan Academic Medical Center",
+          consultationFee: 75,
           bio: "Specialist in glycemic management, renal nutrition, and bioenergetic digital twin modeling with 12+ years of clinical practice.",
         });
       } finally {
@@ -74,8 +76,12 @@ export default function Profile() {
             <span>License: <strong>{profile?.licenseNumber}</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
+            <DollarSign size={16} color="var(--primary)" />
+            <span>Consultation Fee: <strong style={{ color: "var(--primary)" }}>${profile?.consultationFee != null ? profile.consultationFee : 75}</strong></span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Building size={16} color="var(--primary)" />
-            <span>{profile?.clinic}</span>
+            <span>{profile?.clinicName || profile?.clinic || "Clinical Nutrition Center"}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Mail size={16} color="var(--primary)" />
@@ -83,7 +89,7 @@ export default function Profile() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Phone size={16} color="var(--primary)" />
-            <span>{profile?.phone}</span>
+            <span>{profile?.phoneNumber || profile?.phone}</span>
           </div>
         </div>
       </div>

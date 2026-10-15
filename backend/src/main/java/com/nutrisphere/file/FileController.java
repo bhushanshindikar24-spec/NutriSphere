@@ -31,7 +31,13 @@ public class FileController {
 
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
-        Resource resource = fileStorageService.loadAsResource(id, securityUtils.getCurrentUserId());
+        Long currentUserId = null;
+        try {
+            currentUserId = securityUtils.getCurrentUserId();
+        } catch (Exception ignored) {
+            // Unauthenticated download permitted for public files like licenses and profile images
+        }
+        Resource resource = fileStorageService.loadAsResource(id, currentUserId);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")

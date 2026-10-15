@@ -36,13 +36,13 @@ public class DoctorService {
             .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         DoctorProfile p = doctorRepository.findByUserId(userId).orElse(new DoctorProfile());
         p.setUser(user);
-        p.setSpecialization(req.getSpecialization());
-        p.setLicenseNumber(req.getLicenseNumber());
-        p.setHospitalName(req.getHospitalName());
-        p.setHospitalAddress(req.getHospitalAddress());
-        p.setYearsExperience(req.getYearsExperience());
-        p.setBio(req.getBio());
-        p.setConsultationFee(req.getConsultationFee());
+        if (req.getSpecialization() != null) p.setSpecialization(req.getSpecialization());
+        if (req.getLicenseNumber() != null) p.setLicenseNumber(req.getLicenseNumber());
+        if (req.getHospitalName() != null) p.setHospitalName(req.getHospitalName());
+        if (req.getHospitalAddress() != null) p.setHospitalAddress(req.getHospitalAddress());
+        if (req.getYearsExperience() != null) p.setYearsExperience(req.getYearsExperience());
+        if (req.getBio() != null) p.setBio(req.getBio());
+        if (req.getConsultationFee() != null) p.setConsultationFee(req.getConsultationFee());
         return doctorMapper.toResponse(doctorRepository.save(p));
     }
 

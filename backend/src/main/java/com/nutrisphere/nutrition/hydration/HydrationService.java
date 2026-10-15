@@ -51,4 +51,37 @@ public class HydrationService {
         r.setLogCount(waterLogRepo.findByPatientUserIdAndLogDateOrderByLogTime(patientUserId, date).size());
         return r;
     }
+
+    @Transactional
+    public WaterLog updateWaterLog(Long id, Long patientUserId, WaterLogRequest req) {
+        WaterLog log = waterLogRepo.findById(id)
+            .orElseThrow(() -> new com.nutrisphere.exception.ResourceNotFoundException("WaterLog", id));
+        if (!log.getPatientUserId().equals(patientUserId)) {
+            throw new com.nutrisphere.exception.ForbiddenException("Cannot edit another patient's water log");
+        }
+        Double amount = req.getAmountMl() != null ? req.getAmountMl() : req.getAmount();
+        if (amount != null && amount > 0) {
+            log.setAmountMl(amount);
+        }
+        if (req.getNotes() != null) {
+            log.setNotes(req.getNotes());
+        }
+        if (req.getLogTime() != null) {
+            log.setLogTime(req.getLogTime());
+        }
+        if (req.getLogDate() != null) {
+            log.setLogDate(req.getLogDate());
+        }
+        return waterLogRepo.save(log);
+    }
+
+    @Transactional
+    public void deleteWaterLog(Long id, Long patientUserId) {
+        WaterLog log = waterLogRepo.findById(id)
+            .orElseThrow(() -> new com.nutrisphere.exception.ResourceNotFoundException("WaterLog", id));
+        if (!log.getPatientUserId().equals(patientUserId)) {
+            throw new com.nutrisphere.exception.ForbiddenException("Cannot delete another patient's water log");
+        }
+        waterLogRepo.delete(log);
+    }
 }

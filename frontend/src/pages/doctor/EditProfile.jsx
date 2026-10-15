@@ -12,31 +12,61 @@ export default function EditProfile() {
     lastName: "",
     specialization: "",
     hospital: "",
+    hospitalName: "",
     phone: "",
+    consultationFee: 100,
     bio: "",
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (user) {
- 
-      setFormData({
-        firstName: user.firstName || "Marcus",
-        lastName: user.lastName || "Thorne",
-        specialization: user.specialization || "Internal Medicine & Endocrinology",
-        hospital: user.hospital || "Metropolitan Academic Medical Center",
-        phone: user.phone || "+1 (555) 789-0123",
-        bio: user.bio || "Board-certified in Internal Medicine with subspecialty in metabolic disorders.",
-      });
-    }
+    const loadProfile = async () => {
+      try {
+        const res = await api.get("/doctors/profile");
+        const p = res.data?.data || res.data;
+        if (p) {
+          setFormData({
+            firstName: p.firstName || user?.firstName || "",
+            lastName: p.lastName || user?.lastName || "",
+            specialization: p.specialization || "",
+            hospital: p.hospitalName || p.hospital || "",
+            hospitalName: p.hospitalName || p.hospital || "",
+            phone: p.phoneNumber || p.phone || user?.phoneNumber || "",
+            consultationFee: p.consultationFee != null ? p.consultationFee : 100,
+            bio: p.bio || "",
+          });
+          return;
+        }
+      } catch (_e) {
+        // fallback to user object
+      }
+
+      if (user) {
+        setFormData({
+          firstName: user.firstName || "Marcus",
+          lastName: user.lastName || "Thorne",
+          specialization: user.specialization || "Internal Medicine & Endocrinology",
+          hospital: user.hospital || "Metropolitan Academic Medical Center",
+          hospitalName: user.hospital || "Metropolitan Academic Medical Center",
+          phone: user.phone || "+1 (555) 789-0123",
+          consultationFee: 100,
+          bio: user.bio || "Board-certified in Internal Medicine with subspecialty in metabolic disorders.",
+        });
+      }
+    };
+    loadProfile();
   }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.put("/doctors/profile", formData);
+      await api.put("/doctors/profile", {
+        ...formData,
+        hospitalName: formData.hospital || formData.hospitalName,
+        consultationFee: Number(formData.consultationFee) || 0,
+      });
       setSuccess(true);
       setTimeout(() => navigate("/doctor/profile"), 1200);
     } catch (_err) {
@@ -116,15 +146,31 @@ export default function EditProfile() {
             </div>
           </div>
 
-          <div>
-            <label className="form-label">Contact Phone</label>
-            <input
-              type="text"
-              className="input-field"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              style={{ width: "100%" }}
-            />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div>
+              <label className="form-label">Contact Phone</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                style={{ width: "100%" }}
+              />
+            </div>
+            <div>
+              <label className="form-label">Consultation Fee ($ USD) *</label>
+              <input
+                type="number"
+                min="0"
+                step="5"
+                className="input-field"
+                required
+                value={formData.consultationFee}
+                onChange={(e) => setFormData({ ...formData, consultationFee: e.target.value })}
+                placeholder="e.g. 100"
+                style={{ width: "100%" }}
+              />
+            </div>
           </div>
 
           <div>

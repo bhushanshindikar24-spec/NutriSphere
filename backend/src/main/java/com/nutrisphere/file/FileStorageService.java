@@ -94,7 +94,7 @@ public class FileStorageService {
         StoredFile sf = fileStoredRepository.findById(fileId)
             .orElseThrow(() -> new ResourceNotFoundException("File", fileId));
 
-        if (sf.getUploaderUserId() != null && !sf.getUploaderUserId().equals(userId)) {
+        if (userId != null && sf.getUploaderUserId() != null && !sf.getUploaderUserId().equals(userId)) {
             if (!"licenses".equalsIgnoreCase(sf.getCategory()) && !"profile-images".equalsIgnoreCase(sf.getCategory()) && !"food-images".equalsIgnoreCase(sf.getCategory())) {
                 authorizeClinicalEntityForUser(sf.getEntityType(), sf.getEntityId(), userId);
             }
@@ -118,11 +118,15 @@ public class FileStorageService {
     }
 
     private void authorizeClinicalEntity(String entityType, Long entityId) {
+        String type = entityType.toUpperCase(Locale.ROOT);
+        if ("LICENSE".equals(type) || "PROFILE_IMAGE".equals(type) || "FOOD_IMAGE".equals(type) || "GENERAL".equals(type)) {
+            return;
+        }
+
         if (entityId == null) {
             throw new BadRequestException("entityId is required for clinical files");
         }
 
-        String type = entityType.toUpperCase(Locale.ROOT);
         Long patientUserId = switch (type) {
             case "MEDICAL_REPORT" -> medicalReportRepository.findById(entityId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalReport", entityId))

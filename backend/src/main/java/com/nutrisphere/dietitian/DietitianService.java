@@ -32,13 +32,13 @@ public class DietitianService {
             .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         DietitianProfile p = dietitianRepository.findByUserId(userId).orElse(new DietitianProfile());
         p.setUser(user);
-        p.setSpecialization(req.getSpecialization());
-        p.setLicenseNumber(req.getLicenseNumber());
-        p.setClinicName(req.getClinicName());
-        p.setClinicAddress(req.getClinicAddress());
-        p.setYearsExperience(req.getYearsExperience());
-        p.setBio(req.getBio());
-        p.setConsultationFee(req.getConsultationFee());
+        if (req.getSpecialization() != null) p.setSpecialization(req.getSpecialization());
+        if (req.getLicenseNumber() != null) p.setLicenseNumber(req.getLicenseNumber());
+        if (req.getClinicName() != null) p.setClinicName(req.getClinicName());
+        if (req.getClinicAddress() != null) p.setClinicAddress(req.getClinicAddress());
+        if (req.getYearsExperience() != null) p.setYearsExperience(req.getYearsExperience());
+        if (req.getBio() != null) p.setBio(req.getBio());
+        if (req.getConsultationFee() != null) p.setConsultationFee(req.getConsultationFee());
         return dietitianMapper.toResponse(dietitianRepository.save(p));
     }
 

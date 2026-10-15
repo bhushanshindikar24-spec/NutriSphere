@@ -18,6 +18,12 @@ export const recordDeviation = (data) =>
 export const getPlannedVsActual = (date, patientUserId) => 
   api.get("/food-logs/planned-vs-actual", { params: { date, patientUserId } });
 
+export const updateFoodLog = (id, data) =>
+  api.put(`/food-logs/${id}`, data);
+
+export const deleteFoodLog = (id) =>
+  api.delete(`/food-logs/${id}`);
+
 export const foodLogService = {
   logFood,
   getTodayFoodLogs,
@@ -25,6 +31,8 @@ export const foodLogService = {
   getFoodLogsRange,
   recordDeviation,
   getPlannedVsActual,
+  updateFoodLog,
+  deleteFoodLog,
 };
 
 export default foodLogService;

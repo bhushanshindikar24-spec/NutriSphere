@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Stethoscope, Apple, Utensils, User, ShieldCheck, Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import * as authService from "../../services/authService";
 import api from "../../services/api";
+import SearchableSelect from "../../components/common/SearchableSelect";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -332,34 +333,110 @@ export default function Register() {
                     />
                   </div>
                   <div>
-                    <label className="form-label">
-                      {selectedRole === "HOTEL" ? "Cuisine Specialty" : "Medical Qualifications *"}
-                    </label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      required={selectedRole !== "HOTEL"}
-                      value={selectedRole === "HOTEL" ? formData.cuisineType : formData.degree}
-                      onChange={(e) =>
-                        selectedRole === "HOTEL"
-                          ? setFormData({ ...formData, cuisineType: e.target.value })
-                          : setFormData({ ...formData, degree: e.target.value })
-                      }
-                      placeholder={selectedRole === "DOCTOR" ? "MBBS, MD - Cardiology" : selectedRole === "DIETITIAN" ? "M.Sc Clinical Nutrition, RD" : "Clinical & Therapeutic"}
-                    />
+                    {selectedRole === "HOTEL" ? (
+                      <>
+                        <label className="form-label">Cuisine Specialty</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={formData.cuisineType}
+                          onChange={(e) => setFormData({ ...formData, cuisineType: e.target.value })}
+                          placeholder="Clinical & Therapeutic"
+                        />
+                      </>
+                    ) : (
+                      <SearchableSelect
+                        label="Medical Qualifications *"
+                        required
+                        placeholder={selectedRole === "DOCTOR" ? "Search MBBS, MD, MS..." : "Search M.Sc Clinical Nutrition, RD..."}
+                        value={formData.degree}
+                        onChange={(val) => setFormData({ ...formData, degree: val })}
+                        options={
+                          selectedRole === "DOCTOR"
+                            ? [
+                                "MBBS",
+                                "MBBS, MD (Internal Medicine)",
+                                "MBBS, MD (Preventive Cardiology)",
+                                "MBBS, MD (Endocrinology)",
+                                "MBBS, MD (Gastroenterology)",
+                                "MBBS, MD (Pediatrics)",
+                                "MBBS, MS (General Surgery)",
+                                "MBBS, DNB (General Medicine)",
+                                "MBBS, MRCP (UK)",
+                                "MD, PhD",
+                                "DO (Doctor of Osteopathic Medicine)",
+                                "MBBS, Fellowship in Diabetology",
+                              ]
+                            : [
+                                "Registered Dietitian (RD)",
+                                "M.Sc Clinical Nutrition",
+                                "M.Sc Food Science & Nutrition",
+                                "M.Sc Clinical Nutrition & Dietetics, RD",
+                                "B.Sc Clinical Nutrition & Dietetics",
+                                "B.Sc Food & Nutrition",
+                                "PG Diploma in Dietetics & Public Health (PGDDPHN)",
+                                "Certified Diabetes Educator (CDE)",
+                                "Ph.D. in Clinical Nutrition",
+                                "Board Certified Specialist in Renal Nutrition (CSR)",
+                                "Board Certified Specialist in Pediatric Nutrition (CSP)",
+                                "Board Certified Specialist in Sports Dietetics (CSSD)",
+                              ]
+                        }
+                      />
+                    )}
                   </div>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                   <div>
-                    <label className="form-label">Specialization</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.specialization}
-                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                      placeholder="e.g. Preventive Cardiology, Renal"
-                    />
+                    {selectedRole === "HOTEL" ? (
+                      <>
+                        <label className="form-label">Cuisine Category</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={formData.specialization}
+                          onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                          placeholder="e.g. Diabetic & Low Sodium Meals"
+                        />
+                      </>
+                    ) : (
+                      <SearchableSelect
+                        label="Specialization"
+                        placeholder={selectedRole === "DOCTOR" ? "Search Cardiology, Endocrinology..." : "Search Clinical Nutrition, Diabetes..."}
+                        value={formData.specialization}
+                        onChange={(val) => setFormData({ ...formData, specialization: val })}
+                        options={
+                          selectedRole === "DOCTOR"
+                            ? [
+                                "Preventive Cardiology",
+                                "Endocrinology & Diabetes Telemetry",
+                                "Gastroenterology & Gut Microbiome",
+                                "Nephrology & Renal Care",
+                                "Metabolic Syndrome & Obesity Medicine",
+                                "Internal Medicine",
+                                "Hypertension & Vascular Health",
+                                "Clinical Lipidology",
+                                "Bariatric Medicine",
+                                "Geriatric Medicine",
+                                "Hepatology",
+                              ]
+                            : [
+                                "Clinical Nutrition & Medical Dietetics",
+                                "Diabetes & Insulin Resistance Protocol",
+                                "Cardiovascular & Lipid Optimization",
+                                "Renal & Kidney Health Nutrition",
+                                "Gastrointestinal, IBS & Gut Microbiome",
+                                "Pediatric & Child Clinical Nutrition",
+                                "Oncology & Immunonutrition",
+                                "Bariatric & Weight Management",
+                                "Sports & Performance Nutrition",
+                                "Autoimmune & Anti-Inflammatory Protocols",
+                                "Geriatric & Sarcopenia Nutrition",
+                              ]
+                        }
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="form-label">Hospital / Clinic / Kitchen Name</label>
@@ -371,6 +448,35 @@ export default function Register() {
                       placeholder="e.g. Boston Medical Center"
                     />
                   </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: selectedRole === "HOTEL" ? "1fr" : "1fr 1fr", gap: "1rem" }}>
+                  <div>
+                    <label className="form-label">Years of Clinical Experience</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="form-input"
+                      value={formData.yearsExperience}
+                      onChange={(e) => setFormData({ ...formData, yearsExperience: e.target.value })}
+                      placeholder="e.g. 8"
+                    />
+                  </div>
+                  {selectedRole !== "HOTEL" && (
+                    <div>
+                      <label className="form-label">Consultation Fee ($) *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="5"
+                        required
+                        className="form-input"
+                        placeholder={selectedRole === "DOCTOR" ? "e.g. 150" : "e.g. 75"}
+                        value={formData.consultationFee}
+                        onChange={(e) => setFormData({ ...formData, consultationFee: e.target.value })}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {selectedRole !== "HOTEL" && (

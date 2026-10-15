@@ -67,4 +67,19 @@ public class FoodLogController {
         securityUtils.assertPatientAccess(uid);
         return ApiResponse.success(foodLogService.getPlannedVsActual(uid, date));
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<FoodLogResponse> updateFoodLog(
+            @PathVariable Long id,
+            @RequestBody FoodLogRequest req) {
+        return ApiResponse.success(foodLogService.updateFoodLog(id, securityUtils.getCurrentUserId(), req));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<Void> deleteFoodLog(@PathVariable Long id) {
+        foodLogService.deleteFoodLog(id, securityUtils.getCurrentUserId());
+        return ApiResponse.success("Food log deleted", null);
+    }
 }

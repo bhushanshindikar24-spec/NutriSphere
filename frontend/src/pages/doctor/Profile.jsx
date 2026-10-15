@@ -1,7 +1,7 @@
 import {  useContext, useState, useEffect  } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { Mail, Award, Edit3, Phone, Building, Stethoscope } from "lucide-react";
+import { Mail, Award, Edit3, Phone, Building, Stethoscope, DollarSign } from "lucide-react";
 import api from "../../services/api";
 
 export default function Profile() {
@@ -23,6 +23,8 @@ export default function Profile() {
           licenseNumber: "MD-67201-IM",
           specialization: "Internal Medicine & Endocrinology",
           hospital: "Metropolitan Academic Medical Center",
+          hospitalName: "Metropolitan Academic Medical Center",
+          consultationFee: 100,
           phone: "+1 (555) 789-0123",
           officeHours: "Tue, Thu, Fri: 8:30 AM - 3:00 PM EST",
           bio: "Board-certified in Internal Medicine with subspecialty in metabolic disorders, glycemic regulation, and cardiovascular prevention.",
@@ -75,8 +77,12 @@ export default function Profile() {
             <span>MD License: <strong>{profile?.licenseNumber}</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
+            <DollarSign size={16} color="#10B981" />
+            <span>Consultation Fee: <strong style={{ color: "#10B981" }}>${profile?.consultationFee != null ? profile.consultationFee : 100}</strong></span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Building size={16} color="#10B981" />
-            <span>{profile?.hospital}</span>
+            <span>{profile?.hospitalName || profile?.hospital || "Clinical Practice"}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Mail size={16} color="#10B981" />
@@ -84,7 +90,7 @@ export default function Profile() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Phone size={16} color="#10B981" />
-            <span>{profile?.phone}</span>
+            <span>{profile?.phoneNumber || profile?.phone}</span>
           </div>
         </div>
       </div>

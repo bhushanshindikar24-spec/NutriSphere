@@ -31,4 +31,19 @@ public class HydrationController {
         if (date == null) date = LocalDate.now();
         return ApiResponse.success(hydrationService.getSummary(securityUtils.getCurrentUserId(), date));
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<WaterLog> updateWaterLog(
+            @PathVariable Long id,
+            @RequestBody WaterLogRequest req) {
+        return ApiResponse.success(hydrationService.updateWaterLog(id, securityUtils.getCurrentUserId(), req));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<Void> deleteWaterLog(@PathVariable Long id) {
+        hydrationService.deleteWaterLog(id, securityUtils.getCurrentUserId());
+        return ApiResponse.success("Water log deleted", null);
+    }
 }

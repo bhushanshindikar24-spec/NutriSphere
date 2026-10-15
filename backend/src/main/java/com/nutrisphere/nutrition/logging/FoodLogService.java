@@ -74,6 +74,37 @@ public class FoodLogService {
         return r;
     }
 
+    @Transactional
+    public FoodLogResponse updateFoodLog(Long id, Long patientUserId, FoodLogRequest req) {
+        FoodLog log = logRepo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("FoodLog", id));
+        if (!log.getPatientUserId().equals(patientUserId)) {
+            throw new com.nutrisphere.exception.ForbiddenException("Cannot edit another patient's food log");
+        }
+        if (req.getFoodName() != null && !req.getFoodName().isBlank()) log.setFoodName(req.getFoodName());
+        if (req.getMealType() != null) log.setMealType(req.getMealType());
+        if (req.getCalories() != null) log.setCalories(req.getCalories());
+        if (req.getProteinG() != null) log.setProteinG(req.getProteinG());
+        if (req.getCarbsG() != null) log.setCarbsG(req.getCarbsG());
+        if (req.getFatG() != null) log.setFatG(req.getFatG());
+        if (req.getFiberG() != null) log.setFiberG(req.getFiberG());
+        if (req.getQuantityG() != null) log.setQuantityG(req.getQuantityG());
+        if (req.getNotes() != null) log.setNotes(req.getNotes());
+        if (req.getLogDate() != null) log.setLogDate(req.getLogDate());
+        if (req.getLogTime() != null) log.setLogTime(req.getLogTime());
+        return toResponse(logRepo.save(log));
+    }
+
+    @Transactional
+    public void deleteFoodLog(Long id, Long patientUserId) {
+        FoodLog log = logRepo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("FoodLog", id));
+        if (!log.getPatientUserId().equals(patientUserId)) {
+            throw new com.nutrisphere.exception.ForbiddenException("Cannot delete another patient's food log");
+        }
+        logRepo.delete(log);
+    }
+
     private void assertMealBelongsToPatient(Long mealId, Long patientUserId) {
         if (mealId == null) return;
         DietPlanMeal meal = mealRepo.findById(mealId)
