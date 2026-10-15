@@ -67,14 +67,17 @@ export default function MainLayout() {
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border-color)",
-        padding: "0.9rem 2rem",
+        padding: "0 2rem",
+        height: "64px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         position: "sticky",
         top: 0,
         zIndex: 50,
-        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)"
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+        boxSizing: "border-box",
+        flexShrink: 0
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
           <Link to="/" style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}>
@@ -179,9 +182,16 @@ export default function MainLayout() {
       <div style={{ display: "flex", flex: 1 }}>
         <aside style={{
           width: "260px",
+          flexShrink: 0,
           borderRight: "1px solid #e2e8f0",
           background: "#ffffff",
-          padding: "1.75rem 1rem"
+          padding: "1.75rem 1rem",
+          position: "sticky",
+          top: "64px",
+          height: "calc(100vh - 64px)",
+          overflowY: "auto",
+          alignSelf: "flex-start",
+          boxSizing: "border-box"
         }}>
           <div style={{ padding: "0 0.75rem 0.75rem 0.75rem", fontSize: "0.72rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Workspace Navigation
@@ -218,7 +228,7 @@ export default function MainLayout() {
         </aside>
 
         {/* Main Content Area */}
-        <main style={{ flex: 1, padding: "2.5rem 2.5rem", background: "var(--bg-color)", overflowY: "auto" }}>
+        <main style={{ flex: 1, minWidth: 0, padding: "2.5rem 2.5rem", background: "var(--bg-color)" }}>
           <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
             <Outlet />
           </div>

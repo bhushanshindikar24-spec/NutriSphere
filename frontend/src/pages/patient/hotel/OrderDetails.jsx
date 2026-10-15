@@ -11,35 +11,47 @@ export default function OrderDetails() {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await api.get(`/orders/${id || 1}`);
+        const res = await api.get(`/orders/${id}`);
         setOrder(res.data?.data || res.data);
-      } catch (_err) {
-        setOrder({
-          id: id || "ORD-9412",
-          status: "IN_PREPARATION",
-          createdAt: new Date().toISOString(),
-          estimatedDelivery: "35 Minutes",
-          totalPrice: 28.5,
-          deliveryAddress: "142 Elmwood Ave, Cambridge, MA",
-          notes: "Please leave at front door.",
-          items: [
-            { mealName: "Mediterranean Herb Chicken Bowl", quantity: 1, price: 14.5, calories: 480 },
-            { mealName: "Crispy Tofu & Edamame Salad", quantity: 1, price: 10.5, calories: 410 },
-          ],
-        });
+      } catch (err) {
+        console.error("Failed to fetch order details:", err);
+        setOrder(null);
+        setError("Unable to fetch order details. No order history found for this identifier.");
       } finally {
         setLoading(false);
       }
     };
-    fetchOrder();
+    if (id) {
+      fetchOrder();
+    } else {
+      setLoading(false);
+      setError("No order identifier provided.");
+    }
   }, [id]);
 
   if (loading) return <div className="loading-screen">Loading Order Details...</div>;
-  if (!order) return <div className="glass-panel" style={{ padding: "2rem" }}>Order not found.</div>;
+  if (!order) return (
+    <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>
+      <button
+        onClick={() => navigate("/patient/hotel/orders")}
+        className="btn btn-outline"
+        style={{ width: "fit-content", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+      >
+        <ArrowLeft size={16} /> Back to Orders
+      </button>
+      <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
+        <h4 style={{ margin: "0 0 0.5rem 0", color: "var(--text-main)" }}>
+          {error ? "Unable to Fetch Order Details" : "Order Not Found"}
+        </h4>
+        <p>{error || "No order history found."}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>

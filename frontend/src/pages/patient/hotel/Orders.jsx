@@ -9,34 +9,22 @@ export default function Orders() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await api.get("/orders");
+        let res;
+        try {
+          res = await api.get("/orders/my");
+        } catch (_myErr) {
+          res = await api.get("/orders");
+        }
         setOrders(res.data?.data || res.data || []);
-      } catch (_err) {
-        setOrders([
-          {
-            id: "ORD-9412",
-            createdAt: new Date().toISOString(),
-            status: "IN_PREPARATION",
-            totalPrice: 28.5,
-            items: [
-              { mealName: "Mediterranean Herb Chicken Bowl", quantity: 1, price: 14.5 },
-              { mealName: "Crispy Tofu & Edamame Salad", quantity: 1, price: 10.5 },
-            ],
-            deliveryAddress: "142 Elmwood Ave, Cambridge, MA",
-          },
-          {
-            id: "ORD-8821",
-            createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-            status: "DELIVERED",
-            totalPrice: 21.5,
-            items: [{ mealName: "Wild Salmon & Steamed Asparagus", quantity: 1, price: 18.0 }],
-            deliveryAddress: "142 Elmwood Ave, Cambridge, MA",
-          },
-        ]);
+      } catch (err) {
+        console.error("Failed to fetch orders:", err);
+        setOrders([]);
+        setError("Unable to fetch orders. Please check your connection or try again later.");
       } finally {
         setLoading(false);
       }
@@ -61,7 +49,14 @@ export default function Orders() {
       {orders.length === 0 ? (
         <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
           <Package size={40} style={{ margin: "0 auto 1rem", opacity: 0.4 }} />
-          <p>No orders found. Browse our partner menu to order fresh, dietitian-approved meals.</p>
+          <h4 style={{ margin: "0 0 0.5rem 0", color: "var(--text-main)" }}>
+            {error ? "Unable to Fetch Orders" : "No Order History"}
+          </h4>
+          <p>
+            {error 
+              ? error 
+              : "No order history found. Browse our partner menu to order fresh, dietitian-approved meals."}
+          </p>
         </div>
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>

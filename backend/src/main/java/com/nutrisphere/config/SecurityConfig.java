@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/hotel/meals/**").hasRole("HOTEL")
                 .requestMatchers("/api/hotel/availability/**").hasRole("HOTEL")
                 .requestMatchers("/api/hotel/profile/**").hasRole("HOTEL")
-                .requestMatchers("/api/orders/**").authenticated()
+                .requestMatchers("/api/orders", "/api/orders/**").authenticated()
                 .requestMatchers("/api/assignments/**").authenticated()
                 .requestMatchers("/api/doctors/**").hasAnyRole("DOCTOR", "ADMIN")
                 .requestMatchers("/api/dietitians/**").hasAnyRole("DIETITIAN", "ADMIN")

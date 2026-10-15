@@ -15,6 +15,7 @@ export default function Register() {
     lastName: "",
     email: emailParam,
     password: "",
+    confirmPassword: "",
     phoneNumber: "",
     licenseNumber: "",
     degree: "",
@@ -59,10 +60,17 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match. Please verify your password.");
+      return;
+    }
+
     setIsLoading(true);
     try {
+      const { confirmPassword: _, ...validFormData } = formData;
       const payload = {
-        ...formData,
+        ...validFormData,
         role: selectedRole,
         yearsExperience: Number(formData.yearsExperience) || 0,
         consultationFee: Number(formData.consultationFee) || 0,
@@ -275,17 +283,31 @@ export default function Register() {
               )}
             </div>
 
-            <div>
-              <label className="form-label">Password *</label>
-              <input
-                type="password"
-                className="form-input"
-                required
-                minLength={6}
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="At least 6 characters"
-              />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div>
+                <label className="form-label">Password *</label>
+                <input
+                  type="password"
+                  className="form-input"
+                  required
+                  minLength={6}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="At least 6 characters"
+                />
+              </div>
+              <div>
+                <label className="form-label">Confirm Password *</label>
+                <input
+                  type="password"
+                  className="form-input"
+                  required
+                  minLength={6}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  placeholder="Re-enter password"
+                />
+              </div>
             </div>
 
             {/* Professional Specific Fields */}

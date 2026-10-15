@@ -41,7 +41,6 @@ export default function Home() {
             <li><a href="#services" className="landing-nav-link">Services</a></li>
             <li><a href="#specialists" className="landing-nav-link">Specialists</a></li>
             <li><a href="#diet-plans" className="landing-nav-link">Diet Plans</a></li>
-            <li><Link to="/contact" className="landing-nav-link">Contact Us</Link></li>
           </ul>
         </nav>
 

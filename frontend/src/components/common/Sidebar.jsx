@@ -6,10 +6,16 @@ export default function Sidebar({ links = [] }) {
   return (
     <aside style={{
       width: '240px',
+      flexShrink: 0,
       borderRight: '1px solid var(--border-color)',
       background: 'var(--bg-surface)',
       padding: '1.5rem 1rem',
-      height: '100%',
+      position: 'sticky',
+      top: '64px',
+      height: 'calc(100vh - 64px)',
+      overflowY: 'auto',
+      alignSelf: 'flex-start',
+      boxSizing: 'border-box'
     }}>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         {links.map((link) => {

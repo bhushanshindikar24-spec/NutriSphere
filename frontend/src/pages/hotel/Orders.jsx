@@ -7,35 +7,21 @@ export default function Orders() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get("/orders");
+      let res;
+      try {
+        res = await api.get("/orders/hotel");
+      } catch (_hotelErr) {
+        res = await api.get("/orders");
+      }
       setOrders(res.data?.data || res.data || []);
-    } catch (_err) {
-      setOrders([
-        {
-          id: "ORD-9412",
-          patientName: "Alex Morgan",
-          status: "IN_PREPARATION",
-          totalPrice: 28.5,
-          createdAt: new Date().toISOString(),
-          deliveryAddress: "142 Elmwood Ave, Apt 4B, Cambridge",
-          items: [
-            { mealName: "Mediterranean Herb Chicken Bowl", quantity: 1 },
-            { mealName: "Crispy Tofu & Edamame Salad", quantity: 1 },
-          ],
-        },
-        {
-          id: "ORD-9390",
-          patientName: "Sarah Jenkins",
-          status: "ORDER_PLACED",
-          totalPrice: 18.0,
-          createdAt: new Date(Date.now() - 1800000).toISOString(),
-          deliveryAddress: "88 Beacon St, Boston",
-          items: [{ mealName: "Wild Salmon & Steamed Asparagus", quantity: 1 }],
-        },
-      ]);
+    } catch (err) {
+      console.error("Failed to fetch kitchen orders:", err);
+      setOrders([]);
+      setError("Unable to fetch orders. Please check network connection or try again later.");
     } finally {
       setLoading(false);
     }
@@ -48,11 +34,14 @@ export default function Orders() {
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      await api.put(`/orders/${orderId}/status`, { status: newStatus });
+      await api.patch(`/orders/${orderId}/status`, { status: newStatus });
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
     } catch (_err) {
+      try {
+        await api.put(`/orders/${orderId}/status`, { status: newStatus });
+      } catch (_putErr) {}
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
@@ -70,8 +59,16 @@ export default function Orders() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: "1rem" }}>
-        {orders.map((order) => (
+      {orders.length === 0 ? (
+        <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
+          <h4 style={{ margin: "0 0 0.5rem 0", color: "var(--text-main)" }}>
+            {error ? "Unable to Fetch Orders" : "No Order History"}
+          </h4>
+          <p>{error || "No order history or incoming kitchen orders found."}</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: "1rem" }}>
+          {orders.map((order) => (
           <div
             key={order.id}
             className="glass-panel"
@@ -155,7 +152,8 @@ export default function Orders() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

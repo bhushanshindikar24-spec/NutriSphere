@@ -18,6 +18,15 @@ public class OrderController {
         return ApiResponse.success(orderService.placeOrder(securityUtils.getCurrentUserId(), req));
     }
 
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<OrderResponse>> getOrders() {
+        if (securityUtils.hasRole("HOTEL")) {
+            return ApiResponse.success(orderService.getHotelOrders(securityUtils.getCurrentUserId()));
+        }
+        return ApiResponse.success(orderService.getPatientOrders(securityUtils.getCurrentUserId()));
+    }
+
     @GetMapping({"/my", "/my-orders"})
     @PreAuthorize("hasRole('PATIENT')")
     public ApiResponse<List<OrderResponse>> getMyOrders() {
@@ -36,7 +45,7 @@ public class OrderController {
         return ApiResponse.success(orderService.getById(id, securityUtils.getCurrentUserId()));
     }
 
-    @PatchMapping("/{id}/status")
+    @RequestMapping(value = "/{id}/status", method = {RequestMethod.PATCH, RequestMethod.PUT})
     @PreAuthorize("hasRole('HOTEL')")
     public ApiResponse<OrderResponse> updateStatus(@PathVariable Long id,
             @RequestBody OrderStatusRequest req) {
