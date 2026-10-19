@@ -16,6 +16,11 @@ public class ConditionService {
         return healthConditionRepo.findByActiveTrue();
     }
 
+    public HealthCondition getConditionById(Long id) {
+        return healthConditionRepo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("HealthCondition", id));
+    }
+
     public List<PatientCondition> getPatientConditions(Long patientUserId) {
         return patientConditionRepo.findByPatientUserIdAndActiveTrue(patientUserId);
     }

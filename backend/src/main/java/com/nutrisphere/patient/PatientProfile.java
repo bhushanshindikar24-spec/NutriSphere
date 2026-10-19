@@ -55,4 +55,22 @@ public class PatientProfile extends BaseEntity {
 
     @Column(name = "emergency_contact_phone")
     private String emergencyContactPhone;
+
+    @Column(name = "dietary_preference", length = 100)
+    private String dietaryPreference;
+
+    @Column(name = "current_water_intake_liters")
+    private Double currentWaterIntakeLiters;
+
+    @Column(name = "health_goals", length = 500)
+    private String healthGoals;
+
+    @Column(name = "nutritional_requirements", length = 1000)
+    private String nutritionalRequirements;
+
+    @Column(name = "target_daily_calories")
+    private Double targetDailyCalories;
+
+    @Column(name = "target_daily_water_ml")
+    private Double targetDailyWaterMl;
 }

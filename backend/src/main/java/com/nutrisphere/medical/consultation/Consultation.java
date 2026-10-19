@@ -49,6 +49,15 @@ public class Consultation extends BaseEntity {
     @Column(name = "notes", length = 2000) 
     private String notes;
 
+    @Column(name = "symptoms_discussed", length = 1000)
+    private String symptomsDiscussed;
+
+    @Column(name = "prescribed_medicines", length = 2000)
+    private String prescribedMedicines;
+
+    @Column(name = "follow_up_instructions", length = 1000)
+    private String followUpInstructions;
+
     @Column(name = "follow_up_date") 
     private LocalDateTime followUpDate;
 
@@ -65,6 +74,7 @@ public class Consultation extends BaseEntity {
     private Object vitalSigns;
 
     @Transient
+    @Builder.Default
     private String otp = "1234";
 
     public String getOtp() {

@@ -8,5 +8,6 @@ import java.util.List;
 @Repository
 public interface MealDeviationRepository extends JpaRepository<MealDeviation, Long> {
     List<MealDeviation> findByPatientUserIdOrderByDeviationDateDesc(Long patientUserId);
+    List<MealDeviation> findByPatientUserIdAndDeviationDate(Long patientUserId, LocalDate deviationDate);
     List<MealDeviation> findByPatientUserIdAndDeviationDateBetween(Long patientUserId, LocalDate from, LocalDate to);
 }

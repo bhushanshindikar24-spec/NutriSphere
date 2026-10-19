@@ -21,4 +21,10 @@ public class PatientProfileRequest {
     private String address;
     private String emergencyContactName;
     private String emergencyContactPhone;
+    private String dietaryPreference;
+    private Double currentWaterIntakeLiters;
+    private String healthGoals;
+    private String nutritionalRequirements;
+    private Double targetDailyCalories;
+    private Double targetDailyWaterMl;
 }

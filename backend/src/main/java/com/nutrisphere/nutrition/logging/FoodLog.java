@@ -37,4 +37,10 @@ public class FoodLog extends BaseEntity {
     private String notes;
     @Column(name = "diet_plan_meal_id")
     private Long dietPlanMealId;
+    @Column(name = "difficulty_reason", length = 255)
+    private String difficultyReason;
+    @Column(name = "difficulty_rating")
+    private Integer difficultyRating;
+    @Column(name = "symptoms_reported", length = 500)
+    private String symptomsReported;
 }

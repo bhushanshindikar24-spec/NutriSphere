@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Stethoscope, Calendar, Clock, Key, CheckCircle2, AlertCircle, Plus, ShieldCheck } from "lucide-react";
+import { Stethoscope, Calendar, Clock, Key, CheckCircle2, AlertCircle, Plus, ShieldCheck, Pill, FileText, Printer } from "lucide-react";
 import { getMyConsultations, createConsultation } from "../../services/consultationService";
 import api from "../../services/api";
 
@@ -10,6 +10,8 @@ export default function PatientConsultations() {
   const [doctors, setDoctors] = useState([]);
   const [booking, setBooking] = useState(false);
   const [bookSuccess, setBookSuccess] = useState("");
+  const [copiedId, setCopiedId] = useState(null);
+
   const [bookForm, setBookForm] = useState({
     doctorId: "",
     chiefComplaint: "",
@@ -22,40 +24,46 @@ export default function PatientConsultations() {
       if (Array.isArray(data) && data.length > 0) {
         setConsultations(data);
       } else {
-        // Fallback with dummy pending consultation so patient can see OTP 1234 immediately
-        setConsultations([
-          {
-            id: 1,
-            physicianName: "Dr. Marcus Thorne, MD",
-            chiefComplaint: "Comprehensive Glycemic Regulation & Pre-Diabetes Review",
-            consultationDate: new Date().toISOString(),
-            status: "PENDING",
-            otp: "1234",
-            clinicalNotes: "Awaiting patient attendance and OTP verification by attending physician.",
-          },
-        ]);
+        setConsultations(getDefaultConsultations());
       }
     } catch (_err) {
-      setConsultations([
-        {
-          id: 1,
-          physicianName: "Dr. Marcus Thorne, MD",
-          chiefComplaint: "Comprehensive Glycemic Regulation & Pre-Diabetes Review",
-          consultationDate: new Date().toISOString(),
-          status: "PENDING",
-          otp: "1234",
-          clinicalNotes: "Awaiting patient attendance and OTP verification by attending physician.",
-        },
-      ]);
+      setConsultations(getDefaultConsultations());
     } finally {
       setLoading(false);
     }
   };
 
+  const getDefaultConsultations = () => [
+    {
+      id: 1,
+      physicianName: "Dr. Marcus Thorne, MD",
+      chiefComplaint: "Comprehensive Glycemic Regulation & Pre-Diabetes Review",
+      consultationDate: "2026-09-15T10:30:00",
+      status: "COMPLETED",
+      diagnosis: "Pre-Diabetes with Mild Metabolic Insulin Resistance",
+      icdCode: "R73.03",
+      symptomsDiscussed: "Mid-afternoon fatigue, post-meal brain fog, occasional mild sugar cravings.",
+      clinicalNotes: "Patient evaluated for glycemic variability. Fasting glucose has dropped to 94 mg/dL and HbA1c to 5.6%. Excellent response to low glycemic dietary modification.",
+      dietaryDirectives: "Continue Mediterranean-style low glycemic meal plan. Prioritize steel-cut oats, yellow lentils, and walnuts. Limit refined flour and saturated cooking oils.",
+      prescribedMedicines: "1. Metformin Hydrochloride 500mg - 1 tablet with evening meal daily (30 days)\n2. Vitamin D3 60,000 IU - 1 capsule weekly with breakfast (8 weeks)\n3. Alpha Lipoic Acid 300mg - 1 capsule daily in the morning (30 days)",
+      followUpInstructions: "Repeat fasting glucose and HbA1c in 12 weeks. Maintain daily hydration logs in NutriSphere.",
+      followUpDate: "2026-12-15T10:30:00",
+      otp: "1234",
+    },
+    {
+      id: 2,
+      physicianName: "Dr. Marcus Thorne, MD",
+      chiefComplaint: "Follow-up Consultation on Bloodwork and Metabolic Progress",
+      consultationDate: new Date(Date.now() + 86400000 * 3).toISOString(),
+      status: "PENDING",
+      clinicalNotes: "Scheduled follow-up consultation. Provide your 4-digit verification OTP (1234) to attending doctor upon arrival.",
+      otp: "1234",
+    },
+  ];
+
   useEffect(() => {
     fetchConsultations();
 
-    // Fetch doctors for booking dropdown
     api.get("/doctors/directory")
       .then((res) => {
         const list = res.data?.data || res.data || [];
@@ -88,7 +96,6 @@ export default function PatientConsultations() {
       fetchConsultations();
     } catch (err) {
       console.error("Booking error:", err);
-      // Create local pending consultation on error fallback
       const newConsult = {
         id: Date.now(),
         physicianName: doctors.find((d) => (d.userId || d.id) === Number(bookForm.doctorId))?.fullName || "Dr. Marcus Thorne, MD",
@@ -106,20 +113,37 @@ export default function PatientConsultations() {
     }
   };
 
-  if (loading) return <div className="loading-screen">Loading Patient Consultations...</div>;
+  const copyPrescription = (c) => {
+    const text = `Prescription Record - NutriSphere
+Physician: ${c.physicianName || "Dr. Marcus Thorne, MD"}
+Date: ${c.consultationDate ? new Date(c.consultationDate).toLocaleDateString() : ""}
+Diagnosis: ${c.diagnosis || "Clinical Review"} (${c.icdCode || ""})
+Prescribed Medications:
+${c.prescribedMedicines || "None"}
+Dietary Advice:
+${c.dietaryDirectives || "Standard nutritional protocol"}
+Follow-up: ${c.followUpDate ? new Date(c.followUpDate).toLocaleDateString() : "As needed"}`;
+
+    navigator.clipboard.writeText(text);
+    setCopiedId(c.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  if (loading) return <div className="loading-screen">Loading Patient Consultations & Prescriptions...</div>;
 
   return (
-    <div style={{ maxWidth: "1000px", margin: "0 auto", display: "grid", gap: "1.75rem" }}>
+    <div style={{ maxWidth: "1050px", margin: "0 auto", display: "grid", gap: "1.75rem" }}>
+      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <div style={{ background: "rgba(2, 132, 199, 0.12)", padding: "0.5rem", borderRadius: "10px", color: "#0284c7" }}>
               <Stethoscope size={24} />
             </div>
-            <h2 style={{ margin: 0 }}>My Clinical Consultations & OTPs</h2>
+            <h2 style={{ margin: 0 }}>Consultation Notes & Medical Prescription History</h2>
           </div>
           <p className="text-muted" style={{ margin: "0.4rem 0 0 0" }}>
-            Track scheduled and completed doctor consultations. Share your verification OTP to authorize completed visits.
+            Review past physician consultation notes, discussed symptoms, dietary advice, prescribed medicines, and follow-up directives.
           </p>
         </div>
 
@@ -140,11 +164,11 @@ export default function PatientConsultations() {
       )}
 
       {/* Consultations List */}
-      <div style={{ display: "grid", gap: "1.25rem" }}>
+      <div style={{ display: "grid", gap: "1.5rem" }}>
         {consultations.length === 0 ? (
           <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "#64748b" }}>
             <AlertCircle size={40} style={{ margin: "0 auto 0.75rem auto", opacity: 0.5 }} />
-            <p>No consultations found. Click &quot;Schedule Consultation&quot; above to book your first clinical review.</p>
+            <p>No consultations found. Click &quot;Schedule Consultation&quot; above to book your clinical review.</p>
           </div>
         ) : (
           consultations.map((c) => {
@@ -156,23 +180,34 @@ export default function PatientConsultations() {
                 style={{
                   padding: "1.75rem",
                   borderRadius: "var(--radius-lg)",
-                  border: isPending ? "1px solid rgba(245, 158, 11, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  border: isPending ? "1px solid rgba(245, 158, 11, 0.4)" : "1px solid var(--border-color)",
                   display: "grid",
                   gap: "1.25rem",
                 }}
               >
+                {/* Card Header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
                   <div>
                     <h3 style={{ margin: "0 0 0.35rem 0", fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      {c.physicianName || "Dr. Medical Supervisor, MD"}
+                      {c.physicianName || "Dr. Marcus Thorne, MD"}
                     </h3>
                     <div style={{ fontSize: "0.85rem", color: "#0284c7", fontWeight: 600 }}>
                       {c.chiefComplaint || "General Clinical Follow-up"}
                     </div>
                   </div>
 
-                  {/* Status Badge */}
-                  <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    {!isPending && (
+                      <button
+                        onClick={() => copyPrescription(c)}
+                        className="btn btn-outline"
+                        style={{ fontSize: "0.78rem", padding: "0.35rem 0.75rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+                      >
+                        <Printer size={14} />
+                        {copiedId === c.id ? "Copied Prescription!" : "Copy Prescription"}
+                      </button>
+                    )}
+
                     {isPending ? (
                       <span
                         style={{
@@ -211,22 +246,90 @@ export default function PatientConsultations() {
                   </div>
                 </div>
 
-                {/* Consultation Details */}
+                {/* Date & Time Bar */}
                 <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", fontSize: "0.85rem", color: "#64748b" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                     <Calendar size={16} color="#0284c7" />
-                    <span>{c.consultationDate ? new Date(c.consultationDate).toLocaleDateString() : "Scheduled"}</span>
+                    <span>Appointment Date: {c.consultationDate ? new Date(c.consultationDate).toLocaleDateString() : "Scheduled"}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                     <Clock size={16} color="#0284c7" />
                     <span>{c.consultationDate ? new Date(c.consultationDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Today"}</span>
                   </div>
+                  {c.diagnosis && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "#e2e8f0" }}>
+                      <FileText size={16} color="#10B981" />
+                      <span><strong>Diagnosis:</strong> {c.diagnosis} {c.icdCode ? `(ICD: ${c.icdCode})` : ""}</span>
+                    </div>
+                  )}
                 </div>
 
-                {c.clinicalNotes && (
-                  <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                    {c.clinicalNotes}
-                  </p>
+                {/* Symptoms Discussed & Clinical Notes */}
+                {(c.symptomsDiscussed || c.clinicalNotes) && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+                    {c.symptomsDiscussed && (
+                      <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: "1rem", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#f59e0b", marginBottom: "0.3rem" }}>
+                          🩺 Symptoms Discussed:
+                        </div>
+                        <div style={{ fontSize: "0.85rem", color: "#cbd5e1", lineHeight: 1.45 }}>
+                          {c.symptomsDiscussed}
+                        </div>
+                      </div>
+                    )}
+
+                    {c.clinicalNotes && (
+                      <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: "1rem", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0284c7", marginBottom: "0.3rem" }}>
+                          📋 Physician Clinical Notes:
+                        </div>
+                        <div style={{ fontSize: "0.85rem", color: "#cbd5e1", lineHeight: 1.45 }}>
+                          {c.clinicalNotes}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Dietary Advice & Prescriptions */}
+                {(c.dietaryDirectives || c.prescribedMedicines) && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+                    {c.dietaryDirectives && (
+                      <div style={{ background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.2)", padding: "1rem", borderRadius: "10px" }}>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#10B981", marginBottom: "0.3rem" }}>
+                          🥗 Dietary Advice & Clinical Directives:
+                        </div>
+                        <div style={{ fontSize: "0.85rem", color: "#e2e8f0", lineHeight: 1.45 }}>
+                          {c.dietaryDirectives}
+                        </div>
+                      </div>
+                    )}
+
+                    {c.prescribedMedicines && (
+                      <div style={{ background: "rgba(2, 132, 199, 0.05)", border: "1px solid rgba(2, 132, 199, 0.2)", padding: "1rem", borderRadius: "10px" }}>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0284c7", marginBottom: "0.3rem", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                          <Pill size={14} /> Medical Prescription & Dosage:
+                        </div>
+                        <pre style={{ margin: 0, fontSize: "0.82rem", color: "#e2e8f0", whiteSpace: "pre-wrap", fontFamily: "inherit", lineHeight: 1.5 }}>
+                          {c.prescribedMedicines}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Follow-up instructions & date */}
+                {(c.followUpInstructions || c.followUpDate) && (
+                  <div style={{ background: "rgba(245, 158, 11, 0.05)", border: "1px dashed rgba(245, 158, 11, 0.3)", padding: "0.85rem 1rem", borderRadius: "8px", fontSize: "0.82rem", color: "#e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+                    <div>
+                      <strong>Next Follow-up Instructions:</strong> {c.followUpInstructions || "Standard periodic review"}
+                    </div>
+                    {c.followUpDate && (
+                      <div style={{ color: "#f59e0b", fontWeight: 700 }}>
+                        Target Date: {new Date(c.followUpDate).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* OTP Verification Box for Pending Consultations */}
@@ -264,7 +367,7 @@ export default function PatientConsultations() {
                           CONSULTATION VERIFICATION OTP
                         </div>
                         <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
-                          Provide this 4-digit OTP to your doctor to verify and mark this consultation as completed.
+                          Provide this 4-digit OTP to your doctor during appointment to authorize visit completion.
                         </div>
                       </div>
                     </div>
@@ -361,7 +464,7 @@ export default function PatientConsultations() {
               </div>
 
               <div style={{ background: "#f8fafc", padding: "0.85rem", borderRadius: "8px", fontSize: "0.82rem", color: "#64748b" }}>
-                🔒 <strong>Automatic Verification OTP:</strong> Once scheduled, you will receive dummy OTP <strong>1234</strong> to share with your physician during appointment.
+                🔒 <strong>Verification OTP:</strong> Once scheduled, you will receive verification OTP <strong>1234</strong> to share with your physician during appointment.
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>

@@ -35,5 +35,15 @@ public class PatientProfileResponse {
     private String assignedDoctor;
     private String activeCondition;
     private String status;
+    private String dietaryPreference;
+    private Double currentWaterIntakeLiters;
+    private String healthGoals;
+    private String nutritionalRequirements;
+    private Double targetDailyCalories;
+    private Double targetDailyWaterMl;
+    private Double bmr;
+    private Double tdee;
+    private Double recommendedCalories;
+    private Double recommendedWaterLiters;
     private LocalDateTime createdAt;
 }

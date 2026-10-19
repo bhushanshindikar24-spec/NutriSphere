@@ -1,7 +1,23 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
-import { LogOut, User as UserIcon, LayoutDashboard, Apple, Users, ClipboardList, Stethoscope, Utensils, ShoppingBag } from "lucide-react";
+import { 
+  LogOut, 
+  User as UserIcon, 
+  LayoutDashboard, 
+  Apple, 
+  Users, 
+  ClipboardList, 
+  Stethoscope, 
+  Utensils, 
+  ShoppingBag,
+  Calculator,
+  FileText,
+  Activity,
+  ShieldAlert,
+  Dna,
+  HeartPulse
+} from "lucide-react";
 
 export default function MainLayout() {
   const { user, logout } = useContext(AuthContext);
@@ -19,14 +35,18 @@ export default function MainLayout() {
       case "PATIENT":
         return [
           { name: "Dashboard", path: "/patient", icon: <LayoutDashboard size={18} /> },
-          { name: "My Diet Plan", path: "/patient/diet-plan", icon: <ClipboardList size={18} /> },
+          { name: "Profile & Assessment", path: "/patient/profile", icon: <UserIcon size={18} /> },
+          { name: "Diet Plan & Calendar", path: "/patient/diet-plan", icon: <ClipboardList size={18} /> },
+          { name: "Daily Nutrition Report", path: "/patient/daily-report", icon: <FileText size={18} /> },
           { name: "Log Food & Water", path: "/patient/log-food", icon: <Apple size={18} /> },
-          { name: "Doctors & Specialists", path: "/patient/doctor", icon: <Stethoscope size={18} /> },
-          { name: "My Consultations", path: "/patient/consultations", icon: <Stethoscope size={18} /> },
-          { name: "Clinical Dietitians", path: "/patient/dietitian", icon: <Users size={18} /> },
+          { name: "Nutrition Calculator", path: "/patient/nutrition-calculator", icon: <Calculator size={18} /> },
+          { name: "Food Restrictions DB", path: "/patient/food-restrictions", icon: <ShieldAlert size={18} /> },
+          { name: "Medical & Family History", path: "/patient/medical-history", icon: <Dna size={18} /> },
+          { name: "Blood Reports & AI", path: "/patient/reports", icon: <Activity size={18} /> },
+          { name: "Longitudinal Lab Trends", path: "/patient/lab-progress", icon: <HeartPulse size={18} /> },
+          { name: "Consultations & Rx", path: "/patient/consultations", icon: <Stethoscope size={18} /> },
+          { name: "Care Team Directory", path: "/patient/directory", icon: <Users size={18} /> },
           { name: "Culinary Kitchen", path: "/patient/hotel/menu", icon: <Utensils size={18} /> },
-          { name: "Home Food Mode", path: "/patient/home-food", icon: <Apple size={18} /> },
-          { name: "Digital Twin", path: "/patient/digital-twin", icon: <ClipboardList size={18} /> },
           { name: "Orders", path: "/patient/hotel/orders", icon: <ShoppingBag size={18} /> },
         ];
       case "DIETITIAN":

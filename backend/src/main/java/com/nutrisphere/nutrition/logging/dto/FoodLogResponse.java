@@ -18,4 +18,8 @@ public class FoodLogResponse {
     private Double fatG;
     private Double fiberG;
     private String notes;
+    private Long dietPlanMealId;
+    private String difficultyReason;
+    private Integer difficultyRating;
+    private String symptomsReported;
 }

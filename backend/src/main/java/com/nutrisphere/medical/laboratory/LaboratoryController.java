@@ -14,6 +14,12 @@ public class LaboratoryController {
     private final LaboratoryService labService;
     private final SecurityUtils securityUtils;
 
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<List<LaboratoryReport>> getMyReports() {
+        return ApiResponse.success(labService.getForPatient(securityUtils.getCurrentUserId()));
+    }
+
     @GetMapping("/patient/{patientUserId}")
     @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT','ADMIN')")
     public ApiResponse<List<LaboratoryReport>> getForPatient(@PathVariable Long patientUserId) {
@@ -39,16 +45,41 @@ public class LaboratoryController {
         return ApiResponse.success(labService.getValues(id));
     }
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
-    public ApiResponse<LaboratoryReport> create(@RequestBody LaboratoryReport report) {
+    @PostMapping("/{id}/analyze")
+    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT','ADMIN')")
+    public ApiResponse<com.nutrisphere.medical.laboratory.dto.BloodReportAnalysisResponse> analyzeReport(@PathVariable Long id) {
+        LaboratoryReport report = labService.getById(id);
         securityUtils.assertPatientAccess(report.getPatientUserId());
-        report.setDoctorUserId(securityUtils.getCurrentUserId());
+        return ApiResponse.success(labService.analyzeReport(id));
+    }
+
+    @GetMapping("/patient/{patientUserId}/longitudinal")
+    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT','ADMIN')")
+    public ApiResponse<com.nutrisphere.medical.laboratory.dto.LongitudinalComparisonResponse> getLongitudinal(@PathVariable Long patientUserId) {
+        securityUtils.assertPatientAccess(patientUserId);
+        return ApiResponse.success(labService.getLongitudinalComparison(patientUserId));
+    }
+
+    @GetMapping("/my/longitudinal")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<com.nutrisphere.medical.laboratory.dto.LongitudinalComparisonResponse> getMyLongitudinal() {
+        return ApiResponse.success(labService.getLongitudinalComparison(securityUtils.getCurrentUserId()));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN','PATIENT')")
+    public ApiResponse<LaboratoryReport> create(@RequestBody LaboratoryReport report) {
+        if (securityUtils.hasRole("PATIENT")) {
+            report.setPatientUserId(securityUtils.getCurrentUserId());
+        } else {
+            securityUtils.assertPatientAccess(report.getPatientUserId());
+            report.setDoctorUserId(securityUtils.getCurrentUserId());
+        }
         return ApiResponse.success(labService.create(report));
     }
 
     @PostMapping("/{id}/values")
-    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN','PATIENT')")
     public ApiResponse<LaboratoryValue> addValue(@PathVariable Long id, @RequestBody LaboratoryValue value) {
         LaboratoryReport report = labService.getById(id);
         securityUtils.assertPatientAccess(report.getPatientUserId());

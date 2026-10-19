@@ -84,6 +84,10 @@ public class ConsultationController {
         c.setIcdCode(request.getIcdCode());
         c.setClinicalNotes(request.getClinicalNotes());
         c.setDietaryDirectives(request.getDietaryDirectives());
+        c.setSymptomsDiscussed(request.getSymptomsDiscussed());
+        c.setPrescribedMedicines(request.getPrescribedMedicines());
+        c.setFollowUpInstructions(request.getFollowUpInstructions());
+        if (request.getFollowUpDate() != null) c.setFollowUpDate(request.getFollowUpDate());
         if (request.getVitalSigns() != null) {
             c.setBloodPressure(request.getVitalSigns().getBloodPressure());
             c.setHeartRate(request.getVitalSigns().getHeartRate());
@@ -94,6 +98,33 @@ public class ConsultationController {
         // Status defaults to PENDING (with dummy OTP 1234)
         c.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus() : "PENDING");
         c.setOtp("1234");
+
+        Consultation saved = repo.save(c);
+        populateTransientFields(List.of(saved));
+        return ApiResponse.success(saved);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public ApiResponse<Consultation> update(
+            @PathVariable Long id, 
+            @RequestBody ConsultationRequest request) {
+        Consultation c = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Consultation not found with id: " + id));
+        securityUtils.assertPatientAccess(c.getPatientUserId());
+
+        if (request.getChiefComplaint() != null) c.setChiefComplaint(request.getChiefComplaint());
+        if (request.getDiagnosis() != null) c.setDiagnosis(request.getDiagnosis());
+        if (request.getIcdCode() != null) c.setIcdCode(request.getIcdCode());
+        if (request.getClinicalNotes() != null) c.setClinicalNotes(request.getClinicalNotes());
+        if (request.getDietaryDirectives() != null) c.setDietaryDirectives(request.getDietaryDirectives());
+        if (request.getSymptomsDiscussed() != null) c.setSymptomsDiscussed(request.getSymptomsDiscussed());
+        if (request.getPrescribedMedicines() != null) c.setPrescribedMedicines(request.getPrescribedMedicines());
+        if (request.getFollowUpInstructions() != null) c.setFollowUpInstructions(request.getFollowUpInstructions());
+        if (request.getFollowUpDate() != null) c.setFollowUpDate(request.getFollowUpDate());
+        if (request.getBloodPressure() != null) c.setBloodPressure(request.getBloodPressure());
+        if (request.getHeartRate() != null) c.setHeartRate(request.getHeartRate());
+        if (request.getStatus() != null) c.setStatus(request.getStatus());
 
         Consultation saved = repo.save(c);
         populateTransientFields(List.of(saved));
@@ -148,11 +179,15 @@ public class ConsultationController {
         private Long patientUserId;
         private Long doctorUserId;
         private LocalDateTime consultationDate;
+        private LocalDateTime followUpDate;
         private String chiefComplaint;
         private String diagnosis;
         private String icdCode;
         private String clinicalNotes;
         private String dietaryDirectives;
+        private String symptomsDiscussed;
+        private String prescribedMedicines;
+        private String followUpInstructions;
         private String bloodPressure;
         private String heartRate;
         private String status;

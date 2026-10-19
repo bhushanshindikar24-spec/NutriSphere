@@ -1,4 +1,3 @@
-
 import { Routes, Route } from "react-router-dom";
 import PatientDashboard from "../pages/patient/PatientDashboard";
 import DietPlan from "../pages/patient/DietPlan";
@@ -16,12 +15,18 @@ import NutritionAnalysis from "../pages/patient/NutritionAnalysis";
 import Progress from "../pages/patient/Progress";
 import MyDietitian from "../pages/patient/MyDietitian";
 import MyDoctor from "../pages/patient/MyDoctor";
+import Directory from "../pages/patient/Directory";
 import Profile from "../pages/patient/Profile";
 import EditProfile from "../pages/patient/EditProfile";
 import Notifications from "../pages/patient/Notifications";
 import Reports from "../pages/patient/Reports";
 import UploadReport from "../pages/patient/UploadReport";
+import LabProgress from "../pages/patient/LabProgress";
 import PatientConsultations from "../pages/patient/Consultations";
+import MedicalConditions from "../pages/patient/MedicalConditions";
+import MedicalHistory from "../pages/patient/MedicalHistory";
+import DailyReport from "../pages/patient/DailyReport";
+import NutritionCalculator from "../pages/patient/NutritionCalculator";
 
 // Patient Hotel & Meal Delivery
 import HotelMenu from "../pages/patient/hotel/Menu";
@@ -38,6 +43,12 @@ export default function PatientRoutes() {
       <Route path="/" element={<PatientDashboard />} />
       <Route path="/dashboard" element={<PatientDashboard />} />
       <Route path="/diet-plan" element={<DietPlan />} />
+      <Route path="/daily-report" element={<DailyReport />} />
+      <Route path="/nutrition-calculator" element={<NutritionCalculator />} />
+      <Route path="/calculator" element={<NutritionCalculator />} />
+      <Route path="/food-restrictions" element={<MedicalConditions />} />
+      <Route path="/conditions" element={<MedicalConditions />} />
+      <Route path="/medical-history" element={<MedicalHistory />} />
       <Route path="/log-food" element={<LogFood />} />
       <Route path="/food-logging" element={<FoodLogging />} />
       <Route path="/water-logging" element={<WaterLogging />} />
@@ -51,6 +62,7 @@ export default function PatientRoutes() {
       <Route path="/digital-twin" element={<DigitalTwin />} />
       <Route path="/nutrition-analysis" element={<NutritionAnalysis />} />
       <Route path="/progress" element={<Progress />} />
+      <Route path="/directory" element={<Directory />} />
       <Route path="/my-dietitian" element={<MyDietitian />} />
       <Route path="/dietitian" element={<MyDietitian />} />
       <Route path="/my-doctor" element={<MyDoctor />} />
@@ -61,6 +73,7 @@ export default function PatientRoutes() {
       <Route path="/notifications" element={<Notifications />} />
       <Route path="/reports" element={<Reports />} />
       <Route path="/reports/upload" element={<UploadReport />} />
+      <Route path="/lab-progress" element={<LabProgress />} />
 
       {/* Hotel & Delivery */}
       <Route path="/hotel/menu" element={<HotelMenu />} />

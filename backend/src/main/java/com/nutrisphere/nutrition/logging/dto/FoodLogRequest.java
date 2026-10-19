@@ -33,6 +33,9 @@ public class FoodLogRequest {
 
     private String notes;
     private Long dietPlanMealId;
+    private String difficultyReason;
+    private Integer difficultyRating;
+    private String symptomsReported;
 
     public LocalDate getLogDate() {
         return logDate != null ? logDate : LocalDate.now();

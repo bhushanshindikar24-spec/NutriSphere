@@ -14,5 +14,12 @@ public class MedicalHistory extends BaseEntity {
     @Column(name = "status") private String status;
     @Column(name = "treatment", length = 500) private String treatment;
     @Column(name = "medications", length = 500) private String medications;
+    @Column(name = "severity", length = 100) private String severity;
+    @Column(name = "ongoing_treatments", length = 1000) private String ongoingTreatments;
+    @Column(name = "past_surgeries", length = 1000) private String pastSurgeries;
+    @Column(name = "relevant_symptoms", length = 1000) private String relevantSymptoms;
+    @Column(name = "family_members_affected", length = 500) private String familyMembersAffected;
+    @Column(name = "hereditary_risk_factors", length = 1000) private String hereditaryRiskFactors;
+    @Column(name = "family_history_details", length = 1000) private String familyHistoryDetails;
     @Column(name = "is_active") @Builder.Default private boolean active = true;
 }

@@ -68,6 +68,23 @@ public class FoodLogController {
         return ApiResponse.success(foodLogService.getPlannedVsActual(uid, date));
     }
 
+    @GetMapping("/daily-report")
+    public ApiResponse<DailyNutritionReportResponse> getDailyReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long patientUserId) {
+        LocalDate targetDate = date != null ? date : LocalDate.now();
+        Long uid = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
+        securityUtils.assertPatientAccess(uid);
+        return ApiResponse.success(foodLogService.buildDailyReport(uid, targetDate));
+    }
+
+    @PostMapping("/meal-builder")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<List<FoodLogResponse>> logMealBuilder(
+            @RequestBody MealBuilderRequest req) {
+        return ApiResponse.success(foodLogService.logCustomMeal(securityUtils.getCurrentUserId(), req));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('PATIENT')")
     public ApiResponse<FoodLogResponse> updateFoodLog(

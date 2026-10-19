@@ -22,12 +22,14 @@ class LaboratoryServiceTest {
     private LaboratoryReportRepository reportRepo;
     @Mock
     private LaboratoryValueRepository valueRepo;
+    @Mock
+    private com.nutrisphere.user.UserRepository userRepo;
 
     private LaboratoryService service;
 
     @BeforeEach
     void setUp() {
-        service = new LaboratoryService(reportRepo, valueRepo);
+        service = new LaboratoryService(reportRepo, valueRepo, userRepo);
     }
 
     @Test

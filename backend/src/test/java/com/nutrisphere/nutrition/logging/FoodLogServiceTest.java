@@ -37,12 +37,22 @@ class FoodLogServiceTest {
     private DietPlanRepository planRepo;
     @Mock
     private DietPlanMealRepository mealRepo;
+    @Mock
+    private com.nutrisphere.nutrition.hydration.WaterLogRepository waterLogRepo;
+    @Mock
+    private com.nutrisphere.user.UserRepository userRepo;
+    @Mock
+    private com.nutrisphere.patient.PatientRepository patientRepo;
+    @Mock
+    private com.nutrisphere.assignment.DoctorPatientRepository doctorPatientRepo;
+    @Mock
+    private com.nutrisphere.assignment.DietitianPatientRepository dietitianPatientRepo;
 
     private FoodLogService service;
 
     @BeforeEach
     void setUp() {
-        service = new FoodLogService(logRepo, deviationRepo, planRepo, mealRepo);
+        service = new FoodLogService(logRepo, deviationRepo, planRepo, mealRepo, waterLogRepo, userRepo, patientRepo, doctorPatientRepo, dietitianPatientRepo);
     }
 
     @Test

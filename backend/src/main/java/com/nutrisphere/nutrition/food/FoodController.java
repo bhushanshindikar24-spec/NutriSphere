@@ -28,4 +28,9 @@ public class FoodController {
     public ApiResponse<FoodResponse> create(@RequestBody FoodRequest req) {
         return ApiResponse.success(foodService.create(req));
     }
+
+    @PostMapping("/calculate")
+    public ApiResponse<FoodCalculateResponse> calculate(@RequestBody FoodCalculateRequest req) {
+        return ApiResponse.success(foodService.calculateNutrition(req));
+    }
 }

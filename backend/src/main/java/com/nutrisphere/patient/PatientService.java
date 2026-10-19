@@ -92,6 +92,49 @@ public class PatientService {
         if (req.getAddress() != null) p.setAddress(req.getAddress());
         if (req.getEmergencyContactName() != null) p.setEmergencyContactName(req.getEmergencyContactName());
         if (req.getEmergencyContactPhone() != null) p.setEmergencyContactPhone(req.getEmergencyContactPhone());
+        if (req.getDietaryPreference() != null) p.setDietaryPreference(req.getDietaryPreference());
+        if (req.getCurrentWaterIntakeLiters() != null) p.setCurrentWaterIntakeLiters(req.getCurrentWaterIntakeLiters());
+        if (req.getHealthGoals() != null) p.setHealthGoals(req.getHealthGoals());
+        if (req.getNutritionalRequirements() != null) p.setNutritionalRequirements(req.getNutritionalRequirements());
+
+        // Calculate and reflect targets in personalized diet plan
+        double weight = p.getWeightKg() != null ? p.getWeightKg() : 70.0;
+        double height = p.getHeightCm() != null ? p.getHeightCm() : 170.0;
+        int age = p.getDateOfBirth() != null ? java.time.Period.between(p.getDateOfBirth(), LocalDate.now()).getYears() : 30;
+        boolean isFemale = p.getGender() == com.nutrisphere.common.enums.Gender.FEMALE;
+        double bmr = (10.0 * weight) + (6.25 * height) - (5.0 * age) + (isFemale ? -161.0 : 5.0);
+        double multiplier = 1.375;
+        if (p.getActivityLevel() != null) {
+            switch (p.getActivityLevel()) {
+                case SEDENTARY -> multiplier = 1.2;
+                case LIGHTLY_ACTIVE -> multiplier = 1.375;
+                case MODERATELY_ACTIVE -> multiplier = 1.55;
+                case VERY_ACTIVE -> multiplier = 1.725;
+                case EXTRA_ACTIVE -> multiplier = 1.9;
+            }
+        }
+        double targetCal = bmr * multiplier;
+        if (p.getHealthGoals() != null) {
+            String g = p.getHealthGoals().toLowerCase();
+            if (g.contains("loss") || g.contains("deficit")) targetCal -= 400;
+            else if (g.contains("gain") || g.contains("muscle")) targetCal += 350;
+        }
+        double finalCalories = req.getTargetDailyCalories() != null && req.getTargetDailyCalories() > 0 
+            ? req.getTargetDailyCalories() : Math.max(1200.0, Math.round(targetCal));
+        double finalWaterMl = req.getTargetDailyWaterMl() != null && req.getTargetDailyWaterMl() > 0 
+            ? req.getTargetDailyWaterMl() : (p.getCurrentWaterIntakeLiters() != null && p.getCurrentWaterIntakeLiters() > 0 
+                ? p.getCurrentWaterIntakeLiters() * 1000.0 : Math.round(weight * 33.0));
+
+        p.setTargetDailyCalories(finalCalories);
+        p.setTargetDailyWaterMl(finalWaterMl);
+
+        // Reflect in active approved diet plan if present
+        dietPlanRepository.findByPatientUserIdAndStatus(userId, DietPlanStatus.APPROVED).ifPresent(dp -> {
+            dp.setTargetCalories(finalCalories);
+            dp.setTargetWaterMl(finalWaterMl);
+            dietPlanRepository.save(dp);
+        });
+
         return patientMapper.toResponse(patientRepository.save(p));
     }
 

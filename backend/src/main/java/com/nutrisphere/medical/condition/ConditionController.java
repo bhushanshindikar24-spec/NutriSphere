@@ -19,8 +19,19 @@ public class ConditionController {
         return ApiResponse.success(conditionService.getAllHealthConditions());
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<HealthCondition> getConditionById(@PathVariable Long id) {
+        return ApiResponse.success(conditionService.getConditionById(id));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<List<PatientCondition>> getMyConditions() {
+        return ApiResponse.success(conditionService.getPatientConditions(securityUtils.getCurrentUserId()));
+    }
+
     @GetMapping("/patient/{patientUserId}")
-    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN')")
+    @PreAuthorize("hasAnyRole('DOCTOR','DIETITIAN','PATIENT','ADMIN')")
     public ApiResponse<List<PatientCondition>> getPatientConditions(@PathVariable Long patientUserId) {
         securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(conditionService.getPatientConditions(patientUserId));
