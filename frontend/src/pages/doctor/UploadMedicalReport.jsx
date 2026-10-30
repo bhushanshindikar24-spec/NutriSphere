@@ -25,11 +25,7 @@ export default function UploadMedicalReport() {
         setPatients(list);
         if (!patientId && list.length > 0) setPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-        ]);
-        if (!patientId) setPatientId("101");
+        setPatients([]);
       }
     };
     fetchPatients();

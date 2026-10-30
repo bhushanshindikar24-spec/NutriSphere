@@ -73,4 +73,52 @@ public class PatientProfile extends BaseEntity {
 
     @Column(name = "target_daily_water_ml")
     private Double targetDailyWaterMl;
+
+    @Column(name = "blood_pressure", length = 50)
+    private String bloodPressure;
+
+    @Column(name = "resting_heart_rate")
+    private Integer restingHeartRate;
+
+    @Column(name = "diagnosed_conditions", length = 1000)
+    private String diagnosedConditions;
+
+    @Column(name = "current_symptoms", length = 1000)
+    private String currentSymptoms;
+
+    @Column(name = "previous_surgeries", length = 1000)
+    private String previousSurgeries;
+
+    @Column(name = "family_medical_history", length = 1000)
+    private String familyMedicalHistory;
+
+    @Column(name = "current_medications", length = 1000)
+    private String currentMedications;
+
+    @Column(name = "vitamins_supplements", length = 1000)
+    private String vitaminsSupplements;
+
+    @Column(name = "food_intolerances", length = 500)
+    private String foodIntolerances;
+
+    @Column(name = "meals_per_day", length = 50)
+    private String mealsPerDay;
+
+    @Column(name = "meal_timings", length = 500)
+    private String mealTimings;
+
+    @Column(name = "typical_food_intake", length = 2000)
+    private String typicalFoodIntake;
+
+    @Column(name = "exercise_type", length = 255)
+    private String exerciseType;
+
+    @Column(name = "exercise_frequency_duration", length = 255)
+    private String exerciseFrequencyDuration;
+
+    @Column(name = "smoking_tobacco", length = 100)
+    private String smokingTobacco;
+
+    @Column(name = "alcohol_consumption", length = 100)
+    private String alcoholConsumption;
 }

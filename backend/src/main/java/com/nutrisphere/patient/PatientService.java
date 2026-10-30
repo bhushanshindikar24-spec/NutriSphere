@@ -75,6 +75,9 @@ public class PatientService {
         if (req.getLastName() != null && !req.getLastName().isBlank()) {
             user.setLastName(req.getLastName());
         }
+        if (req.getPhoneNumber() != null) {
+            user.setPhoneNumber(req.getPhoneNumber());
+        }
         userRepository.save(user);
 
         PatientProfile p = patientRepository.findByUserId(userId).orElse(new PatientProfile());
@@ -96,6 +99,23 @@ public class PatientService {
         if (req.getCurrentWaterIntakeLiters() != null) p.setCurrentWaterIntakeLiters(req.getCurrentWaterIntakeLiters());
         if (req.getHealthGoals() != null) p.setHealthGoals(req.getHealthGoals());
         if (req.getNutritionalRequirements() != null) p.setNutritionalRequirements(req.getNutritionalRequirements());
+
+        if (req.getBloodPressure() != null) p.setBloodPressure(req.getBloodPressure());
+        if (req.getRestingHeartRate() != null) p.setRestingHeartRate(req.getRestingHeartRate());
+        if (req.getDiagnosedConditions() != null) p.setDiagnosedConditions(req.getDiagnosedConditions());
+        if (req.getCurrentSymptoms() != null) p.setCurrentSymptoms(req.getCurrentSymptoms());
+        if (req.getPreviousSurgeries() != null) p.setPreviousSurgeries(req.getPreviousSurgeries());
+        if (req.getFamilyMedicalHistory() != null) p.setFamilyMedicalHistory(req.getFamilyMedicalHistory());
+        if (req.getCurrentMedications() != null) p.setCurrentMedications(req.getCurrentMedications());
+        if (req.getVitaminsSupplements() != null) p.setVitaminsSupplements(req.getVitaminsSupplements());
+        if (req.getFoodIntolerances() != null) p.setFoodIntolerances(req.getFoodIntolerances());
+        if (req.getMealsPerDay() != null) p.setMealsPerDay(req.getMealsPerDay());
+        if (req.getMealTimings() != null) p.setMealTimings(req.getMealTimings());
+        if (req.getTypicalFoodIntake() != null) p.setTypicalFoodIntake(req.getTypicalFoodIntake());
+        if (req.getExerciseType() != null) p.setExerciseType(req.getExerciseType());
+        if (req.getExerciseFrequencyDuration() != null) p.setExerciseFrequencyDuration(req.getExerciseFrequencyDuration());
+        if (req.getSmokingTobacco() != null) p.setSmokingTobacco(req.getSmokingTobacco());
+        if (req.getAlcoholConsumption() != null) p.setAlcoholConsumption(req.getAlcoholConsumption());
 
         // Calculate and reflect targets in personalized diet plan
         double weight = p.getWeightKg() != null ? p.getWeightKg() : 70.0;

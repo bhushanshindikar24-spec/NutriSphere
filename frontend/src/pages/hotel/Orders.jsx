@@ -90,7 +90,7 @@ export default function Orders() {
                 <OrderStatusBadge status={order.status} />
               </div>
               <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
-                Patient: <strong>{order.patientName || "Alex Morgan"}</strong> • {order.deliveryAddress}
+                Patient: <strong>{order.patientName || "Patient"}</strong> • {order.deliveryAddress}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
                 {order.items?.map((it, idx) => (

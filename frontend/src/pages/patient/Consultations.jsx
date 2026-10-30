@@ -21,45 +21,13 @@ export default function PatientConsultations() {
   const fetchConsultations = async () => {
     try {
       const data = await getMyConsultations();
-      if (Array.isArray(data) && data.length > 0) {
-        setConsultations(data);
-      } else {
-        setConsultations(getDefaultConsultations());
-      }
+      setConsultations(Array.isArray(data) ? data : []);
     } catch (_err) {
-      setConsultations(getDefaultConsultations());
+      setConsultations([]);
     } finally {
       setLoading(false);
     }
   };
-
-  const getDefaultConsultations = () => [
-    {
-      id: 1,
-      physicianName: "Dr. Marcus Thorne, MD",
-      chiefComplaint: "Comprehensive Glycemic Regulation & Pre-Diabetes Review",
-      consultationDate: "2026-09-15T10:30:00",
-      status: "COMPLETED",
-      diagnosis: "Pre-Diabetes with Mild Metabolic Insulin Resistance",
-      icdCode: "R73.03",
-      symptomsDiscussed: "Mid-afternoon fatigue, post-meal brain fog, occasional mild sugar cravings.",
-      clinicalNotes: "Patient evaluated for glycemic variability. Fasting glucose has dropped to 94 mg/dL and HbA1c to 5.6%. Excellent response to low glycemic dietary modification.",
-      dietaryDirectives: "Continue Mediterranean-style low glycemic meal plan. Prioritize steel-cut oats, yellow lentils, and walnuts. Limit refined flour and saturated cooking oils.",
-      prescribedMedicines: "1. Metformin Hydrochloride 500mg - 1 tablet with evening meal daily (30 days)\n2. Vitamin D3 60,000 IU - 1 capsule weekly with breakfast (8 weeks)\n3. Alpha Lipoic Acid 300mg - 1 capsule daily in the morning (30 days)",
-      followUpInstructions: "Repeat fasting glucose and HbA1c in 12 weeks. Maintain daily hydration logs in NutriSphere.",
-      followUpDate: "2026-12-15T10:30:00",
-      otp: "1234",
-    },
-    {
-      id: 2,
-      physicianName: "Dr. Marcus Thorne, MD",
-      chiefComplaint: "Follow-up Consultation on Bloodwork and Metabolic Progress",
-      consultationDate: new Date(Date.now() + 86400000 * 3).toISOString(),
-      status: "PENDING",
-      clinicalNotes: "Scheduled follow-up consultation. Provide your 4-digit verification OTP (1234) to attending doctor upon arrival.",
-      otp: "1234",
-    },
-  ];
 
   useEffect(() => {
     fetchConsultations();
@@ -96,9 +64,10 @@ export default function PatientConsultations() {
       fetchConsultations();
     } catch (err) {
       console.error("Booking error:", err);
+      const selectedDoc = doctors.find((d) => (d.userId || d.id) === Number(bookForm.doctorId));
       const newConsult = {
         id: Date.now(),
-        physicianName: doctors.find((d) => (d.userId || d.id) === Number(bookForm.doctorId))?.fullName || "Dr. Marcus Thorne, MD",
+        physicianName: selectedDoc?.fullName || (selectedDoc ? `Dr. ${selectedDoc.firstName} ${selectedDoc.lastName}` : "Attending Physician"),
         chiefComplaint: bookForm.chiefComplaint || "Routine Clinical Nutrition Checkup",
         consultationDate: bookForm.consultationDate,
         status: "PENDING",
@@ -115,7 +84,7 @@ export default function PatientConsultations() {
 
   const copyPrescription = (c) => {
     const text = `Prescription Record - NutriSphere
-Physician: ${c.physicianName || "Dr. Marcus Thorne, MD"}
+Physician: ${c.physicianName || "Attending Physician"}
 Date: ${c.consultationDate ? new Date(c.consultationDate).toLocaleDateString() : ""}
 Diagnosis: ${c.diagnosis || "Clinical Review"} (${c.icdCode || ""})
 Prescribed Medications:
@@ -189,7 +158,7 @@ Follow-up: ${c.followUpDate ? new Date(c.followUpDate).toLocaleDateString() : "A
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
                   <div>
                     <h3 style={{ margin: "0 0 0.35rem 0", fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      {c.physicianName || "Dr. Marcus Thorne, MD"}
+                      {c.physicianName || "Attending Physician"}
                     </h3>
                     <div style={{ fontSize: "0.85rem", color: "#0284c7", fontWeight: 600 }}>
                       {c.chiefComplaint || "General Clinical Follow-up"}
@@ -427,7 +396,7 @@ Follow-up: ${c.followUpDate ? new Date(c.followUpDate).toLocaleDateString() : "A
                   required
                 >
                   {doctors.length === 0 ? (
-                    <option value="1">Dr. Marcus Thorne, MD (Endocrinology & Internal Medicine)</option>
+                    <option value="">No doctors available currently</option>
                   ) : (
                     doctors.map((d) => (
                       <option key={d.userId || d.id} value={d.userId || d.id}>

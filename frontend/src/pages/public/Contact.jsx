@@ -38,8 +38,8 @@ export default function Contact() {
               <Phone size={20} />
             </div>
             <div>
-              <p className="text-muted" style={{ fontSize: "0.75rem", margin: 0 }}>Toll-Free Partner Inquiries</p>
-              <p style={{ fontWeight: 600, margin: 0 }}>+1 (800) 555-NUTR (6887)</p>
+              <p className="text-muted" style={{ fontSize: "0.75rem", margin: 0 }}>Toll-Free Health Helpline (India)</p>
+              <p style={{ fontWeight: 600, margin: 0 }}>+91 1800-266-6887 / 112</p>
             </div>
           </div>
 
@@ -49,7 +49,7 @@ export default function Contact() {
             </div>
             <div>
               <p className="text-muted" style={{ fontSize: "0.75rem", margin: 0 }}>Headquarters</p>
-              <p style={{ fontWeight: 600, margin: 0 }}>NutriSphere Clinical Intelligence Labs, Boston, MA</p>
+              <p style={{ fontWeight: 600, margin: 0 }}>NutriSphere Clinical Intelligence Labs, BKC, Bandra East, Mumbai, Maharashtra 400051, India</p>
             </div>
           </div>
         </div>

@@ -28,50 +28,17 @@ export default function MedicalHistory() {
     try {
       const res = await api.get("/medical/history/my");
       const list = res.data?.data || res.data || [];
-      if (Array.isArray(list) && list.length > 0) {
+      if (Array.isArray(list)) {
         setHistoryList(list);
       } else {
-        setHistoryList(getDefaultHistory());
+        setHistoryList([]);
       }
     } catch (_e) {
-      setHistoryList(getDefaultHistory());
+      setHistoryList([]);
     } finally {
       setLoading(false);
     }
   };
-
-  const getDefaultHistory = () => [
-    {
-      id: 1,
-      conditionName: "PCOS (Polycystic Ovary Syndrome)",
-      diagnosisDate: "2023-04-12",
-      severity: "MODERATE",
-      status: "ACTIVE",
-      relevantSymptoms: "Oligomenorrhea, mild hirsutism, insulin resistance, fatigue",
-      medications: "Metformin 500mg (1x daily with evening meal), Inositol supplement",
-      ongoingTreatments: "Low-GI lifestyle modification, resistance training 3x/week",
-      pastSurgeries: "Laparoscopic ovarian cystectomy (2022)",
-      familyMembersAffected: "Mother (Type 2 Diabetes), Older Sister (PCOS)",
-      hereditaryRiskFactors: "Strong maternal lineage of insulin resistance and dyslipidemia",
-      familyHistoryDetails: "Maternal grandmother had early-onset diabetes and hypertension.",
-      description: "Diagnosed via pelvic ultrasound and elevated LH:FSH ratio.",
-    },
-    {
-      id: 2,
-      conditionName: "Essential Hypertension",
-      diagnosisDate: "2024-01-18",
-      severity: "MILD",
-      status: "ACTIVE",
-      relevantSymptoms: "Occasional morning occipital headache, elevated readings (138/88)",
-      medications: "Lifestyle management, low sodium dietary protocol",
-      ongoingTreatments: "Daily blood pressure monitoring, DASH diet adherence",
-      pastSurgeries: "None",
-      familyMembersAffected: "Father (Hypertension at age 45), Paternal Uncle (CAD)",
-      hereditaryRiskFactors: "Paternal history of premature cardiovascular disease",
-      familyHistoryDetails: "Father had coronary stent placement at age 52.",
-      description: "Mild stage 1 hypertension managed primarily through dietary DASH intervention.",
-    },
-  ];
 
   useEffect(() => {
     fetchHistory();
@@ -181,6 +148,18 @@ export default function MedicalHistory() {
       )}
 
       {/* History Records List */}
+      {historyList.length === 0 ? (
+        <div className="glass-panel" style={{ padding: "3rem 2rem", textAlign: "center", borderRadius: "16px" }}>
+          <HeartPulse size={44} color="#94a3b8" style={{ margin: "0 auto 1rem auto", display: "block" }} />
+          <h3 style={{ margin: "0 0 0.5rem 0", color: "#334155" }}>No Medical History Records Recorded</h3>
+          <p className="text-muted" style={{ margin: "0 0 1.5rem 0", fontSize: "0.9rem" }}>
+            Add any past or current medical conditions, surgeries, or family risk factors to help your care team.
+          </p>
+          <button onClick={handleOpenCreate} className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+            <Plus size={16} /> Add First Medical Record
+          </button>
+        </div>
+      ) : (
       <div style={{ display: "grid", gap: "1.5rem" }}>
         {historyList.map((item) => {
           const isSevere = item.severity === "SEVERE" || item.severity === "CRITICAL";
@@ -296,6 +275,7 @@ export default function MedicalHistory() {
           );
         })}
       </div>
+      )}
 
       {/* Add / Edit Modal */}
       {showModal && (

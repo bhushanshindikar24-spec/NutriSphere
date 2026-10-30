@@ -1,85 +1,7 @@
 import { useState, useEffect } from "react";
-import { TrendingUp, ArrowUpRight, ArrowDownRight, Minus, CheckCircle2, AlertTriangle, ShieldCheck, Calendar, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { TrendingUp, ArrowUpRight, ArrowDownRight, Minus, CheckCircle2, AlertTriangle, ShieldCheck, Calendar, Sparkles, Upload } from "lucide-react";
 import api from "../../services/api";
-
-const getDefaultLongitudinal = () => ({
-  patientName: "Patient Record",
-  latestReportDate: "2026-09-15",
-  previousReportDate: "2026-06-10",
-  patientFriendlyInsights: "Comparing your latest blood panel with your baseline from 3 months ago: You have achieved 4 significant biomarker improvements! Vitamin D is up, HbA1c is down, and LDL cholesterol has normalized.",
-  aiDietCorrelation: "Patient's daily nutrition tracking records demonstrate 89% compliance with Mediterranean low-GI meal plan, increased leafy green intake, and daily olive oil/walnut additions, directly supporting the observed biomarker recovery.",
-  clinicalDoctorNotes: "Physician Review (Dr. Marcus Thorne): Favorable metabolic response. Continue prescribed low glycemic index directives and re-check lipid panel in 6 months.",
-  clinicalDisclaimer: "Clinical Disclaimer: AI insights are presented as possible nutritional correlations rather than confirmed diagnoses. Clinical decisions must be confirmed by your supervising doctor.",
-  nutritionalImprovements: [
-    "Vitamin D3 rose from 18.4 ng/mL to 32.1 ng/mL (+13.7 ng/mL, transitioning from deficient to sufficient)",
-    "HbA1c declined from 6.1% to 5.6% (-0.5%), moving below pre-diabetes risk threshold",
-    "LDL Cholesterol declined from 128 mg/dL to 112 mg/dL (-16 mg/dL)",
-    "Serum Ferritin improved from 19 ng/mL to 28 ng/mL (+9 ng/mL) through enhanced iron-citrus pairings",
-  ],
-  areasOfConcern: [],
-  comparisons: [
-    {
-      parameterName: "Vitamin D3 (25-OH)",
-      previousValue: "18.4",
-      latestValue: "32.1",
-      unit: "ng/mL",
-      normalRange: "30.0 - 100.0 ng/mL",
-      changeStatus: "IMPROVED",
-      statusBadgeColor: "green",
-      aiPossibleExplanation: "Serum Vitamin D increased significantly (+13.7 ng/mL). Consistent intake of fortified milk, egg yolks, and 15-minute morning sun exposure successfully reversed deficiency.",
-      previousNumeric: 18.4,
-      latestNumeric: 32.1,
-    },
-    {
-      parameterName: "HbA1c (Glycated Hemoglobin)",
-      previousValue: "6.1%",
-      latestValue: "5.6%",
-      unit: "%",
-      normalRange: "< 5.7%",
-      changeStatus: "IMPROVED",
-      statusBadgeColor: "green",
-      aiPossibleExplanation: "Fasting glycemic control improved favorably (-0.5%). Replacing refined wheat and sweetened snacks with steel-cut oats and quinoa flattened postprandial glucose curves.",
-      previousNumeric: 6.1,
-      latestNumeric: 5.6,
-    },
-    {
-      parameterName: "LDL Cholesterol",
-      previousValue: "128",
-      latestValue: "112",
-      unit: "mg/dL",
-      normalRange: "< 100 mg/dL",
-      changeStatus: "IMPROVED",
-      statusBadgeColor: "green",
-      aiPossibleExplanation: "Atherogenic lipoproteins decreased by 16 mg/dL. Replacing butter and fried foods with extra virgin olive oil and daily walnuts aided circulating lipid clearance.",
-      previousNumeric: 128.0,
-      latestNumeric: 112.0,
-    },
-    {
-      parameterName: "Serum Ferritin (Iron Stores)",
-      previousValue: "19",
-      latestValue: "28",
-      unit: "ng/mL",
-      normalRange: "24 - 336 ng/mL",
-      changeStatus: "IMPROVED",
-      statusBadgeColor: "green",
-      aiPossibleExplanation: "Iron reserves crossed back into healthy range (+9 ng/mL). Pairing yellow lentil dal and fresh spinach with lemon (Vitamin C) significantly enhanced intestinal non-heme absorption.",
-      previousNumeric: 19.0,
-      latestNumeric: 28.0,
-    },
-    {
-      parameterName: "Fasting Blood Glucose",
-      previousValue: "108",
-      latestValue: "94",
-      unit: "mg/dL",
-      normalRange: "70 - 99 mg/dL",
-      changeStatus: "IMPROVED",
-      statusBadgeColor: "green",
-      aiPossibleExplanation: "Fasting blood sugar normalized to 94 mg/dL. Enhanced meal timing and avoiding late-night snacking helped re-sensitize morning hepatic insulin signaling.",
-      previousNumeric: 108.0,
-      latestNumeric: 94.0,
-    },
-  ],
-});
 
 export default function LabProgress() {
   const [data, setData] = useState(null);
@@ -91,7 +13,7 @@ export default function LabProgress() {
         const res = await api.get("/medical/laboratory/my/longitudinal");
         setData(res.data?.data || res.data);
       } catch (_e) {
-        setData(getDefaultLongitudinal());
+        setData(null);
       } finally {
         setLoading(false);
       }
@@ -100,6 +22,41 @@ export default function LabProgress() {
   }, []);
 
   if (loading) return <div className="loading-screen">Loading Longitudinal Lab Comparison...</div>;
+
+  if (!data || !data.comparisons || data.comparisons.length === 0) {
+    return (
+      <div style={{ maxWidth: "1050px", margin: "0 auto", display: "grid", gap: "1.75rem" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ background: "rgba(16, 185, 129, 0.12)", padding: "0.5rem", borderRadius: "10px", color: "#10B981" }}>
+              <TrendingUp size={24} />
+            </div>
+            <h2 style={{ margin: 0 }}>Longitudinal Blood Report Comparison & AI Progress</h2>
+          </div>
+          <p className="text-muted" style={{ margin: "0.4rem 0 0 0" }}>
+            Visual comparison of your consecutive blood panels across consultations. AI correlates biomarker improvements with your daily diet logs and medications.
+          </p>
+        </div>
+
+        <div className="glass-panel" style={{ padding: "3rem 2rem", borderRadius: "var(--radius-lg)", textAlign: "center", display: "grid", gap: "1.25rem", placeItems: "center" }}>
+          <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(2, 132, 199, 0.12)", color: "#0284c7", display: "grid", placeItems: "center" }}>
+            <Upload size={32} />
+          </div>
+          <div style={{ maxWidth: "540px" }}>
+            <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>No Blood Reports Recorded Yet</h3>
+            <p className="text-muted" style={{ margin: 0, fontSize: "0.92rem", lineHeight: 1.55 }}>
+              Upload your laboratory blood test panels to automatically detect deficiencies (Vitamin D, B12, Iron, HbA1c, Lipids) and track AI-correlated biomarker improvements over time.
+            </p>
+          </div>
+          <Link to="/patient/upload-report" className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
+            <Upload size={18} /> Upload Your First Blood Report
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const improvedCount = data?.comparisons?.filter((c) => c.changeStatus === "IMPROVED").length || 0;
 
   return (
     <div style={{ maxWidth: "1050px", margin: "0 auto", display: "grid", gap: "1.75rem" }}>
@@ -119,21 +76,34 @@ export default function LabProgress() {
       {/* Comparison Date Banner */}
       <div className="glass-panel" style={{ padding: "1.25rem 1.5rem", borderRadius: "var(--radius-lg)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <Calendar size={16} color="var(--text-muted)" />
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Previous Baseline Panel:</span>
-            <strong>{data?.previousReportDate || "2026-06-10"}</strong>
-          </div>
-          <span style={{ color: "var(--text-muted)" }}>➔</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <Calendar size={16} color="#10B981" />
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Latest Follow-up Panel:</span>
-            <strong style={{ color: "#10B981" }}>{data?.latestReportDate || "2026-09-15"}</strong>
-          </div>
+          {data?.previousReportDate ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <Calendar size={16} color="var(--text-muted)" />
+                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Previous Baseline Panel:</span>
+                <strong>{data.previousReportDate}</strong>
+              </div>
+              <span style={{ color: "var(--text-muted)" }}>➔</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <Calendar size={16} color="#10B981" />
+                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Latest Follow-up Panel:</span>
+                <strong style={{ color: "#10B981" }}>{data.latestReportDate}</strong>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Calendar size={16} color="#0284c7" />
+              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Baseline Panel Recorded:</span>
+              <strong style={{ color: "#0284c7" }}>{data.latestReportDate || "Active"}</strong>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginLeft: "0.5rem" }}>
+                (Upload follow-up report to generate historical delta trends)
+              </span>
+            </div>
+          )}
         </div>
 
-        <div style={{ background: "rgba(16, 185, 129, 0.12)", color: "#10B981", padding: "0.4rem 0.85rem", borderRadius: "9999px", fontSize: "0.82rem", fontWeight: 700 }}>
-          {data?.comparisons?.filter((c) => c.changeStatus === "IMPROVED").length || 0} Biomarkers Improved
+        <div style={{ background: improvedCount > 0 ? "rgba(16, 185, 129, 0.12)" : "rgba(2, 132, 199, 0.12)", color: improvedCount > 0 ? "#10B981" : "#0284c7", padding: "0.4rem 0.85rem", borderRadius: "9999px", fontSize: "0.82rem", fontWeight: 700 }}>
+          {improvedCount > 0 ? `${improvedCount} Biomarkers Improved` : `${data?.comparisons?.length || 0} Biomarkers Monitored`}
         </div>
       </div>
 

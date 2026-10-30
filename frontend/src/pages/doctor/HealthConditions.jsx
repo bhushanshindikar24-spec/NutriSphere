@@ -25,10 +25,7 @@ export default function HealthConditions() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-        ]);
+        setPatients([]);
       }
     };
     fetchCohort();

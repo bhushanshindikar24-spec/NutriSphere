@@ -119,7 +119,7 @@ export default function FoodLogging() {
       <div>
         <h2 style={{ margin: "0 0 0.25rem 0" }}>Log Daily Nutrition</h2>
         <p className="text-muted" style={{ margin: 0 }}>
-          Search verified USDA / OpenFoodFacts databases or manually enter home-cooked items.
+          Search verified Indian foods (ICMR-NIN database) or manually log home-cooked meals.
         </p>
       </div>
 
@@ -132,9 +132,9 @@ export default function FoodLogging() {
       {/* Database Search */}
       <div className="glass-panel" style={{ padding: "1.25rem", borderRadius: "var(--radius-lg)" }}>
         <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-          <Sparkles size={16} color="var(--primary)" /> Instant Food & Barcode Search
+          <Sparkles size={16} color="var(--primary)" /> Indian Food & Nutrition Database Search
         </h4>
-        <FoodSearch onSelectFood={handleSelectFood} placeholder="Search rice, chicken breast, oats, apples..." />
+        <FoodSearch onSelectFood={handleSelectFood} placeholder="Search Dal, Multigrain Roti, Paneer, Poha, Khichdi, Idli, Chicken Tikka..." />
       </div>
 
       {/* Manual Entry Form */}
@@ -147,7 +147,7 @@ export default function FoodLogging() {
                 type="text"
                 className="input-field"
                 required
-                placeholder="e.g. Scrambled Eggs with Avocado"
+                placeholder="e.g. Desi Egg Bhurji, Paneer Bhurji with Phulka"
                 value={formData.foodName}
                 onChange={(e) => setFormData({ ...formData, foodName: e.target.value })}
                 style={{ width: "100%" }}

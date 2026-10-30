@@ -12,6 +12,7 @@ import DietitianRoutes from "./DietitianRoutes";
 import DoctorRoutes from "./DoctorRoutes";
 import HotelRoutes from "./HotelRoutes";
 import AdminRoutes from "./AdminRoutes";
+import Settings from "../pages/common/Settings";
 
 // Role-based redirect helper
 const RoleBasedRedirect = () => {
@@ -103,6 +104,15 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute roles={["ADMIN"]}>
               <AdminRoutes />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute roles={["PATIENT", "DIETITIAN", "DOCTOR", "HOTEL", "ADMIN"]}>
+              <Settings />
             </ProtectedRoute>
           }
         />

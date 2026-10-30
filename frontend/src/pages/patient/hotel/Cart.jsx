@@ -114,11 +114,11 @@ export default function Cart() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span className="text-muted">Clinical Delivery:</span>
-              <span>{formatCurrency(3.5)}</span>
+              <span>{formatCurrency(40)}</span>
             </div>
             <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "0.75rem", display: "flex", justifyContent: "space-between", fontSize: "1.1rem" }}>
               <strong>Total:</strong>
-              <strong style={{ color: "var(--primary)" }}>{formatCurrency(totalAmount + 3.5)}</strong>
+              <strong style={{ color: "var(--primary)" }}>{formatCurrency(totalAmount + 40)}</strong>
             </div>
           </div>
 

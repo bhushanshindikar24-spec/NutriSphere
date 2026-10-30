@@ -16,19 +16,7 @@ export default function ConsultationDetails() {
         const res = await api.get(`/medical/consultations/${id || 1}`);
         setConsult(res.data?.data || res.data);
       } catch (_err) {
-        setConsult({
-          id: id || 1,
-          patientName: "Alex Morgan",
-          patientId: 101,
-          consultationDate: "2026-09-20T10:30:00Z",
-          chiefComplaint: "Routine Lipid & Metabolic Follow-Up",
-          diagnosis: "Borderline LDL Elevation",
-          icdCode: "E78.00",
-          vitalSigns: { bloodPressure: "118/76", heartRate: "68" },
-          clinicalNotes: "Patient adhering conscientiously to prescribed Mediterranean diet plan. Blood pressure is optimal at 118/76 mmHg. Resting heart rate 68 bpm. Patient reports higher daytime energy and zero gastrointestinal distress.",
-          dietaryDirectives: "Maintain 30g+ prebiotic fiber daily. Recheck fasting lipid panel in 90 days.",
-          physicianName: "Dr. Marcus Thorne, MD",
-        });
+        setConsult(null);
       } finally {
         setLoading(false);
       }

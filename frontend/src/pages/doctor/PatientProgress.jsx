@@ -17,34 +17,7 @@ export default function PatientProgress() {
         const res = await api.get(`/doctors/patients/${id || 1}/progress`);
         setProgress(res.data?.data || res.data);
       } catch (_err) {
-        setProgress({
-          patientName: "Alex Morgan",
-          currentWeightKg: 78.5,
-          startWeightKg: 82.0,
-          weightLostKg: 3.5,
-          complianceRate: 88,
-          weightHistory: [
-            { date: "Week 1", weight: 82.0 },
-            { date: "Week 2", weight: 81.1 },
-            { date: "Week 3", weight: 79.8 },
-            { date: "Week 4", weight: 78.5 },
-          ],
-          adherenceHistory: [
-            { date: "W1", adherence: 78, target: 80 },
-            { date: "W2", adherence: 82, target: 80 },
-            { date: "W3", adherence: 88, target: 80 },
-            { date: "W4", adherence: 91, target: 80 },
-          ],
-          calorieHistory: [
-            { date: "Mon", calories: 1940 },
-            { date: "Tue", calories: 2010 },
-            { date: "Wed", calories: 1890 },
-            { date: "Thu", calories: 1980 },
-            { date: "Fri", calories: 2050 },
-            { date: "Sat", calories: 1920 },
-            { date: "Sun", calories: 1960 },
-          ],
-        });
+        setProgress(null);
       } finally {
         setLoading(false);
       }

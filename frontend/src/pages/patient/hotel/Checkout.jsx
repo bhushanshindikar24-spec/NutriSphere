@@ -8,8 +8,8 @@ import api from "../../../services/api";
 export default function Checkout() {
   const navigate = useNavigate();
   const { cartItems, totalAmount, clearCart } = useContext(CartContext);
-  const [address, setAddress] = useState("142 Elmwood Ave, Apt 4B, Cambridge, MA");
-  const [deliveryNotes, setDeliveryNotes] = useState("Please leave at front door, ring bell.");
+  const [address, setAddress] = useState("Flat 402, Shanti Niketan, Bandra West, Mumbai, Maharashtra 400050");
+  const [deliveryNotes, setDeliveryNotes] = useState("Please ring bell, deliver to front door.");
   const [paymentMethod, setPaymentMethod] = useState("CREDIT_CARD");
   const [loading, setLoading] = useState(false);
   const [successOrder, setSuccessOrder] = useState(null);
@@ -131,7 +131,7 @@ export default function Checkout() {
           <input
             type="text"
             className="input-field"
-            placeholder="Delivery instructions (e.g. gate code, apt #)..."
+            placeholder="Delivery landmark / instructions (e.g. Near Metro Station, Flat 402, 6-digit PIN)..."
             value={deliveryNotes}
             onChange={(e) => setDeliveryNotes(e.target.value)}
             style={{ width: "100%" }}
@@ -145,9 +145,10 @@ export default function Checkout() {
           </h4>
           <div style={{ display: "grid", gap: "0.5rem" }}>
             {[
-              { id: "CREDIT_CARD", label: "Credit / Debit Card (Visa, Mastercard)" },
-              { id: "HEALTH_SAVINGS", label: "HSA / FSA Health Savings Account" },
-              { id: "CASH_ON_DELIVERY", label: "Cash on Delivery" },
+              { id: "UPI", label: "UPI (Google Pay, PhonePe, Paytm, BHIM QR)" },
+              { id: "CREDIT_CARD", label: "Credit / Debit Card (RuPay, Visa, Mastercard)" },
+              { id: "NET_BANKING", label: "Net Banking (SBI, HDFC, ICICI, Axis & others)" },
+              { id: "CASH_ON_DELIVERY", label: "Cash on Delivery (COD)" },
             ].map((p) => (
               <label
                 key={p.id}
@@ -177,7 +178,7 @@ export default function Checkout() {
         <div className="glass-panel" style={{ padding: "1.5rem", borderRadius: "var(--radius-lg)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <span className="text-muted" style={{ fontSize: "0.8rem", display: "block" }}>Final Order Total</span>
-            <strong style={{ fontSize: "1.5rem", color: "var(--primary)" }}>{formatCurrency(totalAmount + 3.5)}</strong>
+            <strong style={{ fontSize: "1.5rem", color: "var(--primary)" }}>{formatCurrency(totalAmount + 40)}</strong>
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: "0.75rem 2rem" }}>
             {loading ? "Confirming Order..." : "Place Delivery Order"}

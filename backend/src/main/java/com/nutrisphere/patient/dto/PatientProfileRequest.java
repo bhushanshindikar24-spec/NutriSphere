@@ -8,6 +8,7 @@ import java.time.LocalDate;
 public class PatientProfileRequest {
     private String firstName;
     private String lastName;
+    private String phoneNumber;
     private LocalDate dateOfBirth;
     private Gender gender;
     private Double heightCm;
@@ -27,4 +28,20 @@ public class PatientProfileRequest {
     private String nutritionalRequirements;
     private Double targetDailyCalories;
     private Double targetDailyWaterMl;
+    private String bloodPressure;
+    private Integer restingHeartRate;
+    private String diagnosedConditions;
+    private String currentSymptoms;
+    private String previousSurgeries;
+    private String familyMedicalHistory;
+    private String currentMedications;
+    private String vitaminsSupplements;
+    private String foodIntolerances;
+    private String mealsPerDay;
+    private String mealTimings;
+    private String typicalFoodIntake;
+    private String exerciseType;
+    private String exerciseFrequencyDuration;
+    private String smokingTobacco;
+    private String alcoholConsumption;
 }

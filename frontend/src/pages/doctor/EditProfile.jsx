@@ -14,7 +14,7 @@ export default function EditProfile() {
     hospital: "",
     hospitalName: "",
     phone: "",
-    consultationFee: 100,
+    consultationFee: 800,
     bio: "",
   });
   const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ export default function EditProfile() {
             hospital: p.hospitalName || p.hospital || "",
             hospitalName: p.hospitalName || p.hospital || "",
             phone: p.phoneNumber || p.phone || user?.phoneNumber || "",
-            consultationFee: p.consultationFee != null ? p.consultationFee : 100,
+            consultationFee: p.consultationFee != null ? p.consultationFee : 800,
             bio: p.bio || "",
           });
           return;
@@ -44,14 +44,14 @@ export default function EditProfile() {
 
       if (user) {
         setFormData({
-          firstName: user.firstName || "Marcus",
-          lastName: user.lastName || "Thorne",
-          specialization: user.specialization || "Internal Medicine & Endocrinology",
-          hospital: user.hospital || "Metropolitan Academic Medical Center",
-          hospitalName: user.hospital || "Metropolitan Academic Medical Center",
-          phone: user.phone || "+1 (555) 789-0123",
-          consultationFee: 100,
-          bio: user.bio || "Board-certified in Internal Medicine with subspecialty in metabolic disorders.",
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          specialization: user.specialization || "Clinical Medicine",
+          hospital: user.hospital || "",
+          hospitalName: user.hospital || "",
+          phone: user.phone || "",
+          consultationFee: user.consultationFee || 0,
+          bio: user.bio || "",
         });
       }
     };
@@ -158,16 +158,16 @@ export default function EditProfile() {
               />
             </div>
             <div>
-              <label className="form-label">Consultation Fee ($ USD) *</label>
+              <label className="form-label">Consultation Fee (₹ INR) *</label>
               <input
                 type="number"
                 min="0"
-                step="5"
+                step="50"
                 className="input-field"
                 required
                 value={formData.consultationFee}
                 onChange={(e) => setFormData({ ...formData, consultationFee: e.target.value })}
-                placeholder="e.g. 100"
+                placeholder="e.g. 800"
                 style={{ width: "100%" }}
               />
             </div>

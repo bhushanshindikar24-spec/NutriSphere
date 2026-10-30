@@ -18,57 +18,9 @@ export default function Consultations() {
   const fetchConsults = async () => {
     try {
       const data = await getDoctorConsultations();
-      if (Array.isArray(data) && data.length > 0) {
-        setConsultations(data);
-      } else {
-        setConsultations([
-          {
-            id: 1,
-            patientName: "Alex Morgan",
-            patientId: 101,
-            chiefComplaint: "Routine Lipid & Metabolic Follow-Up",
-            diagnosis: "Borderline LDL Elevation (E78.00)",
-            clinicalNotes: "Patient adhering well to Mediterranean diet. Recommending continuation of 30g+ prebiotic fiber protocol.",
-            consultationDate: "2026-09-20T10:30:00Z",
-            status: "PENDING",
-            otp: "1234",
-          },
-          {
-            id: 2,
-            patientName: "Sarah Jenkins",
-            patientId: 102,
-            chiefComplaint: "Pre-Diabetes Glycemic Review",
-            diagnosis: "Impaired Fasting Glucose (R73.01)",
-            clinicalNotes: "Fasting blood sugar stabilized at 104 mg/dL. Referred to Dietitian Vance for carbohydrate evening tapering.",
-            consultationDate: "2026-09-12T14:00:00Z",
-            status: "COMPLETED",
-          },
-        ]);
-      }
+      setConsultations(Array.isArray(data) ? data : (data?.content || []));
     } catch (_err) {
-      setConsultations([
-        {
-          id: 1,
-          patientName: "Alex Morgan",
-          patientId: 101,
-          chiefComplaint: "Routine Lipid & Metabolic Follow-Up",
-          diagnosis: "Borderline LDL Elevation (E78.00)",
-          clinicalNotes: "Patient adhering well to Mediterranean diet. Recommending continuation of 30g+ prebiotic fiber protocol.",
-          consultationDate: "2026-09-20T10:30:00Z",
-          status: "PENDING",
-          otp: "1234",
-        },
-        {
-          id: 2,
-          patientName: "Sarah Jenkins",
-          patientId: 102,
-          chiefComplaint: "Pre-Diabetes Glycemic Review",
-          diagnosis: "Impaired Fasting Glucose (R73.01)",
-          clinicalNotes: "Fasting blood sugar stabilized at 104 mg/dL. Referred to Dietitian Vance for carbohydrate evening tapering.",
-          consultationDate: "2026-09-12T14:00:00Z",
-          status: "COMPLETED",
-        },
-      ]);
+      setConsultations([]);
     } finally {
       setLoading(false);
     }
@@ -192,7 +144,7 @@ export default function Consultations() {
             </div>
 
             <p style={{ fontSize: "0.875rem", color: "#64748b", margin: "0 0 1.25rem 0", lineHeight: 1.5 }}>
-              Ask patient <strong>{verifyingConsult.patientName || "Alex Morgan"}</strong> for their 4-digit consultation authorization OTP to mark this visit as completed.
+              Ask patient <strong>{verifyingConsult.patientName || "the patient"}</strong> for their 4-digit consultation authorization OTP to mark this visit as completed.
             </p>
 
             {otpError && (

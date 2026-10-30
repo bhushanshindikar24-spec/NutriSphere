@@ -21,11 +21,11 @@ export default function EditProfile() {
     if (user) {
  
       setFormData({
-        kitchenName: user.hotelName || "NutriKitchen Downtown Hub",
-        phone: user.phone || "+1 (555) 456-7890",
-        address: user.address || "742 Commercial Way, Boston, MA",
-        hours: user.hours || "Mon-Sun: 6:30 AM - 9:30 PM EST",
-        bio: user.bio || "Specializing in medically tailored meals and diabetic-friendly glycemic portions.",
+        kitchenName: user.hotelName || "NutriKitchen Clinical Hub - Mumbai",
+        phone: user.phone || "+91 98220 12345",
+        address: user.address || "Unit 4B, Health Tech Park, BKC, Mumbai, Maharashtra 400051",
+        hours: user.hours || "Mon-Sun: 7:00 AM - 10:30 PM IST",
+        bio: user.bio || "Specializing in medically tailored Indian satvik meals, diabetic glycemic portions, and heart-healthy thalis.",
       });
     }
   }, [user]);

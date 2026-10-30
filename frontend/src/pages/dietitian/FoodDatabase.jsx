@@ -44,7 +44,7 @@ export default function FoodDatabase() {
       <div>
         <h2>Clinical Food & Nutrient Database</h2>
         <p className="text-muted">
-          Access over 300,000+ verified food items via USDA FoodData Central and OpenFoodFacts APIs.
+          Access authentic Indian therapeutic foods (ICMR-NIN standards) alongside verified international nutrient databases.
         </p>
       </div>
 

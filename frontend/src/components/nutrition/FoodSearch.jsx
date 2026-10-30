@@ -2,7 +2,7 @@ import {  useState, useEffect  } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { foodService } from "../../services/foodService";
 
-export default function FoodSearch({ onSelectFood, placeholder = "Search foods, USDA, or barcodes..." }) {
+export default function FoodSearch({ onSelectFood, placeholder = "Search Indian foods (ICMR-NIN), staples, or barcodes..." }) {
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("ALL"); // ALL, LOCAL, USDA, OPENFOODFACTS
   const [results, setResults] = useState([]);
@@ -103,10 +103,10 @@ export default function FoodSearch({ onSelectFood, placeholder = "Search foods, 
           className="input-field"
           value={source}
           onChange={(e) => setSource(e.target.value)}
-          style={{ width: "140px" }}
+          style={{ width: "150px" }}
         >
           <option value="ALL">All Sources</option>
-          <option value="LOCAL">NutriSphere DB</option>
+          <option value="LOCAL">Indian ICMR DB</option>
           <option value="USDA">USDA Central</option>
           <option value="OPENFOODFACTS">OpenFoodFacts</option>
         </select>

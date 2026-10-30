@@ -17,14 +17,14 @@ export default function Profile() {
         setProfile(res.data?.data || res.data);
       } catch (_err) {
         setProfile({
-          kitchenName: user?.hotelName || "NutriKitchen Downtown Hub",
-          contactPerson: `${user?.firstName || "Sarah"} ${user?.lastName || "Conner"}`,
-          email: user?.email || "kitchen@nutrikitchen.com",
-          phone: "+1 (555) 456-7890",
-          address: "742 Commercial Way, Boston, MA",
-          licenseNumber: "FSIS-CLIN-8841",
-          hours: "Mon-Sun: 6:30 AM - 9:30 PM EST",
-          bio: "Specializing in medically tailored meals, low-sodium cardiac broths, diabetic-friendly glycemic portions, and allergen-isolated culinary production.",
+          kitchenName: user?.hotelName || "NutriKitchen Clinical Hub - Mumbai",
+          contactPerson: `${user?.firstName || "Pooja"} ${user?.lastName || "Sharma"}`,
+          email: user?.email || "kitchen@nutrikitchen.in",
+          phone: "+91 98220 12345",
+          address: "Unit 4B, Health Tech Park, BKC, Mumbai, Maharashtra 400051",
+          licenseNumber: "FSSAI-LIC-11524999000123",
+          hours: "Mon-Sun: 7:00 AM - 10:30 PM IST",
+          bio: "Specializing in medically tailored Indian meals, low-sodium DASH thalis, diabetic-friendly glycemic portions, and allergen-isolated satvik culinary preparation.",
         });
       } finally {
         setLoading(false);

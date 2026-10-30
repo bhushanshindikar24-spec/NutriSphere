@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { Mail, Award, Edit3, Phone, Building, Stethoscope, DollarSign } from "lucide-react";
 import api from "../../services/api";
+import { formatCurrency } from "../../utils/formatters";
 
 export default function Profile() {
   const { user } = useContext(AuthContext);
@@ -17,17 +18,17 @@ export default function Profile() {
         setProfile(res.data?.data || res.data);
       } catch (_err) {
         setProfile({
-          firstName: user?.firstName || "Marcus",
-          lastName: user?.lastName || "Thorne",
-          email: user?.email || "doctor@nutrisphere.health",
-          licenseNumber: "MD-67201-IM",
-          specialization: "Internal Medicine & Endocrinology",
-          hospital: "Metropolitan Academic Medical Center",
-          hospitalName: "Metropolitan Academic Medical Center",
-          consultationFee: 100,
-          phone: "+1 (555) 789-0123",
-          officeHours: "Tue, Thu, Fri: 8:30 AM - 3:00 PM EST",
-          bio: "Board-certified in Internal Medicine with subspecialty in metabolic disorders, glycemic regulation, and cardiovascular prevention.",
+          firstName: user?.firstName || "",
+          lastName: user?.lastName || "",
+          email: user?.email || "",
+          licenseNumber: user?.licenseNumber || "",
+          specialization: user?.specialization || "Clinical Medicine",
+          hospital: user?.hospital || "",
+          hospitalName: user?.hospital || "",
+          consultationFee: user?.consultationFee || 0,
+          phone: user?.phone || "",
+          officeHours: user?.officeHours || "",
+          bio: user?.bio || "",
         });
       } finally {
         setLoading(false);
@@ -78,7 +79,7 @@ export default function Profile() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <DollarSign size={16} color="#10B981" />
-            <span>Consultation Fee: <strong style={{ color: "#10B981" }}>${profile?.consultationFee != null ? profile.consultationFee : 100}</strong></span>
+            <span>Consultation Fee: <strong style={{ color: "#10B981" }}>{formatCurrency(profile?.consultationFee != null ? profile.consultationFee : 800)}</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Building size={16} color="#10B981" />

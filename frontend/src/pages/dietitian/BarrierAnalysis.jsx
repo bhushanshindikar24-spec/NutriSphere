@@ -19,11 +19,7 @@ export default function BarrierAnalysis() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-          { id: 103, patientName: "Robert Chen" },
-        ]);
+        setPatients([]);
       }
     };
     fetchPatients();
@@ -43,27 +39,8 @@ export default function BarrierAnalysis() {
       });
       setCounts(c);
     } catch (_err) {
-      setBarriers([
-        {
-          id: 1,
-          barrierType: "TIME_CONSTRAINT",
-          description: "Late evening meetings caused missed meal preparation time.",
-          severity: "MEDIUM",
-          createdAt: "2026-09-28",
-          suggestedIntervention: "Batch cook quinoa bowls on Sundays or activate partner kitchen delivery.",
-          resolved: false,
-        },
-        {
-          id: 2,
-          barrierType: "FOOD_UNAVAILABLE",
-          description: "Local grocer out of fresh wild salmon.",
-          severity: "LOW",
-          createdAt: "2026-09-25",
-          suggestedIntervention: "Swap with canned albacore tuna or extra firm grilled tofu.",
-          resolved: true,
-        },
-      ]);
-      setCounts({ TIME_CONSTRAINT: 3, FOOD_UNAVAILABLE: 1, SOCIAL_EVENT: 2 });
+      setBarriers([]);
+      setCounts({});
     } finally {
       setLoading(false);
     }

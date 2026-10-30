@@ -17,10 +17,7 @@ export default function PlannedVsActual() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-        ]);
+        setPatients([]);
       }
     };
     fetchCohort();
@@ -33,16 +30,7 @@ export default function PlannedVsActual() {
         const res = await api.get(`/nutrition/planned-vs-actual?patientId=${selectedPatientId}`);
         setData(res.data?.data || res.data);
       } catch (_err) {
-        setData({
-          planned: { calories: 1950, proteinG: 140, carbsG: 180, fatG: 65, waterMl: 2500 },
-          actual: { calories: 1880, proteinG: 135, carbsG: 172, fatG: 62, waterMl: 2250 },
-          meals: [
-            { name: "Breakfast", plannedKcal: 450, actualKcal: 420, status: "MATCHED" },
-            { name: "Lunch", plannedKcal: 600, actualKcal: 610, status: "MATCHED" },
-            { name: "Dinner", plannedKcal: 650, actualKcal: 600, status: "MATCHED" },
-            { name: "Snack", plannedKcal: 250, actualKcal: 250, status: "MATCHED" },
-          ],
-        });
+        setData(null);
       } finally {
         setLoading(false);
       }

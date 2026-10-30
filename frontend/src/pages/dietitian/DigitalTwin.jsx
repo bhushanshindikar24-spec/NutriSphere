@@ -16,11 +16,7 @@ export default function DigitalTwin() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-          { id: 103, patientName: "Robert Chen" },
-        ]);
+        setPatients([]);
       }
     };
     fetchCohort();
@@ -33,26 +29,7 @@ export default function DigitalTwin() {
         const res = await api.get(`/digital-twin?patientId=${selectedPatientId}`);
         setTwinData(res.data?.data || res.data);
       } catch (_err) {
-        setTwinData({
-          currentWeightKg: selectedPatientId === 102 ? 84.0 : 78.5,
-          targetWeightKg: selectedPatientId === 102 ? 75.0 : 72.0,
-          netCaloricDeficit: -420,
-          projectedWeight30Days: selectedPatientId === 102 ? 82.1 : 76.2,
-          realityScore: selectedPatientId === 102 ? 64 : 84,
-          dailyCaloricTarget: 1950,
-          historicalWeights: [
-            { date: "Day 1", weight: 80.0 },
-            { date: "Day 7", weight: 79.4 },
-            { date: "Day 14", weight: 79.0 },
-            { date: "Day 21", weight: 78.5 },
-          ],
-          projectedWeights: [
-            { date: "Day 21", weight: 78.5 },
-            { date: "Day 30", weight: 77.8 },
-            { date: "Day 45", weight: 76.9 },
-            { date: "Day 60", weight: 76.0 },
-          ],
-        });
+        setTwinData(null);
       } finally {
         setLoading(false);
       }

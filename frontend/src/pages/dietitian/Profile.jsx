@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { User, Mail, Award, Edit3, Phone, Building, DollarSign } from "lucide-react";
 import api from "../../services/api";
+import { formatCurrency } from "../../utils/formatters";
 
 export default function Profile() {
   const { user } = useContext(AuthContext);
@@ -17,16 +18,16 @@ export default function Profile() {
         setProfile(res.data?.data || res.data);
       } catch (_err) {
         setProfile({
-          firstName: user?.firstName || "Elena",
-          lastName: user?.lastName || "Vance",
-          email: user?.email || "dietitian@nutrisphere.health",
-          licenseNumber: "RD-98214-MET",
-          specialization: "Clinical Nutrition & Metabolic Optimization",
-          phone: "+1 (555) 234-8901",
-          clinic: "Metropolitan Academic Medical Center",
-          clinicName: "Metropolitan Academic Medical Center",
-          consultationFee: 75,
-          bio: "Specialist in glycemic management, renal nutrition, and bioenergetic digital twin modeling with 12+ years of clinical practice.",
+          firstName: user?.firstName || "",
+          lastName: user?.lastName || "",
+          email: user?.email || "",
+          licenseNumber: user?.licenseNumber || "",
+          specialization: user?.specialization || "Clinical Nutrition",
+          phone: user?.phone || "",
+          clinic: user?.clinic || "",
+          clinicName: user?.clinic || "",
+          consultationFee: user?.consultationFee || 0,
+          bio: user?.bio || "",
         });
       } finally {
         setLoading(false);
@@ -77,7 +78,7 @@ export default function Profile() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <DollarSign size={16} color="var(--primary)" />
-            <span>Consultation Fee: <strong style={{ color: "var(--primary)" }}>${profile?.consultationFee != null ? profile.consultationFee : 75}</strong></span>
+            <span>Consultation Fee: <strong style={{ color: "var(--primary)" }}>{formatCurrency(profile?.consultationFee != null ? profile.consultationFee : 600)}</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Building size={16} color="var(--primary)" />

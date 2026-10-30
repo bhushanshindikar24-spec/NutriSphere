@@ -23,10 +23,7 @@ export default function Measurements() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-        ]);
+        setPatients([]);
       }
     };
     fetchCohort();
@@ -38,11 +35,7 @@ export default function Measurements() {
       const res = await api.get(`/dietitians/patients/${selectedPatientId}/measurements`);
       setMeasurements(res.data?.data || res.data || []);
     } catch (_err) {
-      setMeasurements([
-        { id: 1, date: "2026-09-28", weightKg: 78.5, waistCm: 84, bodyFatPct: 18.2 },
-        { id: 2, date: "2026-09-14", weightKg: 79.4, waistCm: 85.5, bodyFatPct: 18.8 },
-        { id: 3, date: "2026-09-01", weightKg: 80.2, waistCm: 86.5, bodyFatPct: 19.4 },
-      ]);
+      setMeasurements([]);
     } finally {
       setLoading(false);
     }

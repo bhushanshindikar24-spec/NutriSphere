@@ -16,10 +16,7 @@ export default function FoodLogs() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-        ]);
+        setPatients([]);
       }
     };
     fetchCohort();
@@ -31,28 +28,7 @@ export default function FoodLogs() {
       const res = await api.get(`/food-logs?patientId=${selectedPatientId}`);
       setLogs(res.data?.data?.content || res.data?.data || res.data || []);
     } catch (_err) {
-      setLogs([
-        {
-          id: 1,
-          foodName: "Steel-cut oatmeal with chia seeds and blueberries",
-          mealType: "BREAKFAST",
-          calories: 420,
-          protein: 16,
-          carbs: 64,
-          fat: 8,
-          loggedAt: "2026-10-04T08:15:00Z",
-        },
-        {
-          id: 2,
-          foodName: "Mediterranean Herb Grilled Chicken with Quinoa",
-          mealType: "LUNCH",
-          calories: 580,
-          protein: 44,
-          carbs: 52,
-          fat: 14,
-          loggedAt: "2026-10-04T13:20:00Z",
-        },
-      ]);
+      setLogs([]);
     } finally {
       setLoading(false);
     }

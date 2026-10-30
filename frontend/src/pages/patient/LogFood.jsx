@@ -349,9 +349,9 @@ export default function LogFood() {
             {/* Database Instant Search */}
             <div style={{ marginBottom: "1.25rem" }}>
               <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <Sparkles size={15} color="#0284c7" /> Search Food Database (USDA / Nutrition Database)
+                <Sparkles size={15} color="#0284c7" /> Search Indian Food & Nutrition Database (ICMR-NIN Standards)
               </label>
-              <FoodSearch onSelectFood={handleSelectFood} placeholder="Search rice, grilled chicken breast, oats, avocado..." />
+              <FoodSearch onSelectFood={handleSelectFood} placeholder="Search Dal, Multigrain Roti, Paneer, Poha, Khichdi, Idli, Chicken Tikka..." />
             </div>
 
             <form onSubmit={handleLogFood} style={{ display: "grid", gap: "1rem" }}>
@@ -362,7 +362,7 @@ export default function LogFood() {
                     type="text"
                     className="form-input"
                     required
-                    placeholder="e.g. Greek Yogurt with Berries"
+                    placeholder="e.g. Moong Dal Khichdi with Dahi, Besan Chilla"
                     value={foodFormData.foodName}
                     onChange={(e) => setFoodFormData({ ...foodFormData, foodName: e.target.value })}
                   />

@@ -17,41 +17,7 @@ export default function DietPlans() {
         const res = await api.get("/nutrition/diet-plans");
         setPlans(res.data?.data || res.data || []);
       } catch (_err) {
-        setPlans([
-          {
-            id: 201,
-            name: "Phase 2 Mediterranean Fat-Loss",
-            patientName: "Alex Morgan",
-            patientId: 101,
-            dailyCaloriesTarget: 1950,
-            dailyProteinTarget: 140,
-            status: "ACTIVE",
-            startDate: "2026-09-01",
-            endDate: "2026-11-30",
-          },
-          {
-            id: 202,
-            name: "Low-Glycemic Anti-Inflammatory Plan",
-            patientName: "Sarah Jenkins",
-            patientId: 102,
-            dailyCaloriesTarget: 1750,
-            dailyProteinTarget: 110,
-            status: "PENDING_APPROVAL",
-            startDate: "2026-09-15",
-            endDate: "2026-12-15",
-          },
-          {
-            id: 203,
-            name: "DASH Cardioprotective Diet",
-            patientName: "Robert Chen",
-            patientId: 103,
-            dailyCaloriesTarget: 2100,
-            dailyProteinTarget: 130,
-            status: "DRAFT",
-            startDate: "2026-10-01",
-            endDate: "2026-12-31",
-          },
-        ]);
+        setPlans([]);
       } finally {
         setLoading(false);
       }

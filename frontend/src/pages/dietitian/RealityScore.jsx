@@ -19,11 +19,7 @@ export default function RealityScore() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-          { id: 103, patientName: "Robert Chen" },
-        ]);
+        setPatients([]);
       }
     };
     fetchCohort();
@@ -35,21 +31,7 @@ export default function RealityScore() {
       const res = await api.get(`/intelligence/reality-score?patientId=${selectedPatientId}`);
       setScoreData(res.data?.data || res.data);
     } catch (_err) {
-      setScoreData({
-        overallScore: selectedPatientId === 103 ? 45 : selectedPatientId === 102 ? 58 : 84,
-        interpretation:
-          selectedPatientId === 103
-            ? "High Risk of Failure - Immediate Adaptive Intervention Needed"
-            : selectedPatientId === 102
-            ? "Moderate Feasibility - Barrier Accumulation Detected"
-            : "High Real-World Feasibility - Optimal Protocol Alignment",
-        dimensionScores: {
-          caloricFeasibility: selectedPatientId === 103 ? 42 : selectedPatientId === 102 ? 60 : 88,
-          mealTimingFeasibility: selectedPatientId === 103 ? 38 : selectedPatientId === 102 ? 52 : 82,
-          foodAvailability: selectedPatientId === 103 ? 55 : selectedPatientId === 102 ? 65 : 85,
-          biologicalTolerance: selectedPatientId === 103 ? 50 : selectedPatientId === 102 ? 56 : 80,
-        },
-      });
+      setScoreData(null);
     } finally {
       setLoading(false);
     }

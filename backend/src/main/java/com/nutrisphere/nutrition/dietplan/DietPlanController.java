@@ -9,16 +9,28 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@RestController @RequestMapping({"/api/nutrition/diet-plans", "/api/diet-plans"}) @RequiredArgsConstructor
+@RestController 
+@RequestMapping({"/api/nutrition/diet-plans", "/api/diet-plans"}) 
+@RequiredArgsConstructor
 public class DietPlanController {
     private final DietPlanService dietPlanService;
     private final SecurityUtils securityUtils;
 
     @PostMapping
-    @PreAuthorize("hasRole('DIETITIAN')")
+    @PreAuthorize("hasAnyRole('DIETITIAN', 'PATIENT')")
     public ApiResponse<DietPlanResponse> create(@Valid @RequestBody DietPlanRequest req) {
-        securityUtils.assertPatientAccess(req.getPatientUserId());
+        Long patientId = req.getPatientUserId() != null ? req.getPatientUserId() : securityUtils.getCurrentUserId();
+        securityUtils.assertPatientAccess(patientId);
         return ApiResponse.success(dietPlanService.createPlan(securityUtils.getCurrentUserId(), req));
+    }
+
+    @PostMapping("/generate-ai")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DIETITIAN')")
+    public ApiResponse<DietPlanResponse> generateAiDietPlan(
+            @RequestParam(required = false) Long patientUserId) {
+        Long targetPatientId = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
+        securityUtils.assertPatientAccess(targetPatientId);
+        return ApiResponse.success(dietPlanService.generateAiPlan(targetPatientId, securityUtils.getCurrentUserId()));
     }
 
     @GetMapping("/pending")
@@ -28,7 +40,7 @@ public class DietPlanController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasRole('PATIENT')")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DIETITIAN')")
     public ApiResponse<List<DietPlanResponse>> getMyPlans() {
         return ApiResponse.success(dietPlanService.getApprovedPlanForPatient(securityUtils.getCurrentUserId()));
     }
@@ -59,37 +71,53 @@ public class DietPlanController {
     }
 
     @PostMapping("/{id}/meals")
-    @PreAuthorize("hasRole('DIETITIAN')")
+    @PreAuthorize("hasAnyRole('DIETITIAN', 'PATIENT')")
     public ApiResponse<DietPlanMealResponse> addMeal(@PathVariable Long id,
             @RequestBody DietPlanMealRequest req) {
         return ApiResponse.success(dietPlanService.addMeal(id, securityUtils.getCurrentUserId(), req));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DIETITIAN')")
+    @PreAuthorize("hasAnyRole('DIETITIAN', 'PATIENT')")
     public ApiResponse<DietPlanResponse> update(@PathVariable Long id, @RequestBody DietPlanRequest req) {
         return ApiResponse.success(dietPlanService.updatePlan(id, securityUtils.getCurrentUserId(), req));
     }
 
     @PutMapping("/{planId}/meals/{mealId}")
-    @PreAuthorize("hasRole('DIETITIAN')")
+    @PreAuthorize("hasAnyRole('DIETITIAN', 'PATIENT')")
     public ApiResponse<DietPlanMealResponse> updateMeal(@PathVariable Long planId, @PathVariable Long mealId,
             @RequestBody DietPlanMealRequest req) {
         return ApiResponse.success(dietPlanService.updateMeal(planId, mealId, securityUtils.getCurrentUserId(), req));
     }
 
     @DeleteMapping("/{planId}/meals/{mealId}")
-    @PreAuthorize("hasRole('DIETITIAN')")
+    @PreAuthorize("hasAnyRole('DIETITIAN', 'PATIENT')")
     public ApiResponse<Void> deleteMeal(@PathVariable Long planId, @PathVariable Long mealId) {
         dietPlanService.deleteMeal(planId, mealId, securityUtils.getCurrentUserId());
         return ApiResponse.success(null);
     }
 
     @DeleteMapping("/{planId}/meals/{mealId}/items/{itemId}")
-    @PreAuthorize("hasRole('DIETITIAN')")
+    @PreAuthorize("hasAnyRole('DIETITIAN', 'PATIENT')")
     public ApiResponse<Void> deleteMealItem(@PathVariable Long planId, @PathVariable Long mealId,
             @PathVariable Long itemId) {
         dietPlanService.deleteMealItem(planId, mealId, itemId, securityUtils.getCurrentUserId());
         return ApiResponse.success(null);
+    }
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR')")
+    public ApiResponse<DietPlanResponse> approvePlan(
+            @PathVariable Long id,
+            @RequestBody(required = false) PlanApprovalRequest req) {
+        return ApiResponse.success(dietPlanService.approvePlan(id, securityUtils.getCurrentUserId(), req));
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasAnyRole('DIETITIAN', 'DOCTOR')")
+    public ApiResponse<DietPlanResponse> rejectPlan(
+            @PathVariable Long id,
+            @RequestParam(required = false) String notes) {
+        return ApiResponse.success(dietPlanService.rejectPlan(id, securityUtils.getCurrentUserId(), notes));
     }
 }

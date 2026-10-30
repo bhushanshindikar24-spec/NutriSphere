@@ -17,10 +17,7 @@ export default function MedicalHistory() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-        ]);
+        setPatients([]);
       }
     };
     fetchCohort();
@@ -32,22 +29,7 @@ export default function MedicalHistory() {
       const res = await api.get(`/medical/history?patientId=${selectedPatientId}`);
       setHistoryItems(res.data?.data || res.data || []);
     } catch (_err) {
-      setHistoryItems([
-        {
-          id: 1,
-          eventTitle: "Appendectomy",
-          category: "SURGERY",
-          eventDate: "2018-05-12",
-          description: "Laparoscopic appendectomy performed with zero postoperative complications.",
-        },
-        {
-          id: 2,
-          eventTitle: "Family History of CAD",
-          category: "GENETIC_RISK",
-          eventDate: "2024-01-10",
-          description: "Paternal myocardial infarction at age 54. Primary motivation for preventive nutrition.",
-        },
-      ]);
+      setHistoryItems([]);
     } finally {
       setLoading(false);
     }

@@ -19,22 +19,22 @@ export default function FoodAlternatives() {
       const name = (food.name || "").toLowerCase();
 // eslint-disable-next-line no-useless-assignment
       let mockList = [];
-      if (name.includes("rice") || name.includes("bread") || name.includes("grain")) {
+      if (name.includes("rice") || name.includes("bread") || name.includes("roti") || name.includes("grain")) {
         mockList = [
-          { name: "Cooked Quinoa", calories: 120, proteinG: 4.4, carbsG: 21, fatG: 1.9, reason: "Higher fiber and complete protein profile." },
-          { name: "Cauliflower Rice", calories: 25, proteinG: 2.0, carbsG: 5, fatG: 0.3, reason: "Low calorie, keto-friendly alternative." },
-          { name: "Brown Rice", calories: 111, proteinG: 2.6, carbsG: 23, fatG: 0.9, reason: "Lower glycemic index with sustained energy release." },
+          { name: "Jowar / Bajra Bhakri", calories: 105, proteinG: 3.7, carbsG: 21.6, fatG: 0.8, reason: "High-fiber gluten-free millet flatbread with low glycemic index." },
+          { name: "Steamed Brown Basmati Rice", calories: 112, proteinG: 2.6, carbsG: 23.5, fatG: 0.9, reason: "Complex whole grain with slow digestive absorption." },
+          { name: "Multigrain Phulka (Wheat, Jowar & Bajra)", calories: 84, proteinG: 3.3, carbsG: 16.1, fatG: 0.7, reason: "Traditional Indian staple packed with fiber and magnesium." },
         ];
-      } else if (name.includes("chicken") || name.includes("beef") || name.includes("meat")) {
+      } else if (name.includes("chicken") || name.includes("mutton") || name.includes("fish") || name.includes("meat")) {
         mockList = [
-          { name: "Grilled Firm Tofu", calories: 140, proteinG: 17, carbsG: 3, fatG: 8, reason: "Heart-healthy plant-based protein with zero cholesterol." },
-          { name: "Lentil Dal", calories: 165, proteinG: 12, carbsG: 27, fatG: 1, reason: "Rich in prebiotic fiber and micronutrients." },
-          { name: "Baked Salmon", calories: 206, proteinG: 22, carbsG: 0, fatG: 12, reason: "High in anti-inflammatory Omega-3 fatty acids." },
+          { name: "Low-Fat Paneer Bhurji", calories: 145, proteinG: 12.0, carbsG: 2.8, fatG: 9.0, reason: "Dense vegetarian dairy protein with calcium and minimal carbohydrates." },
+          { name: "Panchmel Dal Tadka", calories: 110, proteinG: 6.5, carbsG: 16.0, fatG: 2.8, reason: "Easily digestible satvik legume mix rich in prebiotic fiber and iron." },
+          { name: "Sprouted Kala Chana Chaat", calories: 125, proteinG: 8.5, carbsG: 21.0, fatG: 1.2, reason: "High bioavailable zinc, magnesium, and plant-based amino acids." },
         ];
       } else {
         mockList = [
-          { name: "Steamed Edamame", calories: 122, proteinG: 11, carbsG: 10, fatG: 5, reason: "High fiber and micronutrient density." },
-          { name: "Greek Yogurt (Nonfat)", calories: 59, proteinG: 10, carbsG: 3.6, fatG: 0.4, reason: "High protein satiety with gut probiotics." },
+          { name: "Roasted Desi Makhana (Foxnuts)", calories: 105, proteinG: 2.9, carbsG: 22.8, fatG: 0.3, reason: "Zero cholesterol, low-sodium Indian superfood rich in magnesium." },
+          { name: "Spiced Tadka Chaas (Buttermilk)", calories: 35, proteinG: 2.2, carbsG: 3.2, fatG: 1.2, reason: "Traditional probiotic cooler with roasted cumin to stimulate digestion." },
         ];
       }
       setAlternatives(mockList);
@@ -47,12 +47,12 @@ export default function FoodAlternatives() {
     <div style={{ maxWidth: "800px", margin: "0 auto" }}>
       <div style={{ marginBottom: "1.5rem" }}>
         <h2>Food & Recipe Alternatives</h2>
-        <p className="text-muted">Find clinically equivalent dietary substitutes that match your nutritional targets.</p>
+        <p className="text-muted">Find clinically equivalent Indian dietary substitutes that match your nutritional targets.</p>
       </div>
 
       <div className="glass-panel" style={{ padding: "1.5rem", borderRadius: "var(--radius-lg)", marginBottom: "1.5rem" }}>
-        <h4 style={{ margin: "0 0 0.75rem 0" }}>Select a Food to Substitute</h4>
-        <FoodSearch onSelectFood={fetchAlternatives} placeholder="Search food to replace (e.g. white rice, steak)..." />
+        <h4 style={{ margin: "0 0 0.75rem 0" }}>Select an Indian Food to Substitute</h4>
+        <FoodSearch onSelectFood={fetchAlternatives} placeholder="Search food to replace (e.g. white rice, maida paratha, chicken curry)..." />
       </div>
 
       {loading ? (

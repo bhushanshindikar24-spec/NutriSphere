@@ -17,47 +17,7 @@ export default function PlanDetails() {
         const res = await api.get(`/nutrition/diet-plans/${id || 201}`);
         setPlan(res.data?.data || res.data);
       } catch (_err) {
-        setPlan({
-          id: id || 201,
-          name: "Phase 2 Mediterranean Fat-Loss",
-          patientName: "Alex Morgan",
-          patientId: 101,
-          status: "ACTIVE",
-          startDate: "2026-09-01",
-          endDate: "2026-11-30",
-          dailyCaloriesTarget: 1950,
-          dailyProteinTarget: 140,
-          dailyCarbsTarget: 180,
-          dailyFatTarget: 65,
-          dailyWaterTarget: 2500,
-          notes: "Focus on anti-inflammatory whole grains, lean poultry, wild fish, and high-polyphenol olive oil.",
-          meals: [
-            {
-              mealType: "BREAKFAST",
-              time: "08:00 AM",
-              targetCalories: 450,
-              description: "Steel-cut oatmeal with blueberries, chia seeds, and egg white scramble.",
-            },
-            {
-              mealType: "LUNCH",
-              time: "01:00 PM",
-              targetCalories: 600,
-              description: "Grilled chicken breast, wild quinoa, steamed broccoli, extra virgin olive oil vinaigrette.",
-            },
-            {
-              mealType: "SNACK",
-              time: "04:30 PM",
-              targetCalories: 250,
-              description: "Greek yogurt with a handful of raw walnuts and green tea.",
-            },
-            {
-              mealType: "DINNER",
-              time: "07:30 PM",
-              targetCalories: 650,
-              description: "Baked Atlantic salmon fillet with roast asparagus and sweet potato wedges.",
-            },
-          ],
-        });
+        setPlan(null);
       } finally {
         setLoading(false);
       }

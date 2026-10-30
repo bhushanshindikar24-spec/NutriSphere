@@ -88,15 +88,31 @@ public class LaboratoryController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN')")
     public ApiResponse<LaboratoryReport> update(@PathVariable Long id, @RequestBody LaboratoryReport updates) {
         LaboratoryReport existing = labService.getById(id);
         securityUtils.assertPatientAccess(existing.getPatientUserId());
         return ApiResponse.success(labService.update(id, updates));
     }
 
+    @PostMapping("/{id}/verify")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN')")
+    public ApiResponse<LaboratoryReport> verifyReport(
+            @PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        LaboratoryReport existing = labService.getById(id);
+        securityUtils.assertPatientAccess(existing.getPatientUserId());
+        existing.setReviewedByDoctor(true);
+        existing.setStatus("VERIFIED");
+        String notes = body != null && body.containsKey("notes") 
+            ? body.get("notes") 
+            : "Biomarkers reviewed and clinically approved for personalized nutritional treatment planning.";
+        existing.setDoctorReviewNotes(notes);
+        return ApiResponse.success(labService.update(id, existing));
+    }
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         LaboratoryReport existing = labService.getById(id);
         securityUtils.assertPatientAccess(existing.getPatientUserId());

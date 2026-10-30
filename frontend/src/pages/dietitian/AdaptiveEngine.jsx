@@ -21,11 +21,7 @@ export default function AdaptiveEngine() {
         setPatients(list);
         if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
       } catch (_err) {
-        setPatients([
-          { id: 101, patientName: "Alex Morgan" },
-          { id: 102, patientName: "Sarah Jenkins" },
-          { id: 103, patientName: "Robert Chen" },
-        ]);
+        setPatients([]);
       } finally {
         setLoading(false);
       }
@@ -38,30 +34,7 @@ export default function AdaptiveEngine() {
       const res = await adaptiveService.getPendingRecommendations(selectedPatientId);
       setRecommendations(res.data?.data || res.data || []);
     } catch (_err) {
-      setRecommendations([
-        {
-          id: 1,
-          adaptationType: "CALORIC_DEFICIT_MODULATION",
-          title: "Moderate Deficit from -500 kcal to -350 kcal",
-          rationale: "Patient reported repeated hunger barriers (3x past 7 days) and late-night snacking. Easing deficit stabilizes leptin and prevents metabolic fatigue.",
-          confidenceScore: 0.92,
-          proposedChanges: {
-            dailyCalories: 2100,
-            dinnerCarbsG: 65,
-          },
-        },
-        {
-          id: 2,
-          adaptationType: "TIMING_REDISTRIBUTION",
-          title: "Shift Breakfast Target to Mid-Morning",
-          rationale: "Patient consistently skips 8:00 AM breakfast due to morning commute. Re-allocating calories to a 10:30 AM slot aligns with actual circadian intake.",
-          confidenceScore: 0.88,
-          proposedChanges: {
-            morningSlot: "10:30 AM",
-            snackCalories: 350,
-          },
-        },
-      ]);
+      setRecommendations([]);
     }
   };
 

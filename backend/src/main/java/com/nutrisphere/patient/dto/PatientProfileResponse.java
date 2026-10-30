@@ -45,5 +45,21 @@ public class PatientProfileResponse {
     private Double tdee;
     private Double recommendedCalories;
     private Double recommendedWaterLiters;
+    private String bloodPressure;
+    private Integer restingHeartRate;
+    private String diagnosedConditions;
+    private String currentSymptoms;
+    private String previousSurgeries;
+    private String familyMedicalHistory;
+    private String currentMedications;
+    private String vitaminsSupplements;
+    private String foodIntolerances;
+    private String mealsPerDay;
+    private String mealTimings;
+    private String typicalFoodIntake;
+    private String exerciseType;
+    private String exerciseFrequencyDuration;
+    private String smokingTobacco;
+    private String alcoholConsumption;
     private LocalDateTime createdAt;
 }

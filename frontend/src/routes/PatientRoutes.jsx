@@ -18,6 +18,7 @@ import MyDoctor from "../pages/patient/MyDoctor";
 import Directory from "../pages/patient/Directory";
 import Profile from "../pages/patient/Profile";
 import EditProfile from "../pages/patient/EditProfile";
+import Settings from "../pages/common/Settings";
 import Notifications from "../pages/patient/Notifications";
 import Reports from "../pages/patient/Reports";
 import UploadReport from "../pages/patient/UploadReport";
@@ -36,6 +37,8 @@ import HotelCheckout from "../pages/patient/hotel/Checkout";
 import HotelOrders from "../pages/patient/hotel/Orders";
 import HotelOrderDetails from "../pages/patient/hotel/OrderDetails";
 import HotelOrderHistory from "../pages/patient/hotel/OrderHistory";
+import KitchenProfile from "../pages/patient/hotel/KitchenProfile";
+import CustomMealRequest from "../pages/patient/hotel/CustomMealRequest";
 
 export default function PatientRoutes() {
   return (
@@ -70,12 +73,14 @@ export default function PatientRoutes() {
       <Route path="/consultations" element={<PatientConsultations />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile/edit" element={<EditProfile />} />
+      <Route path="/settings" element={<Settings />} />
       <Route path="/notifications" element={<Notifications />} />
       <Route path="/reports" element={<Reports />} />
       <Route path="/reports/upload" element={<UploadReport />} />
       <Route path="/lab-progress" element={<LabProgress />} />
 
       {/* Hotel & Delivery */}
+      <Route path="/hotel" element={<HotelMenu />} />
       <Route path="/hotel/menu" element={<HotelMenu />} />
       <Route path="/hotel/meals/:id" element={<HotelMealDetails />} />
       <Route path="/hotel/cart" element={<HotelCart />} />
@@ -83,6 +88,8 @@ export default function PatientRoutes() {
       <Route path="/hotel/orders" element={<HotelOrders />} />
       <Route path="/hotel/orders/:id" element={<HotelOrderDetails />} />
       <Route path="/hotel/order-history" element={<HotelOrderHistory />} />
+      <Route path="/hotel/kitchen-profile" element={<KitchenProfile />} />
+      <Route path="/hotel/custom-request" element={<CustomMealRequest />} />
     </Routes>
   );
 }

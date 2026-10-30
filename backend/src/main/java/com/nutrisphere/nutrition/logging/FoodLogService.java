@@ -200,12 +200,12 @@ public class FoodLogService {
         Double waterMl = waterLogRepo.sumAmountForDate(patientUserId, date);
         double actualWaterMl = waterMl != null ? waterMl : 0.0;
 
-        // Fetch targets
-        double plannedCalories = 2000.0;
-        double plannedProtein = 75.0;
-        double plannedCarbs = 220.0;
-        double plannedFat = 55.0;
-        double plannedWaterMl = 2500.0;
+        // Fetch targets dynamically
+        double plannedCalories = 1800.0;
+        double plannedProtein = 70.0;
+        double plannedCarbs = 200.0;
+        double plannedFat = 50.0;
+        double plannedWaterMl = 2200.0;
 
         var approvedPlan = planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED);
         if (approvedPlan.isPresent()) {
@@ -218,8 +218,42 @@ public class FoodLogService {
         } else {
             PatientProfile prof = patientRepo.findByUserId(patientUserId).orElse(null);
             if (prof != null) {
-                if (prof.getTargetDailyCalories() != null && prof.getTargetDailyCalories() > 0) plannedCalories = prof.getTargetDailyCalories();
-                if (prof.getTargetDailyWaterMl() != null && prof.getTargetDailyWaterMl() > 0) plannedWaterMl = prof.getTargetDailyWaterMl();
+                if (prof.getTargetDailyCalories() != null && prof.getTargetDailyCalories() > 0) {
+                    plannedCalories = prof.getTargetDailyCalories();
+                } else if (prof.getWeightKg() != null && prof.getHeightCm() != null && prof.getWeightKg() > 20 && prof.getHeightCm() > 50) {
+                    double w = prof.getWeightKg();
+                    double h = prof.getHeightCm();
+                    int age = prof.getDateOfBirth() != null ? java.time.Period.between(prof.getDateOfBirth(), LocalDate.now()).getYears() : 30;
+                    boolean isFemale = prof.getGender() != com.nutrisphere.common.enums.Gender.MALE;
+                    double bmr = (10.0 * w) + (6.25 * h) - (5.0 * age) + (isFemale ? -161.0 : 5.0);
+                    double mult = 1.375;
+                    if (prof.getActivityLevel() != null) {
+                        switch (prof.getActivityLevel()) {
+                            case SEDENTARY -> mult = 1.2;
+                            case LIGHTLY_ACTIVE -> mult = 1.375;
+                            case MODERATELY_ACTIVE -> mult = 1.55;
+                            case VERY_ACTIVE -> mult = 1.725;
+                            case EXTRA_ACTIVE -> mult = 1.9;
+                        }
+                    }
+                    double tdee = bmr * mult;
+                    String hg = prof.getHealthGoals() != null ? prof.getHealthGoals().toLowerCase() : "";
+                    if (hg.contains("loss") || hg.contains("pcos") || hg.contains("deficit")) plannedCalories = Math.max(1200.0, tdee - 400.0);
+                    else if (hg.contains("gain") || hg.contains("muscle")) plannedCalories = tdee + 350.0;
+                    else plannedCalories = tdee;
+                    plannedCalories = Math.round(plannedCalories / 10.0) * 10.0;
+                }
+
+                if (prof.getWeightKg() != null && prof.getWeightKg() > 20) {
+                    plannedProtein = Math.round(prof.getWeightKg() * 1.3);
+                }
+                plannedFat = Math.round((plannedCalories * 0.28) / 9.0);
+                plannedCarbs = Math.max(100.0, Math.round((plannedCalories - (plannedProtein * 4.0) - (plannedFat * 9.0)) / 4.0));
+                if (prof.getTargetDailyWaterMl() != null && prof.getTargetDailyWaterMl() > 0) {
+                    plannedWaterMl = prof.getTargetDailyWaterMl();
+                } else if (prof.getWeightKg() != null && prof.getWeightKg() > 20) {
+                    plannedWaterMl = Math.round(prof.getWeightKg() * 35.0);
+                }
             }
         }
 

@@ -16,7 +16,12 @@ export const formatDate = (dateStr) => {
   if (!dateStr) return "-";
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    return d.toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   } catch (_e) {
     return dateStr;
   }
@@ -27,9 +32,15 @@ export const formatTime = (timeStr) => {
   try {
     if (timeStr.includes("T")) {
       const d = new Date(timeStr);
-      return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+      return d.toLocaleTimeString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }) + " IST";
     }
-    return timeStr.slice(0, 5);
+    // If format is like "08:30" or "08:30 AM"
+    return timeStr.includes("IST") ? timeStr : `${timeStr} IST`;
   } catch (_e) {
     return timeStr;
   }
@@ -37,7 +48,7 @@ export const formatTime = (timeStr) => {
 
 export const formatDateTime = (dateTimeStr) => {
   if (!dateTimeStr) return "-";
-  return `${formatDate(dateTimeStr)} at ${formatTime(dateTimeStr)}`;
+  return `${formatDate(dateTimeStr)}, ${formatTime(dateTimeStr)}`;
 };
 
 export const getDaysAgo = (days) => {

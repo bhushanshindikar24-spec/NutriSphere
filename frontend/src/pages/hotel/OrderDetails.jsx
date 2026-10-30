@@ -68,7 +68,7 @@ export default function OrderDetails() {
           <div>
             <h2 style={{ margin: "0 0 0.25rem 0" }}>Order #{order.id}</h2>
             <span className="text-muted" style={{ fontSize: "0.85rem" }}>
-              Patient: <strong>{order.patientName || "Alex Morgan"}</strong> • Placed on {formatDate(order.createdAt)}
+              Patient: <strong>{order.patientName || "Patient"}</strong> • Placed on {formatDate(order.createdAt)}
             </span>
           </div>
           <OrderStatusBadge status={order.status} />

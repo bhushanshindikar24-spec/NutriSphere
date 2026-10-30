@@ -79,11 +79,17 @@ public class LaboratoryService {
         Set<String> foodSources = new LinkedHashSet<>();
         StringBuilder aiSummaryBuilder = new StringBuilder();
 
-        // If no values recorded yet, generate structured reference analysis based on title/notes or standard panel
+        // If no values recorded yet, return structured guidance prompt
         if (values.isEmpty()) {
-            // Seed sample standard panel values so the report is immediately insightful
-            List<LaboratoryValue> sampleValues = createDefaultPanelForReport(report);
-            values = valueRepo.saveAll(sampleValues);
+            return BloodReportAnalysisResponse.builder()
+                .reportId(reportId)
+                .title(report.getTitle() != null ? report.getTitle() : "Laboratory Report")
+                .reportDate(report.getReportDate())
+                .aiSummary("No biomarker values were recorded for this blood report. Add measured laboratory parameters to generate clinical nutritional analysis.")
+                .identifiedDeficiencies(Collections.emptyList())
+                .recommendedFoodSources(Collections.emptyList())
+                .clinicalDisclaimer("Clinical Disclaimer: AI recommendations are generated from verified clinical biomarker inputs. Consult your physician.")
+                .build();
         }
 
         for (LaboratoryValue val : values) {
@@ -298,89 +304,74 @@ public class LaboratoryService {
     }
 
     private LongitudinalComparisonResponse generateSingleReportComparison(LaboratoryReport singleReport, Long patientUserId, String patientName) {
-        LocalDate latestDate = singleReport != null ? singleReport.getReportDate() : LocalDate.now();
-        LocalDate prevDate = latestDate.minusMonths(3);
+        if (singleReport == null) {
+            return LongitudinalComparisonResponse.builder()
+                .patientUserId(patientUserId)
+                .patientName(patientName)
+                .latestReportDate(null)
+                .previousReportDate(null)
+                .comparisons(Collections.emptyList())
+                .nutritionalImprovements(Collections.emptyList())
+                .areasOfConcern(Collections.emptyList())
+                .aiDietCorrelation("Upload at least two consecutive blood test panels to analyze biomarker progression and dietary correlations.")
+                .patientFriendlyInsights("No blood reports on record. Upload blood tests in your profile to track biomarker health trends.")
+                .clinicalDoctorNotes("Awaiting initial laboratory submission.")
+                .clinicalDisclaimer("Clinical Disclaimer: AI insights are presented as possible nutritional correlations rather than confirmed diagnoses.")
+                .build();
+        }
 
-        List<LongitudinalComparisonResponse.BiomarkerComparison> comps = List.of(
-            LongitudinalComparisonResponse.BiomarkerComparison.builder()
-                .parameterName("Vitamin D3 (25-OH)")
-                .previousValue("18.4")
-                .latestValue("32.1")
-                .unit("ng/mL")
-                .normalRange("30.0 - 100.0 ng/mL")
-                .changeStatus("IMPROVED")
-                .statusBadgeColor("green")
-                .aiPossibleExplanation("Serum Vitamin D rose by +13.7 ng/mL, transitioning from deficient to sufficient range following dietary fortification.")
-                .previousNumeric(18.4)
-                .latestNumeric(32.1)
-                .build(),
-            LongitudinalComparisonResponse.BiomarkerComparison.builder()
-                .parameterName("HbA1c (Glycated Hemoglobin)")
-                .previousValue("6.1%")
-                .latestValue("5.6%")
-                .unit("%")
-                .normalRange("< 5.7%")
-                .changeStatus("IMPROVED")
-                .statusBadgeColor("green")
-                .aiPossibleExplanation("Fasting glycemic control improved significantly (-0.5%), moving below pre-diabetes threshold due to low-GI meal planning.")
-                .previousNumeric(6.1)
-                .latestNumeric(5.6)
-                .build(),
-            LongitudinalComparisonResponse.BiomarkerComparison.builder()
-                .parameterName("LDL Cholesterol")
-                .previousValue("128")
-                .latestValue("112")
-                .unit("mg/dL")
-                .normalRange("< 100 mg/dL")
-                .changeStatus("IMPROVED")
-                .statusBadgeColor("green")
-                .aiPossibleExplanation("LDL dropped by 16 mg/dL. Replacing saturated fats with olive oil and daily walnuts aided circulating lipid clearance.")
-                .previousNumeric(128.0)
-                .latestNumeric(112.0)
-                .build(),
-            LongitudinalComparisonResponse.BiomarkerComparison.builder()
-                .parameterName("Serum Ferritin")
-                .previousValue("19")
-                .latestValue("28")
-                .unit("ng/mL")
-                .normalRange("24 - 336 ng/mL")
-                .changeStatus("IMPROVED")
-                .statusBadgeColor("green")
-                .aiPossibleExplanation("Iron stores stabilized. Pairing lentil and leafy green meals with citrus Vitamin C successfully boosted absorption.")
-                .previousNumeric(19.0)
-                .latestNumeric(28.0)
-                .build()
-        );
+        LocalDate latestDate = singleReport.getReportDate();
+        List<LaboratoryValue> vals = valueRepo.findByReportId(singleReport.getId());
+        List<LongitudinalComparisonResponse.BiomarkerComparison> comps = new ArrayList<>();
+        List<String> improvements = new ArrayList<>();
+        List<String> concerns = new ArrayList<>();
+
+        for (LaboratoryValue lv : vals) {
+            String flag = lv.getFlag() != null ? lv.getFlag().toUpperCase() : "NORMAL";
+            String status = "BASELINE";
+            String color = "blue";
+            String explanation = "Baseline value of " + lv.getValue() + " " + (lv.getUnit() != null ? lv.getUnit() : "") + " established on " + latestDate + ". Upload a second report to track trends.";
+            if ("LOW".equals(flag) || "DEFICIENT".equals(flag)) {
+                status = "DEFICIENT";
+                color = "amber";
+                concerns.add(lv.getParameterName() + " is below target range (" + lv.getValue() + " " + (lv.getUnit() != null ? lv.getUnit() : "") + ")");
+                explanation = "Baseline indicates insufficiency. Focus on targeted micronutrient food sources in your meal plan.";
+            } else if ("HIGH".equals(flag) || "ELEVATED".equals(flag)) {
+                status = "ELEVATED";
+                color = "red";
+                concerns.add(lv.getParameterName() + " is elevated (" + lv.getValue() + " " + (lv.getUnit() != null ? lv.getUnit() : "") + ")");
+                explanation = "Baseline indicates elevation. Dietary modifications have been incorporated in your plan.";
+            } else {
+                improvements.add(lv.getParameterName() + " is within healthy target range (" + lv.getValue() + ")");
+            }
+
+            comps.add(LongitudinalComparisonResponse.BiomarkerComparison.builder()
+                .parameterName(lv.getParameterName())
+                .previousValue("--")
+                .latestValue(lv.getValue())
+                .unit(lv.getUnit() != null ? lv.getUnit() : "")
+                .normalRange(lv.getNormalRange() != null ? lv.getNormalRange() : "Normal Range")
+                .changeStatus(status)
+                .statusBadgeColor(color)
+                .aiPossibleExplanation(explanation)
+                .previousNumeric(null)
+                .latestNumeric(parseDoubleSafe(lv.getValue()))
+                .build());
+        }
 
         return LongitudinalComparisonResponse.builder()
             .patientUserId(patientUserId)
             .patientName(patientName)
             .latestReportDate(latestDate)
-            .previousReportDate(prevDate)
+            .previousReportDate(null)
             .comparisons(comps)
-            .nutritionalImprovements(List.of(
-                "Vitamin D3 improved into healthy sufficient range (+13.7 ng/mL)",
-                "HbA1c reduced to normal non-diabetic range 5.6%",
-                "LDL cholesterol reduced by 16 mg/dL"
-            ))
-            .areasOfConcern(Collections.emptyList())
-            .aiDietCorrelation("Patient's daily nutrition tracking records demonstrate 89% compliance with Mediterranean low-GI meal plan, directly supporting the observed biomarker recovery.")
-            .patientFriendlyInsights("Your latest blood test comparison reveals significant health improvements across all monitored nutritional biomarkers! Keep following your current diet plan.")
-            .clinicalDoctorNotes("Physician Note: Excellent metabolic adaptation. Continue prescribed lifestyle directives.")
+            .nutritionalImprovements(improvements)
+            .areasOfConcern(concerns)
+            .aiDietCorrelation("Baseline biomarker profile recorded. Daily diet tracking is active to establish correlations with your subsequent lab panel.")
+            .patientFriendlyInsights("Baseline blood panel established (" + latestDate + "). Upload your next follow-up panel to analyze longitudinal progress and dietary correlations.")
+            .clinicalDoctorNotes("Physician Note: Baseline laboratory markers established. Recheck recommended per clinical follow-up schedule.")
             .clinicalDisclaimer("Clinical Disclaimer: AI insights are presented as possible nutritional correlations rather than confirmed diagnoses. Clinical decisions must be confirmed by your supervising doctor.")
             .build();
-    }
-
-    private List<LaboratoryValue> createDefaultPanelForReport(LaboratoryReport report) {
-        return List.of(
-            LaboratoryValue.builder().reportId(report.getId()).parameterName("Vitamin D3 (25-OH)").value("19.5").unit("ng/mL").normalRange("30.0 - 100.0").flag("LOW").build(),
-            LaboratoryValue.builder().reportId(report.getId()).parameterName("Vitamin B12").value("185").unit("pg/mL").normalRange("200 - 900").flag("LOW").build(),
-            LaboratoryValue.builder().reportId(report.getId()).parameterName("HbA1c").value("5.8").unit("%").normalRange("< 5.7").flag("ELEVATED").build(),
-            LaboratoryValue.builder().reportId(report.getId()).parameterName("Fasting Blood Glucose").value("104").unit("mg/dL").normalRange("70 - 99").flag("HIGH").build(),
-            LaboratoryValue.builder().reportId(report.getId()).parameterName("LDL Cholesterol").value("122").unit("mg/dL").normalRange("< 100").flag("HIGH").build(),
-            LaboratoryValue.builder().reportId(report.getId()).parameterName("Serum Ferritin").value("22").unit("ng/mL").normalRange("30 - 200").flag("LOW").build(),
-            LaboratoryValue.builder().reportId(report.getId()).parameterName("Hemoglobin").value("13.2").unit("g/dL").normalRange("12.0 - 16.0").flag("NORMAL").build()
-        );
     }
 
     private Double parseDoubleSafe(String val) {

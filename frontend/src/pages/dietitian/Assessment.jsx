@@ -15,32 +15,7 @@ export default function Assessment() {
         const res = await api.get("/dietitians/assessments");
         setAssessments(res.data?.data || res.data || []);
       } catch (_err) {
-        setAssessments([
-          {
-            id: 1,
-            patientName: "Alex Morgan",
-            patientId: 101,
-            assessmentType: "INITIAL_COMPREHENSIVE",
-            date: "2026-09-01",
-            bmi: 24.8,
-            weightKg: 78.5,
-            waistCm: 84,
-            clinicalDiagnosis: "Mild Dyslipidemia, Inadequate dietary fiber intake.",
-            recommendations: "Shift to Mediterranean anti-inflammatory protocol with 30g+ daily dietary fiber.",
-          },
-          {
-            id: 2,
-            patientName: "Sarah Jenkins",
-            patientId: 102,
-            assessmentType: "FOLLOW_UP_REASSESSMENT",
-            date: "2026-09-15",
-            bmi: 29.4,
-            weightKg: 84.0,
-            waistCm: 92,
-            clinicalDiagnosis: "Pre-diabetes with impaired fasting glucose (108 mg/dL).",
-            recommendations: "Strict low glycemic index food matrix with evening carbohydrate taper.",
-          },
-        ]);
+        setAssessments([]);
       } finally {
         setLoading(false);
       }
