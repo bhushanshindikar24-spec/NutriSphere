@@ -1086,7 +1086,7 @@ export default function EditProfile() {
 
                 <button
                   type="button"
-                  onClick={() => navigate("/patient/reports")}
+                  onClick={() => navigate("/patient/profile?tab=blood-reports")}
                   className="btn btn-outline"
                   style={{ fontSize: "0.85rem" }}
                 >

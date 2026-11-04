@@ -27,10 +27,11 @@ public class DietPlanController {
     @PostMapping("/generate-ai")
     @PreAuthorize("hasAnyRole('PATIENT', 'DIETITIAN')")
     public ApiResponse<DietPlanResponse> generateAiDietPlan(
-            @RequestParam(required = false) Long patientUserId) {
+            @RequestParam(required = false) Long patientUserId,
+            @RequestParam(defaultValue = "10") Integer durationDays) {
         Long targetPatientId = patientUserId != null ? patientUserId : securityUtils.getCurrentUserId();
         securityUtils.assertPatientAccess(targetPatientId);
-        return ApiResponse.success(dietPlanService.generateAiPlan(targetPatientId, securityUtils.getCurrentUserId()));
+        return ApiResponse.success(dietPlanService.generateAiPlan(targetPatientId, securityUtils.getCurrentUserId(), durationDays != null ? durationDays : 10));
     }
 
     @GetMapping("/pending")

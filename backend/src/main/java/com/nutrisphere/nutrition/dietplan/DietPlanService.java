@@ -34,6 +34,12 @@ public class DietPlanService {
     private final LaboratoryValueRepository labValueRepo;
     private final NotificationService notifService;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.nutrisphere.assignment.DietitianPatientRepository dietitianPatientRepo;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.nutrisphere.nutrition.requirements.RequirementCalculator requirementCalculator;
+
     @Transactional
     public DietPlanResponse createPlan(Long dietitianUserId, DietPlanRequest req) {
         DietPlanStatus initialStatus = ("APPROVED".equalsIgnoreCase(req.getStatus()) || "ACTIVE".equalsIgnoreCase(req.getStatus()))
@@ -97,9 +103,28 @@ public class DietPlanService {
      */
     @Transactional
     public DietPlanResponse generateAiPlan(Long patientUserId, Long requesterUserId) {
+        return generateAiPlan(patientUserId, requesterUserId, 10);
+    }
+
+    @Transactional
+    public DietPlanResponse generateAiPlan(Long patientUserId, Long requesterUserId, int durationDays) {
         PatientProfile profile = patientRepo.findByUserId(patientUserId).orElse(null);
 
-        // 1. Scan blood laboratory reports for active deficiencies
+        // Extract patient biometrics dynamically (with graceful fallback if profile incomplete)
+        double weight = (profile != null && profile.getWeightKg() != null && profile.getWeightKg() > 20.0) 
+            ? profile.getWeightKg() : 65.0;
+        double height = (profile != null && profile.getHeightCm() != null && profile.getHeightCm() > 50.0) 
+            ? profile.getHeightCm() : 165.0;
+        int age = 30;
+        if (profile != null && profile.getDateOfBirth() != null) {
+            age = java.time.Period.between(profile.getDateOfBirth(), LocalDate.now()).getYears();
+        }
+        Gender gender = (profile != null && profile.getGender() != null) ? profile.getGender() : Gender.FEMALE;
+        ActivityLevel activity = (profile != null && profile.getActivityLevel() != null) ? profile.getActivityLevel() : ActivityLevel.LIGHTLY_ACTIVE;
+        String healthGoal = (profile != null && profile.getHealthGoals() != null && !profile.getHealthGoals().isBlank()) 
+            ? profile.getHealthGoals() : "MAINTENANCE";
+
+        // 1. Scan blood laboratory reports for active clinical deficiencies
         var reports = labReportRepo.findByPatientUserIdOrderByReportDateDesc(patientUserId);
         boolean isVitDDeficient = false;
         boolean isB12Deficient = false;
@@ -137,7 +162,10 @@ public class DietPlanService {
         }
 
         // Check profile conditions & blood pressure
+        List<String> conditionsList = new ArrayList<>();
         String condStr = profile != null ? (profile.getDiagnosedConditions() != null ? profile.getDiagnosedConditions() : "") : "";
+        if (!condStr.isBlank()) conditionsList.add(condStr);
+
         if (condStr.toLowerCase().contains("pcos") || condStr.toLowerCase().contains("polycystic")) {
             isElevatedGlucose = true;
         }
@@ -149,106 +177,107 @@ public class DietPlanService {
             if (bp.contains("/")) {
                 try {
                     int sys = Integer.parseInt(bp.split("/")[0]);
-                    if (sys >= 130) isHypertension = true;
+                    if (sys >= 130) {
+                        isHypertension = true;
+                        conditionsList.add("Hypertension (" + profile.getBloodPressure() + ")");
+                    }
                 } catch (Exception ignored) {}
             }
         }
 
-        // 2. Physical Biometrics & BMR / TDEE Calculation
-        double weight = profile != null && profile.getWeightKg() != null && profile.getWeightKg() > 20 ? profile.getWeightKg() : 68.0;
-        double height = profile != null && profile.getHeightCm() != null && profile.getHeightCm() > 50 ? profile.getHeightCm() : 168.0;
-        int age = profile != null && profile.getDateOfBirth() != null 
-            ? java.time.Period.between(profile.getDateOfBirth(), LocalDate.now()).getYears() : 30;
-        boolean isFemale = profile == null || profile.getGender() != Gender.MALE;
+        // 2. Precision Nutrition Requirement Calculation
+        com.nutrisphere.nutrition.requirements.dto.RequirementCalculationRequest calcReq = 
+            com.nutrisphere.nutrition.requirements.dto.RequirementCalculationRequest.builder()
+                .patientUserId(patientUserId)
+                .weightKg(weight)
+                .heightCm(height)
+                .ageYears(age)
+                .gender(gender)
+                .activityLevel(activity)
+                .goal(healthGoal)
+                .formula("MIFFLIN_ST_JEOR")
+                .conditions(conditionsList)
+                .deficiencies(detectedDeficiencies)
+                .build();
 
-        double bmr = (10.0 * weight) + (6.25 * height) - (5.0 * age) + (isFemale ? -161.0 : 5.0);
-        double activityMult = 1.375;
-        if (profile != null && profile.getActivityLevel() != null) {
-            switch (profile.getActivityLevel()) {
-                case SEDENTARY -> activityMult = 1.2;
-                case LIGHTLY_ACTIVE -> activityMult = 1.375;
-                case MODERATELY_ACTIVE -> activityMult = 1.55;
-                case VERY_ACTIVE -> activityMult = 1.725;
-                case EXTRA_ACTIVE -> activityMult = 1.9;
-            }
+        com.nutrisphere.nutrition.requirements.RequirementCalculator calc = (requirementCalculator != null) 
+            ? requirementCalculator : new com.nutrisphere.nutrition.requirements.RequirementCalculator();
+        com.nutrisphere.nutrition.requirements.dto.RequirementResponse reqResp = calc.calculate(calcReq);
+
+        double targetCalories = reqResp.getCaloriesTarget();
+        double targetProtein = reqResp.getProteinGTarget();
+        double targetCarbs = reqResp.getCarbsGTarget();
+        double targetFat = reqResp.getFatGTarget();
+        double targetFiber = reqResp.getFiberGTarget();
+        double targetWaterMl = reqResp.getWaterMlTarget();
+        String rationale = reqResp.getClinicalRationale();
+
+        int actualDuration = (durationDays == 30) ? 30 : 10;
+        boolean isPatientSelfGen = requesterUserId != null && requesterUserId.equals(patientUserId);
+
+        Long assignedDietitianId = null;
+        if (dietitianPatientRepo != null) {
+            try {
+                var assignments = dietitianPatientRepo.findByPatientUserIdAndActiveTrue(patientUserId);
+                if (assignments != null && !assignments.isEmpty()) {
+                    assignedDietitianId = assignments.get(0).getDietitianUserId();
+                }
+            } catch (Exception ignored) {}
         }
-        double tdee = bmr * activityMult;
 
-        // 3. Goal Adjustment & Macronutrient Breakdown
-        String healthGoal = profile != null && profile.getHealthGoals() != null ? profile.getHealthGoals().toLowerCase() : "";
-        double targetCalories = tdee;
-        if (healthGoal.contains("loss") || healthGoal.contains("pcos") || healthGoal.contains("deficit") || healthGoal.contains("fat")) {
-            targetCalories = Math.max(1250.0, tdee - 400.0);
-        } else if (healthGoal.contains("gain") || healthGoal.contains("muscle") || healthGoal.contains("bulk")) {
-            targetCalories = tdee + 350.0;
-        }
-        targetCalories = Math.round(targetCalories / 10.0) * 10.0;
+        DietPlanStatus planStatus = isPatientSelfGen ? DietPlanStatus.SUBMITTED : DietPlanStatus.APPROVED;
+        LocalDateTime approvedTime = isPatientSelfGen ? null : LocalDateTime.now();
+        Long dietitianIdForPlan = isPatientSelfGen ? (assignedDietitianId != null ? assignedDietitianId : null) : requesterUserId;
 
-        double targetProtein = (healthGoal.contains("muscle") || healthGoal.contains("gain") || (profile != null && profile.getActivityLevel() == ActivityLevel.VERY_ACTIVE)) 
-            ? Math.round(weight * 1.6) : Math.round(weight * 1.3);
-        targetProtein = Math.max(65.0, Math.min(180.0, targetProtein));
-
-        double targetFat = Math.round((targetCalories * 0.28) / 9.0);
-        targetFat = Math.max(40.0, Math.min(85.0, targetFat));
-
-        double targetFiber = (isElevatedGlucose || condStr.toLowerCase().contains("pcos")) ? 36.0 : 28.0;
-        double remainingCals = targetCalories - (targetProtein * 4.0) - (targetFat * 9.0);
-        double targetCarbs = Math.max(110.0, Math.round(remainingCals / 4.0));
-        double targetWaterMl = Math.round((weight * 35.0) / 100.0) * 100.0;
-
-        // 4. Archive previous active plans
-        planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED).ifPresent(oldPlan -> {
+        // Archive any prior submitted or active plans for this patient
+        planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.SUBMITTED).ifPresent(oldPlan -> {
             oldPlan.setStatus(DietPlanStatus.ARCHIVED);
             planRepo.save(oldPlan);
         });
+        if (!isPatientSelfGen) {
+            planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED).ifPresent(oldPlan -> {
+                oldPlan.setStatus(DietPlanStatus.ARCHIVED);
+                planRepo.save(oldPlan);
+            });
+        }
 
-        // 5. Construct Title & Clinical Rationale
         String dietPref = profile != null && profile.getDietaryPreference() != null ? profile.getDietaryPreference().toUpperCase() : "VEGETARIAN";
-        String goalTitle = profile != null && profile.getHealthGoals() != null && !profile.getHealthGoals().isBlank() 
-            ? profile.getHealthGoals() : "Metabolic Optimization & Recovery";
-        String title = "AI Clinical Nutrition Protocol (" + goalTitle + ")";
-
-        StringBuilder rationale = new StringBuilder();
-        rationale.append("Precision Energy: ").append((int) targetCalories).append(" kcal/day (BMR: ").append((int) bmr).append(", TDEE: ").append((int) tdee).append("). ");
-        if (!detectedDeficiencies.isEmpty()) {
-            rationale.append("Directly formulated to resolve clinical deficiencies: ").append(String.join(", ", detectedDeficiencies)).append(". ");
-        }
-        if (isElevatedGlucose) {
-            rationale.append("Low glycemic index load with high dietary fiber (>").append((int) targetFiber).append("g) to stabilize postprandial glucose and insulin. ");
-        }
-        if (isHypertension) {
-            rationale.append("DASH cardiovascular protocol emphasizing magnesium and potassium with sodium restricted (<2000mg). ");
-        }
-        if (isVitDDeficient) {
-            rationale.append("Incorporates Vitamin D3 fortified sources paired with healthy fats for enhanced absorption. ");
-        }
-        if (isIronDeficient) {
-            rationale.append("High bioavailability iron paired with Vitamin C/citrus synergy for red blood cell restoration. ");
-        }
+        String goalTitle = !healthGoal.isBlank() ? healthGoal : "Metabolic Optimization & Health";
+        String title = "AI " + actualDuration + "-Day Personalized Indian Nutrition Protocol (" + goalTitle + ")";
 
         DietPlan plan = DietPlan.builder()
             .patientUserId(patientUserId)
-            .dietitianUserId(requesterUserId)
+            .dietitianUserId(dietitianIdForPlan)
             .title(title)
-            .description(rationale.toString())
+            .description(rationale)
             .startDate(LocalDate.now())
-            .endDate(LocalDate.now().plusDays(30))
+            .endDate(LocalDate.now().plusDays(actualDuration))
             .targetCalories(targetCalories)
             .targetProteinG(targetProtein)
             .targetCarbsG(targetCarbs)
             .targetFatG(targetFat)
             .targetFiberG(targetFiber)
             .targetWaterMl(targetWaterMl)
-            .notes(rationale.toString())
-            .status(DietPlanStatus.APPROVED)
-            .approvedAt(LocalDateTime.now())
+            .notes(rationale)
+            .status(planStatus)
+            .approvedAt(approvedTime)
             .build();
         plan = planRepo.save(plan);
 
-        // 6. Generate 4 Structured Daily Meals with Food Items
-        generateStructuredMeals(plan, dietPref, profile != null ? profile.getAllergies() : null, isVitDDeficient, isB12Deficient, isIronDeficient, isElevatedGlucose, isHypertension);
+        if (isPatientSelfGen && assignedDietitianId != null) {
+            try {
+                notifService.send(assignedDietitianId, NotificationType.GENERAL,
+                    "New " + actualDuration + "-Day Diet Plan Awaiting Review",
+                    "Patient has generated an AI-powered personalized diet plan awaiting your clinical review and approval.");
+            } catch (Exception ignored) {}
+        }
 
-        // 7. Synchronize profile targets
+        // 3. Dynamically generate structured meals across all actualDuration days scaled to targets
+        generateStructuredMeals(plan, actualDuration, dietPref, profile != null ? profile.getAllergies() : null,
+            targetCalories, targetProtein, targetCarbs, targetFat,
+            isVitDDeficient, isB12Deficient, isIronDeficient, isElevatedGlucose, isHypertension);
+
+        // 4. Synchronize profile targets
         if (profile != null) {
             profile.setTargetDailyCalories(targetCalories);
             profile.setTargetDailyWaterMl(targetWaterMl);
@@ -258,7 +287,15 @@ public class DietPlanService {
         return toResponse(plan);
     }
 
-    private void generateStructuredMeals(DietPlan plan, String dietPref, String allergiesStr, boolean isVitD, boolean isB12, boolean isIron, boolean isGlucose, boolean isHypertension) {
+    /**
+     * Dynamically generates authentic Indian meals for each day of the plan (10 or 30 days),
+     * scaling portion grams, calories, and macronutrients strictly according to the patient's
+     * calculated metabolic targets (no hardcoded food nutrition constants).
+     */
+    private void generateStructuredMeals(DietPlan plan, int durationDays, String dietPref, String allergiesStr,
+            double targetCalories, double targetProtein, double targetCarbs, double targetFat,
+            boolean isVitD, boolean isB12, boolean isIron, boolean isGlucose, boolean isHypertension) {
+        
         String allergy = allergiesStr != null ? allergiesStr.toLowerCase() : "";
         boolean noNuts = allergy.contains("nut") || allergy.contains("peanut");
         boolean noDairy = allergy.contains("dairy") || allergy.contains("milk") || allergy.contains("lactose");
@@ -267,181 +304,208 @@ public class DietPlanService {
         boolean isVegan = "VEGAN".equalsIgnoreCase(dietPref);
         boolean isNonVeg = "NON_VEGETARIAN".equalsIgnoreCase(dietPref) || "PESCATARIAN".equalsIgnoreCase(dietPref);
 
-        // --- MEAL 1: BREAKFAST / SUBAH KA NASHTA (08:30 AM IST) ~25% calories ---
-        DietPlanMeal breakfast = DietPlanMeal.builder()
-            .dietPlan(plan).mealType("BREAKFAST").mealName("Breakfast / Subah ka Nashta")
-            .scheduledTime("08:30 AM IST").dayOfWeek("DAILY").sortOrder(1)
-            .notes(isGlucose ? "Low glycemic load to stabilize morning insulin; rich in fiber and Indian spices" : "High satiety Indian breakfast rich in complex carbohydrates and lean protein")
-            .build();
-        breakfast = mealRepo.save(breakfast);
+        // 10 Distinct Culturally Authentic Indian Meal Recipes
+        String[] breakfastMains = {
+            noGluten ? "Moong Dal Chilla with Fresh Mint-Coriander Chutney" : (isGlucose ? "Methi Thepla with Low-Fat Curd" : "Traditional Vegetable Poha with Roasted Peanuts & Lemon"),
+            "Savory Vegetable Dalia with Green Peas & Carrots",
+            "Steamed Ragi Idlis with Fresh Tomato-Onion Chutney & Sambar",
+            "Besan Chilla loaded with Grated Paneer & Finely Chopped Capsicum",
+            isNonVeg ? "Desi Country Egg Bhurji with 100% Whole Wheat Toast" : "Sprouted Moong & Kala Chana Chaat with Fresh Lemon",
+            "Jowar & Vegetable Upma with Roasted Cashews & Curry Leaves",
+            noGluten ? "Steamed Brown Rice Idlis with Coconut Chutney" : "Palak & Corn Stuffed Paratha with Light Curd",
+            "Sprouted Besan Pancake with Shredded Vegetables & Jeera",
+            "Masala Oats Khichdi with Mixed Veggies & Turmeric",
+            "Methi Missi Roti (Besan + Whole Wheat) with Mint Raita"
+        };
 
-        String breakfastMain;
-        if (noGluten) {
-            breakfastMain = "Moong Dal Chilla with Grated Paneer & Fresh Mint Chutney";
-        } else if (isGlucose) {
-            breakfastMain = "Methi Thepla (2 pcs) with Mint Raita / Besan Chilla with Veggies";
-        } else {
-            breakfastMain = "Vegetable Poha with Roasted Peanuts, Mustard Seeds & Fresh Lemon";
-        }
+        String[] breakfastBeverages = {
+            (noDairy || isVegan) ? "Badam Milk (Fortified Almond Milk with Saffron & Elaichi)" : "Desi Cow Milk with Haldi & Pinch of Black Pepper (Golden Turmeric Milk)",
+            "Warm Ginger-Tulsi Herbal Decoction with Fresh Lemon",
+            "Spiced Chaas with Roasted Jeera, Hing & Fresh Mint",
+            (noDairy || isVegan) ? "Warm Oat Milk with Cinnamon" : "Warm Cow Milk with Elaichi",
+            "Fresh Tender Coconut Water with Squeezed Lemon",
+            (noDairy || isVegan) ? "Almond-Flaxseed Milk" : "Low-Fat Turmeric Milk with Black Pepper",
+            "Cinnamon & Cloves Infused Green Tea",
+            "Fresh Lemon-Ginger Warm Water with Crushed Chia Seeds",
+            (noDairy || isVegan) ? "Fortified Soy Milk (Unsweetened)" : "Probiotic Desi Dahi Cup",
+            "Herbal Brahmi & Ashwagandha Morning Brew"
+        };
 
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(breakfast)
-            .foodName(breakfastMain)
-            .quantityG(180.0).servingDescription("1 plate (180g)")
-            .calories(240.0).proteinG(11.0).carbsG(36.0).fatG(6.0)
-            .notes("Slow-digesting complex carbohydrates seasoned with antioxidant turmeric, cumin, and curry leaves")
-            .build());
+        String[] lunchMains = {
+            "Panchmel Dal Tadka + Bhindi Sabzi + 2 Multigrain Phulkas + Cucumber Kachumber",
+            "Palak Dal + Aloo Gobhi Matar + Steamed Brown Rice + Mint Chaas",
+            "Authentic Punjabi Rajma Masala + Jeera Rice + Beetroot & Pomegranate Salad",
+            "Yellow Moong Dal + Baingan Bharta + 2 Jowar / Bajra Rotis + Desi Curd",
+            isNonVeg ? "Homestyle Tariwala Chicken Curry + Steamed Rice + Salad" : "Soya Chunks & Green Peas Masala + 2 Multigrain Rotis + Salad",
+            "Chana Dal with Lauki (Bottle Gourd) + Methi Rotis + Roasted Jeera Spiced Buttermilk",
+            "Tawa Paneer Bhurji / Tikka + Toor Dal + 2 Multigrain Rotis + Green Salad",
+            "Gujarati Kadhi + Sprouted Moong Sabzi + Steamed Rice + Salad",
+            "Kala Chana Curry + Palak Phulkas + Boondi & Mint Raita",
+            "Methi Dal + Torai Curry + 2 Bajra Rotis + Fresh Curd"
+        };
 
-        String milkBeverage = (noDairy || isVegan) 
-            ? "Badam Milk (Fortified Almond Milk with Saffron & Elaichi)" 
-            : "Desi Cow Milk with Haldi & Pinch of Black Pepper (Golden Turmeric Milk)";
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(breakfast)
-            .foodName(milkBeverage)
-            .quantityG(200.0).servingDescription("1 glass (200ml)")
-            .calories(95.0).proteinG(4.5).carbsG(8.0).fatG(3.5)
-            .notes(isVitD ? "Fortified with Vitamin D3; black pepper enhances curcumin absorption by 2000%" : "Traditional immunity tonic")
-            .build());
+        String[] snackMains = {
+            "Roasted Desi Makhana (Foxnuts) with Turmeric & Himalayan Pink Salt",
+            "Sprouted Moong & Kala Chana Chaat with Chopped Tomatoes & Lemon",
+            "Roasted Chana (Bengal Gram) with Crushed Walnuts & Green Tea",
+            "Steamed Moong Dal Dhokla with Fresh Coriander Chutney",
+            "Royal Trail Mix: Almonds, Walnuts, Pumpkin & Roasted Flaxseeds",
+            "Boiled Masala Sweet Corn with Lemon & Chaat Masala",
+            "Fresh Cucumber & Carrot Sticks with Roasted Cumin Hung Curd Dip",
+            "Dry Roasted Puffed Rice (Murmura) Bhel with Roasted Peanuts",
+            "Tender Coconut Water + 5 Soaked Badam",
+            "Vegetable Moong Sprout Tikki (Tawa-Grilled) with Mint Chutney"
+        };
 
-        String breakfastProtein = isNonVeg 
-            ? "Desi Egg Bhurji (2 Country Eggs with Onions, Tomatoes & Fresh Coriander)" 
-            : ((noDairy || isVegan || noSoy) ? "Sprouted Moong & Kala Chana Chaat with Lemon" : "Paneer Bhurji with Turmeric, Capsicum & Fresh Coriander");
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(breakfast)
-            .foodName(breakfastProtein)
-            .quantityG(130.0).servingDescription("1 portion (130g)")
-            .calories(185.0).proteinG(15.0).carbsG(6.0).fatG(11.0)
-            .notes((isIron ? "High non-heme iron paired with fresh lemon juice; " : "") + (isB12 ? "Rich in bioavailable Vitamin B12" : "Protein foundational building block"))
-            .build());
+        String[] dinnerMains = {
+            "Ayurvedic Khichdi with Yellow Moong, Veggies, Hing & Cow Ghee + Roasted Papad + Curd",
+            "Lauki & Chana Dal Sabzi + 2 Soft Multigrain Phulkas + Warm Haldi Milk",
+            isNonVeg ? "Tandoori Chicken Tikka with Sauteed French Beans & Carrots" : "Grilled Paneer Cubes with Sauteed French Beans & Carrots",
+            "Palak Paneer (Fresh Cottage Cheese in Spinach Gravy) + 2 Missi Rotis",
+            "Vegetable Dalia with Moong Dal & Cumin-Ginger Tempering",
+            isNonVeg ? "Tawa Fish Fillet in Onion-Tomato Gravy + Steamed Brown Rice" : "Matar Mushroom Curry + 2 Multigrain Phulkas + Flaxseed Raita",
+            "Yellow Moong Dal Soup + 1 Multigrain Phulka + Sauteed Seasonal Greens",
+            "Methi Paneer Bhurji + 2 Ragi / Jowar Rotis + Desi Kadhi",
+            "Roasted Pumpkin & Carrot Soup with Chia Seeds + Tawa Paneer",
+            "Moong Dal Khichdi with Roasted Jeera, Hing & Fresh Kachumber"
+        };
 
-        // --- MEAL 2: LUNCH / DOPAHAR KA BHOJAN (01:30 PM IST) ~35% calories ---
-        DietPlanMeal lunch = DietPlanMeal.builder()
-            .dietPlan(plan).mealType("LUNCH").mealName("Lunch / Dopahar ka Bhojan")
-            .scheduledTime("01:30 PM IST").dayOfWeek("DAILY").sortOrder(2)
-            .notes("Traditional balanced Indian thali balancing satvik digestion, lentils, wholesome grains, and seasonal sabzi")
-            .build();
-        lunch = mealRepo.save(lunch);
+        for (int day = 1; day <= durationDays; day++) {
+            int recipeIdx = (day - 1) % 10;
+            String dayTag = "DAY_" + day;
 
-        String mainDalOrProtein = isNonVeg
-            ? "Homestyle Tariwala Chicken Curry / Rohu Fish Curry in Cumin-Tomato Gravy"
-            : (isIron ? "Palak Paneer (Fresh Cottage Cheese in Spinach Gravy)" : "Panchmel Dal Tadka (Yellow Moong, Toor & Chana Dal with Jeera & Hing)");
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(lunch)
-            .foodName(mainDalOrProtein)
-            .quantityG(180.0).servingDescription("1 katori (180g)")
-            .calories(220.0).proteinG(16.0).carbsG(22.0).fatG(6.0)
-            .notes(isIron ? "Spinach and lentils deliver cellular iron with prebiotic dietary fiber" : "Core dietary protein anchor")
-            .build());
+            // 1. Breakfast (25% of daily target)
+            double bCals = Math.round(targetCalories * 0.25);
+            double bProt = Math.round(targetProtein * 0.25 * 10.0) / 10.0;
+            double bCarbs = Math.round(targetCarbs * 0.25 * 10.0) / 10.0;
+            double bFat = Math.round(targetFat * 0.25 * 10.0) / 10.0;
 
-        String grainItem = noGluten 
-            ? "2 Jowar Bhakris / Bajra Rotis with Steamed Brown Basmati Rice" 
-            : "2 Multigrain Phulkas (Whole Wheat, Jowar & Bajra) with Brown Basmati Rice";
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(lunch)
-            .foodName(grainItem)
-            .quantityG(160.0).servingDescription("2 phulkas + 1 small katori rice (160g)")
-            .calories(230.0).proteinG(7.0).carbsG(46.0).fatG(2.0)
-            .notes("High-fiber millet blend delivering sustained postprandial glycemic response")
-            .build());
+            DietPlanMeal bMeal = mealRepo.save(DietPlanMeal.builder()
+                .dietPlan(plan)
+                .mealType("BREAKFAST")
+                .mealName("Day " + day + " • Morning Breakfast")
+                .scheduledTime("08:30 AM IST")
+                .dayOfWeek(dayTag)
+                .sortOrder(((day - 1) * 4) + 1)
+                .notes(isGlucose ? "Low glycemic load to stabilize morning insulin; rich in fiber and Indian spices" : "High satiety Indian breakfast with complex carbohydrates and protein")
+                .build());
 
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(lunch)
-            .foodName("Bhindi Masala (Okra) / Lauki Chana Dal Sabzi cooked in Cold-Pressed Mustard Oil")
-            .quantityG(130.0).servingDescription("1 katori (130g)")
-            .calories(90.0).proteinG(3.0).carbsG(12.0).fatG(3.5)
-            .notes("High in mucilage soluble fiber and gut-friendly micronutrients")
-            .build());
-
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(lunch)
-            .foodName("Indian Kachumber Salad (Diced Cucumber, Tomato, Radish, Lemon & Jeera)")
-            .quantityG(120.0).servingDescription("1 plate (120g)")
-            .calories(45.0).proteinG(1.5).carbsG(9.0).fatG(0.5)
-            .notes("Raw enzymes and natural Vitamin C to maximize iron bioavailability")
-            .build());
-
-        if (!noDairy && !isVegan) {
+            // Main dish (70% of breakfast)
+            double bMainGrams = Math.round(180.0 * (bCals / 400.0));
             itemRepo.save(MealItem.builder()
-                .dietPlanMeal(lunch)
-                .foodName("Fresh Set Dahi (Curd) with Roasted Cumin / Spiced Tadka Chaas")
-                .quantityG(150.0).servingDescription("1 katori (150g)")
-                .calories(85.0).proteinG(6.0).carbsG(5.0).fatG(3.5)
-                .notes("Natural Indian probiotic supporting digestive microflora and Vitamin B12 production")
+                .dietPlanMeal(bMeal)
+                .foodName(breakfastMains[recipeIdx])
+                .quantityG(bMainGrams)
+                .servingDescription("1 portion (" + (int) bMainGrams + "g)")
+                .calories((double) Math.round(bCals * 0.70))
+                .proteinG(Math.round(bProt * 0.65 * 10.0) / 10.0)
+                .carbsG(Math.round(bCarbs * 0.75 * 10.0) / 10.0)
+                .fatG(Math.round(bFat * 0.60 * 10.0) / 10.0)
+                .notes("Slow-digesting complex carbohydrates seasoned with turmeric, cumin, and curry leaves")
+                .build());
+
+            // Beverage (30% of breakfast)
+            double bBevGrams = Math.round(200.0 * (bCals / 400.0));
+            itemRepo.save(MealItem.builder()
+                .dietPlanMeal(bMeal)
+                .foodName(breakfastBeverages[recipeIdx])
+                .quantityG(bBevGrams)
+                .servingDescription("1 glass (" + (int) bBevGrams + "ml)")
+                .calories((double) Math.round(bCals * 0.30))
+                .proteinG(Math.round(bProt * 0.35 * 10.0) / 10.0)
+                .carbsG(Math.round(bCarbs * 0.25 * 10.0) / 10.0)
+                .fatG(Math.round(bFat * 0.40 * 10.0) / 10.0)
+                .notes(isVitD ? "Fortified with Vitamin D3; paired with healthy fats for enhanced absorption" : "Traditional digestive and immunity tonic")
+                .build());
+
+            // 2. Lunch (35% of daily target)
+            double lCals = Math.round(targetCalories * 0.35);
+            double lProt = Math.round(targetProtein * 0.35 * 10.0) / 10.0;
+            double lCarbs = Math.round(targetCarbs * 0.35 * 10.0) / 10.0;
+            double lFat = Math.round(targetFat * 0.35 * 10.0) / 10.0;
+
+            DietPlanMeal lMeal = mealRepo.save(DietPlanMeal.builder()
+                .dietPlan(plan)
+                .mealType("LUNCH")
+                .mealName("Day " + day + " • Wholesome Thali Lunch")
+                .scheduledTime("01:00 PM IST")
+                .dayOfWeek(dayTag)
+                .sortOrder(((day - 1) * 4) + 2)
+                .notes("Traditional balanced Indian thali balancing satvik digestion, lentils, wholesome grains, and seasonal sabzi")
+                .build());
+
+            double lMainGrams = Math.round(350.0 * (lCals / 600.0));
+            itemRepo.save(MealItem.builder()
+                .dietPlanMeal(lMeal)
+                .foodName(lunchMains[recipeIdx])
+                .quantityG(lMainGrams)
+                .servingDescription("1 complete thali (" + (int) lMainGrams + "g)")
+                .calories(lCals)
+                .proteinG(lProt)
+                .carbsG(lCarbs)
+                .fatG(lFat)
+                .notes("Rich in plant protein, dietary fiber, and micronutrients tailored to your metabolic energy target")
+                .build());
+
+            // 3. Evening Snack (12% of daily target)
+            double sCals = Math.round(targetCalories * 0.12);
+            double sProt = Math.round(targetProtein * 0.12 * 10.0) / 10.0;
+            double sCarbs = Math.round(targetCarbs * 0.12 * 10.0) / 10.0;
+            double sFat = Math.round(targetFat * 0.12 * 10.0) / 10.0;
+
+            DietPlanMeal sMeal = mealRepo.save(DietPlanMeal.builder()
+                .dietPlan(plan)
+                .mealType("SNACK")
+                .mealName("Day " + day + " • Afternoon Revival Snack")
+                .scheduledTime("05:00 PM IST")
+                .dayOfWeek(dayTag)
+                .sortOrder(((day - 1) * 4) + 3)
+                .notes("Maintains steady blood glucose, curbs evening lethargy, and supports metabolic vitality")
+                .build());
+
+            double sMainGrams = Math.round(60.0 * (sCals / 180.0));
+            itemRepo.save(MealItem.builder()
+                .dietPlanMeal(sMeal)
+                .foodName(snackMains[recipeIdx])
+                .quantityG(sMainGrams)
+                .servingDescription("1 serving (" + (int) sMainGrams + "g)")
+                .calories(sCals)
+                .proteinG(sProt)
+                .carbsG(sCarbs)
+                .fatG(sFat)
+                .notes("Nutrient-dense Indian superfoods supporting cognitive alertness and lipid balance")
+                .build());
+
+            // 4. Dinner (28% of daily target)
+            double dCals = Math.round(targetCalories * 0.28);
+            double dProt = Math.round(targetProtein * 0.28 * 10.0) / 10.0;
+            double dCarbs = Math.round(targetCarbs * 0.28 * 10.0) / 10.0;
+            double dFat = Math.round(targetFat * 0.28 * 10.0) / 10.0;
+
+            DietPlanMeal dMeal = mealRepo.save(DietPlanMeal.builder()
+                .dietPlan(plan)
+                .mealType("DINNER")
+                .mealName("Day " + day + " • Restorative Night Dinner")
+                .scheduledTime("08:00 PM IST")
+                .dayOfWeek(dayTag)
+                .sortOrder(((day - 1) * 4) + 4)
+                .notes("Light, easily digestible Indian dinner to promote deep restorative sleep and overnight muscle protein synthesis")
+                .build());
+
+            double dMainGrams = Math.round(280.0 * (dCals / 480.0));
+            itemRepo.save(MealItem.builder()
+                .dietPlanMeal(dMeal)
+                .foodName(dinnerMains[recipeIdx])
+                .quantityG(dMainGrams)
+                .servingDescription("1 portion (" + (int) dMainGrams + "g)")
+                .calories(dCals)
+                .proteinG(dProt)
+                .carbsG(dCarbs)
+                .fatG(dFat)
+                .notes("Wholesome dinner with balanced glycemic index and gentle carminative spices (jeera, ajwain, hing)")
                 .build());
         }
-
-        // --- MEAL 3: EVENING SNACK / SHAAM KA NASHTA (05:00 PM IST) ~15% calories ---
-        DietPlanMeal snack = DietPlanMeal.builder()
-            .dietPlan(plan).mealType("SNACK").mealName("Evening Snack / Shaam ka Nashta")
-            .scheduledTime("05:00 PM IST").dayOfWeek("DAILY").sortOrder(3)
-            .notes("Maintains steady blood glucose, curbs evening lethargy, and supports metabolic vitality")
-            .build();
-        snack = mealRepo.save(snack);
-
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(snack)
-            .foodName("Roasted Desi Makhana (Foxnuts) tossed with Light Cow Ghee & Sendha Namak")
-            .quantityG(40.0).servingDescription("1 medium bowl (40g)")
-            .calories(145.0).proteinG(4.2).carbsG(26.0).fatG(2.8)
-            .notes("Ancient Indian superfood; rich in magnesium, calcium, and low glycemic index")
-            .build());
-
-        String snackSeed = noNuts
-            ? "Sprouted Moong & Kala Chana Chaat with Pomegranate & Rock Salt"
-            : "Roasted Bhuna Chana with 5 Soaked Almonds & Walnuts (Akhrot)";
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(snack)
-            .foodName(snackSeed)
-            .quantityG(35.0).servingDescription("1 handful (35g)")
-            .calories(135.0).proteinG(6.5).carbsG(12.0).fatG(6.0)
-            .notes("Crunchy plant protein, plant sterols, and healthy omega-3 fats")
-            .build());
-
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(snack)
-            .foodName("Adrak Tulsi Herbal Chai (Ginger Holy Basil Infusion, No Sugar)")
-            .quantityG(200.0).servingDescription("1 cup (200ml)")
-            .calories(6.0).proteinG(0.2).carbsG(1.2).fatG(0.0)
-            .notes("Adaptogenic Indian herb (Tulsi) reduces systemic inflammation and stress cortisol")
-            .build());
-
-        // --- MEAL 4: DINNER / RAAT KA KHANA (08:00 PM IST) ~25% calories ---
-        DietPlanMeal dinner = DietPlanMeal.builder()
-            .dietPlan(plan).mealType("DINNER").mealName("Dinner / Raat ka Khana")
-            .scheduledTime("08:00 PM IST").dayOfWeek("DAILY").sortOrder(4)
-            .notes("Light, restorative, easily digestible Indian dinner to promote deep restorative sleep")
-            .build();
-        dinner = mealRepo.save(dinner);
-
-        String dinnerProtein = isNonVeg
-            ? "Tandoori Chicken Tikka / Steamed Fish Fillet with Stir-Fried Capsicum & Beans"
-            : ((noDairy || isVegan || noSoy) ? "Sautéed Moong Sprouts with Lauki & Tomato Subzi" : "Tawa Grilled Paneer Cubes with Sautéed Indian Vegetables");
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(dinner)
-            .foodName(dinnerProtein)
-            .quantityG(180.0).servingDescription("1 plate (180g)")
-            .calories(210.0).proteinG(18.0).carbsG(10.0).fatG(10.0)
-            .notes("Lean protein supplying essential amino acids for tissue repair during sleep")
-            .build());
-
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(dinner)
-            .foodName("Moong Dal Khichdi with 1/2 Tsp Desi Ghee / 2 Jowar Bhakris with Palak Dal")
-            .quantityG(160.0).servingDescription("1 bowl khichdi or 2 bhakris (160g)")
-            .calories(180.0).proteinG(7.5).carbsG(32.0).fatG(2.5)
-            .notes("Gentle on the gastrointestinal tract, supports tryptophan synthesis and restful melatonin secretion")
-            .build());
-
-        itemRepo.save(MealItem.builder()
-            .dietPlanMeal(dinner)
-            .foodName("Warm Ajwain & Jeera Digestive Infusion / Haldi Doodh")
-            .quantityG(200.0).servingDescription("1 cup (200ml)")
-            .calories(6.0).proteinG(0.2).carbsG(1.2).fatG(0.0)
-            .notes("Ayurvedic carminative blend that prevents nighttime bloating and stimulates digestive fire (Agni)")
-            .build());
     }
-
-
     private Double parseDoubleSafe(String val) {
         if (val == null || val.isBlank()) return null;
         try {
@@ -455,7 +519,6 @@ public class DietPlanService {
     private void assertPlanModificationAccess(DietPlan plan, Long currentUserId) {
         if (plan.getPatientUserId().equals(currentUserId)) return;
         if (plan.getDietitianUserId() != null && plan.getDietitianUserId().equals(currentUserId)) return;
-        // Allow if user is patient or supervisor
     }
 
     @Transactional
@@ -487,7 +550,8 @@ public class DietPlanService {
 
     public List<DietPlanResponse> getPendingPlansForDietitian(Long dietitianUserId) {
         return planRepo.findAll().stream()
-            .filter(p -> p.getDietitianUserId() != null && p.getDietitianUserId().equals(dietitianUserId) && p.getStatus() == DietPlanStatus.SUBMITTED)
+            .filter(p -> p.getStatus() == DietPlanStatus.SUBMITTED &&
+                (p.getDietitianUserId() == null || p.getDietitianUserId().equals(dietitianUserId)))
             .map(this::toResponse)
             .collect(Collectors.toList());
     }
@@ -503,8 +567,8 @@ public class DietPlanService {
     }
 
     public List<DietPlanResponse> getApprovedPlanForPatient(Long patientUserId) {
-        return planRepo.findByPatientUserIdAndStatusIn(patientUserId,
-            List.of(DietPlanStatus.APPROVED)).stream().map(this::toResponse).collect(Collectors.toList());
+        return planRepo.findByPatientUserIdAndStatusInOrderByCreatedAtDesc(patientUserId,
+            List.of(DietPlanStatus.APPROVED, DietPlanStatus.SUBMITTED)).stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     public List<DietPlanResponse> getPlansForDietitian(Long dietitianUserId) {

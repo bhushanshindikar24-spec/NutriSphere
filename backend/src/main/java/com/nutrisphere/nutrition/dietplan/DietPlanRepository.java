@@ -11,4 +11,5 @@ public interface DietPlanRepository extends JpaRepository<DietPlan, Long> {
     List<DietPlan> findByDietitianUserIdOrderByCreatedAtDesc(Long dietitianUserId);
     Optional<DietPlan> findByPatientUserIdAndStatus(Long patientUserId, DietPlanStatus status);
     List<DietPlan> findByPatientUserIdAndStatusIn(Long patientUserId, List<DietPlanStatus> statuses);
+    List<DietPlan> findByPatientUserIdAndStatusInOrderByCreatedAtDesc(Long patientUserId, List<DietPlanStatus> statuses);
 }

@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import PatientDashboard from "../pages/patient/PatientDashboard";
 import DietPlan from "../pages/patient/DietPlan";
 import LogFood from "../pages/patient/LogFood";
@@ -28,6 +28,7 @@ import MedicalConditions from "../pages/patient/MedicalConditions";
 import MedicalHistory from "../pages/patient/MedicalHistory";
 import DailyReport from "../pages/patient/DailyReport";
 import NutritionCalculator from "../pages/patient/NutritionCalculator";
+import NutritionalRequirements from "../pages/patient/NutritionalRequirements";
 
 // Patient Hotel & Meal Delivery
 import HotelMenu from "../pages/patient/hotel/Menu";
@@ -46,12 +47,14 @@ export default function PatientRoutes() {
       <Route path="/" element={<PatientDashboard />} />
       <Route path="/dashboard" element={<PatientDashboard />} />
       <Route path="/diet-plan" element={<DietPlan />} />
+      <Route path="/nutritional-requirements" element={<NutritionalRequirements />} />
+      <Route path="/my-requirements" element={<NutritionalRequirements />} />
       <Route path="/daily-report" element={<DailyReport />} />
       <Route path="/nutrition-calculator" element={<NutritionCalculator />} />
       <Route path="/calculator" element={<NutritionCalculator />} />
       <Route path="/food-restrictions" element={<MedicalConditions />} />
       <Route path="/conditions" element={<MedicalConditions />} />
-      <Route path="/medical-history" element={<MedicalHistory />} />
+      <Route path="/medical-history" element={<Navigate to="/patient/profile?tab=medical-history" replace />} />
       <Route path="/log-food" element={<LogFood />} />
       <Route path="/food-logging" element={<FoodLogging />} />
       <Route path="/water-logging" element={<WaterLogging />} />
@@ -75,9 +78,9 @@ export default function PatientRoutes() {
       <Route path="/profile/edit" element={<EditProfile />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/notifications" element={<Notifications />} />
-      <Route path="/reports" element={<Reports />} />
+      <Route path="/reports" element={<Navigate to="/patient/profile?tab=blood-reports" replace />} />
       <Route path="/reports/upload" element={<UploadReport />} />
-      <Route path="/lab-progress" element={<LabProgress />} />
+      <Route path="/lab-progress" element={<Navigate to="/patient/profile?tab=longitudinal" replace />} />
 
       {/* Hotel & Delivery */}
       <Route path="/hotel" element={<HotelMenu />} />

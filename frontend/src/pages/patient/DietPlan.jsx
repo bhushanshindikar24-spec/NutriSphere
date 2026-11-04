@@ -20,7 +20,8 @@ import {
   Droplet,
   ShieldAlert,
   Flame,
-  ShieldCheck
+  ShieldCheck,
+  Target
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -30,6 +31,10 @@ export default function DietPlan() {
   const [loading, setLoading] = useState(true);
   const [generatingAi, setGeneratingAi] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [durationModalOpen, setDurationModalOpen] = useState(false);
+  const [chosenDuration, setChosenDuration] = useState(10);
+  const [activeDay, setActiveDay] = useState(1);
+  const [viewAllDays, setViewAllDays] = useState(false);
   
   // Clinician Approval Modal State
   const [approvingPlan, setApprovingPlan] = useState(false);
@@ -84,7 +89,13 @@ export default function DietPlan() {
 
       if (planRes.status === "fulfilled") {
         const plans = planRes.value.data?.data || planRes.value.data;
-        const activePlan = Array.isArray(plans) ? (plans.length > 0 ? plans[0] : null) : plans;
+        let activePlan = null;
+        if (Array.isArray(plans) && plans.length > 0) {
+          const sorted = [...plans].sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+          activePlan = sorted[0];
+        } else if (plans && !Array.isArray(plans)) {
+          activePlan = plans;
+        }
         setPlan(activePlan);
         if (activePlan) {
           setTargetFormData({
@@ -112,12 +123,20 @@ export default function DietPlan() {
     fetchPlanAndProfile();
   }, []);
 
-  const handleGenerateAiDietPlan = async () => {
+  const handleGenerateAiDietPlan = async (duration = chosenDuration) => {
     setGeneratingAi(true);
+    setDurationModalOpen(false);
     try {
-      const res = await api.post("/nutrition/diet-plans/generate-ai");
+      const res = await api.post(`/nutrition/diet-plans/generate-ai?durationDays=${duration}`);
       const generated = res.data?.data || res.data;
-      setPlan(generated);
+      if (generated) {
+        setPlan(generated);
+        setActiveDay(1);
+        setViewAllDays(false);
+        if (generated.startDate) {
+          setSelectedDate(generated.startDate);
+        }
+      }
       if (generated) {
         setTargetFormData({
           targetCalories: generated.targetCalories || "",
@@ -156,10 +175,34 @@ export default function DietPlan() {
     }
   };
 
+  const totalPlanDays = plan?.endDate && plan?.startDate 
+    ? Math.max(1, Math.round((new Date(plan.endDate) - new Date(plan.startDate)) / (1000 * 60 * 60 * 24)))
+    : 10;
+
+  const getDayIndex = (dateStr) => {
+    if (!plan?.startDate) return 1;
+    const s = new Date(plan.startDate + "T00:00:00");
+    const c = new Date(dateStr + "T00:00:00");
+    const diff = Math.floor((c - s) / (1000 * 60 * 60 * 24)) + 1;
+    return (diff >= 1 && diff <= totalPlanDays) ? diff : 1;
+  };
+
+  const handleSelectDay = (dayNum) => {
+    setActiveDay(dayNum);
+    setViewAllDays(false);
+    if (plan?.startDate) {
+      const d = new Date(plan.startDate + "T00:00:00");
+      d.setDate(d.getDate() + (dayNum - 1));
+      setSelectedDate(d.toISOString().split("T")[0]);
+    }
+  };
+
   const changeDate = (days) => {
     const current = new Date(selectedDate);
     current.setDate(current.getDate() + days);
-    setSelectedDate(current.toISOString().split("T")[0]);
+    const newDateStr = current.toISOString().split("T")[0];
+    setSelectedDate(newDateStr);
+    setActiveDay(getDayIndex(newDateStr));
   };
 
   const isToday = selectedDate === new Date().toISOString().split("T")[0];
@@ -421,8 +464,16 @@ export default function DietPlan() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+          <Link
+            to="/patient/nutritional-requirements"
+            className="btn btn-outline"
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", fontSize: "0.88rem", textDecoration: "none" }}
+          >
+            <Target size={16} color="#0284c7" /> Detailed Requirements
+          </Link>
+
           <button
-            onClick={handleGenerateAiDietPlan}
+            onClick={() => setDurationModalOpen(true)}
             disabled={generatingAi}
             style={{
               background: "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)",
@@ -649,17 +700,98 @@ export default function DietPlan() {
       {/* Scheduled Meals List */}
       {plan && (
         <div>
+          {/* Day Navigation Tabs for 10-Day or 30-Day Plan */}
+          <div style={{
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
+            borderRadius: "14px",
+            padding: "0.85rem 1.25rem",
+            marginBottom: "1.25rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                Plan Schedule ({totalPlanDays} Days):
+              </span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap", maxWidth: "100%", overflowX: "auto" }}>
+              <button
+                onClick={() => setViewAllDays(false)}
+                style={{
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: !viewAllDays ? "#0284c7" : "#f1f5f9",
+                  color: !viewAllDays ? "#ffffff" : "#475569",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                Day {activeDay} Focus
+              </button>
+
+              {Array.from({ length: Math.min(totalPlanDays, 30) }, (_, i) => i + 1).map((dayNum) => (
+                <button
+                  key={dayNum}
+                  onClick={() => handleSelectDay(dayNum)}
+                  style={{
+                    padding: "0.35rem 0.6rem",
+                    borderRadius: "8px",
+                    border: (activeDay === dayNum && !viewAllDays) ? "1.5px solid #0284c7" : "1px solid #e2e8f0",
+                    background: (activeDay === dayNum && !viewAllDays) ? "#e0f2fe" : "#ffffff",
+                    color: (activeDay === dayNum && !viewAllDays) ? "#0284c7" : "#475569",
+                    fontSize: "0.78rem",
+                    fontWeight: (activeDay === dayNum && !viewAllDays) ? 800 : 500,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  D{dayNum}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setViewAllDays(true)}
+                style={{
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: viewAllDays ? "#0284c7" : "#f1f5f9",
+                  color: viewAllDays ? "#ffffff" : "#475569",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                Show All Days ({plan.meals?.length || 0} Meals)
+              </button>
+            </div>
+          </div>
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#0f172a" }}>
-              Prescribed Meals for {getDayName(selectedDate)}
+              {viewAllDays ? `Complete ${totalPlanDays}-Day Nutrition Protocol` : `Prescribed Meals for Day ${activeDay} (${getDayName(selectedDate)})`}
             </h3>
             <span style={{ fontSize: "0.85rem", color: "#64748b" }}>
-              {plan.meals?.length || 0} Structured Meal Sessions
+              {viewAllDays ? `${plan.meals?.length || 0} Total Meal Sessions` : `Day ${activeDay} Sessions`}
             </span>
           </div>
 
           <div style={{ display: "grid", gap: "1.5rem" }}>
-            {(plan.meals || []).map((meal, idx) => {
+            {((plan.meals || []).filter((meal) => {
+              if (viewAllDays) return true;
+              if (meal.dayOfWeek === `DAY_${activeDay}`) return true;
+              if (meal.dayOfWeek === `ROTATION_${((activeDay - 1) % 3) + 1}`) return true;
+              if (meal.dayOfWeek === "DAILY" || !meal.dayOfWeek) return true;
+              return false;
+            })).map((meal, idx) => {
               const mealCalories = meal.totalCalories || meal.items?.reduce((s, it) => s + (it.calories || 0), 0) || 0;
               const mealProtein = meal.totalProteinG || meal.items?.reduce((s, it) => s + (it.proteinG || 0), 0) || 0;
               const mealCarbs = meal.items?.reduce((s, it) => s + (it.carbsG || 0), 0) || 0;

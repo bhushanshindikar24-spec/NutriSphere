@@ -15,14 +15,12 @@ import {
   ShoppingBag,
   Calculator,
   FileText,
-  Activity,
   ShieldAlert,
-  Dna,
-  HeartPulse,
   CreditCard,
   Truck,
   ShieldCheck,
   Sparkles,
+  Target,
   ChevronDown,
   ArrowLeft
 } from "lucide-react";
@@ -36,7 +34,9 @@ export default function MainLayout() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const isHotelSection = location.pathname.includes("/hotel");
+  const isHotelUser = user?.role === "HOTEL";
+  const isPatientUser = user?.role === "PATIENT";
+  const isPatientInHotel = isPatientUser && location.pathname.includes("/hotel");
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -90,39 +90,16 @@ export default function MainLayout() {
   const getNavLinks = () => {
     if (!user) return [];
 
-    // When in Hotel section, display all hotel items in the left section!
-    if (isHotelSection) {
-      if (user.role === "HOTEL") {
-        return [
-          { name: "Kitchen Dashboard", path: "/hotel/dashboard", icon: <LayoutDashboard size={18} /> },
-          { name: "Orders Queue", path: "/hotel/orders", icon: <ShoppingBag size={18} /> },
-          { name: "Culinary Menu", path: "/hotel/menu", icon: <Utensils size={18} /> },
-          { name: "Category Management", path: "/hotel/manage-categories", icon: <ClipboardList size={18} /> },
-        ];
-      }
-      return [
-        { name: "Therapeutic Menu & Thalis", path: "/patient/hotel/menu", icon: <Utensils size={18} /> },
-        { name: "Meal Plate Cart", path: "/patient/hotel/cart", icon: <ShoppingBag size={18} />, badge: cartCount > 0 ? cartCount : null },
-        { name: "Express Checkout", path: "/patient/hotel/checkout", icon: <CreditCard size={18} /> },
-        { name: "Live Orders & Tracking", path: "/patient/hotel/orders", icon: <Truck size={18} /> },
-        { name: "Order History & Invoices", path: "/patient/hotel/order-history", icon: <FileText size={18} /> },
-        { name: "Kitchen & FSSAI Standards", path: "/patient/hotel/kitchen-profile", icon: <ShieldCheck size={18} /> },
-        { name: "Chef Special / Custom Request", path: "/patient/hotel/custom-request", icon: <Sparkles size={18} /> },
-      ];
-    }
-
     switch (user.role) {
       case "PATIENT":
         return [
           { name: "Dashboard", path: "/patient", icon: <LayoutDashboard size={18} /> },
           { name: "Diet Plan & Calendar", path: "/patient/diet-plan", icon: <ClipboardList size={18} /> },
+          { name: "My Nutritional Requirements", path: "/patient/nutritional-requirements", icon: <Target size={18} /> },
           { name: "Daily Nutrition Report", path: "/patient/daily-report", icon: <FileText size={18} /> },
           { name: "Log Food & Water", path: "/patient/log-food", icon: <Apple size={18} /> },
           { name: "Nutrition Calculator", path: "/patient/nutrition-calculator", icon: <Calculator size={18} /> },
           { name: "Food Restrictions DB", path: "/patient/food-restrictions", icon: <ShieldAlert size={18} /> },
-          { name: "Medical & Family History", path: "/patient/medical-history", icon: <Dna size={18} /> },
-          { name: "Blood Reports & AI", path: "/patient/reports", icon: <Activity size={18} /> },
-          { name: "Longitudinal Lab Trends", path: "/patient/lab-progress", icon: <HeartPulse size={18} /> },
           { name: "Consultations & Rx", path: "/patient/consultations", icon: <Stethoscope size={18} /> },
           { name: "Care Team Directory", path: "/patient/directory", icon: <Users size={18} /> },
         ];
@@ -143,9 +120,10 @@ export default function MainLayout() {
         ];
       case "HOTEL":
         return [
-          { name: "Dashboard", path: "/hotel", icon: <LayoutDashboard size={18} /> },
+          { name: "Kitchen Dashboard", path: "/hotel/dashboard", icon: <LayoutDashboard size={18} /> },
           { name: "Orders Queue", path: "/hotel/orders", icon: <ShoppingBag size={18} /> },
           { name: "Culinary Menu", path: "/hotel/menu", icon: <Utensils size={18} /> },
+          { name: "Category Management", path: "/hotel/manage-categories", icon: <ClipboardList size={18} /> },
         ];
       case "ADMIN":
         return [
@@ -472,7 +450,7 @@ export default function MainLayout() {
           width: "260px",
           flexShrink: 0,
           borderRight: "1px solid #e2e8f0",
-          background: isHotelSection ? "#fffdf9" : "#ffffff",
+          background: isHotelUser ? "#fffdf9" : "#ffffff",
           padding: "1.5rem 1rem",
           position: "sticky",
           top: "64px",
@@ -485,7 +463,7 @@ export default function MainLayout() {
           justifyContent: "space-between"
         }}>
           <div>
-            {isHotelSection ? (
+            {isHotelUser ? (
               <div style={{
                 padding: "0.85rem 1rem",
                 marginBottom: "1.25rem",
@@ -510,16 +488,12 @@ export default function MainLayout() {
                   </div>
                   <div>
                     <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#78350f" }}>
-                      Hotel & Dining
+                      Hotel Kitchen Portal
                     </div>
                     <div style={{ fontSize: "0.68rem", fontWeight: 600, color: "#b45309" }}>
-                      Therapeutic Kitchen
+                      Orders & Culinary
                     </div>
                   </div>
-                </div>
-                <div style={{ fontSize: "0.68rem", color: "#92400e", marginTop: "0.35rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#16a34a", display: "inline-block" }}></span>
-                  <span>BKC Mumbai • Live FSSAI Kitchen</span>
                 </div>
               </div>
             ) : (
@@ -540,23 +514,23 @@ export default function MainLayout() {
                       padding: "0.7rem 1rem",
                       borderRadius: "10px",
                       textDecoration: "none",
-                      color: isActive ? (isHotelSection ? "#78350f" : "#0284c7") : "#475569",
-                      background: isActive ? (isHotelSection ? "#fef3c7" : "#f0f9ff") : "transparent",
+                      color: isActive ? (isHotelUser ? "#78350f" : "#0284c7") : "#475569",
+                      background: isActive ? (isHotelUser ? "#fef3c7" : "#f0f9ff") : "transparent",
                       fontWeight: isActive ? 700 : 500,
                       fontSize: "0.9rem",
-                      borderLeft: isActive ? (isHotelSection ? "3px solid #d97706" : "3px solid #0284c7") : "3px solid transparent",
-                      boxShadow: isActive ? (isHotelSection ? "0 1px 3px rgba(217, 119, 6, 0.12)" : "0 1px 3px rgba(2, 132, 199, 0.06)") : "none",
+                      borderLeft: isActive ? (isHotelUser ? "3px solid #d97706" : "3px solid #0284c7") : "3px solid transparent",
+                      boxShadow: isActive ? (isHotelUser ? "0 1px 3px rgba(217, 119, 6, 0.12)" : "0 1px 3px rgba(2, 132, 199, 0.06)") : "none",
                       transition: "var(--transition)"
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                        <span style={{ color: isActive ? (isHotelSection ? "#d97706" : "#0284c7") : "#64748b", display: "flex" }}>
+                        <span style={{ color: isActive ? (isHotelUser ? "#d97706" : "#0284c7") : "#64748b", display: "flex" }}>
                           {link.icon}
                         </span>
                         <span>{link.name}</span>
                       </div>
                       {link.badge && (
                         <span style={{
-                          background: isHotelSection ? "#d97706" : "#0284c7",
+                          background: isHotelUser ? "#d97706" : "#0284c7",
                           color: "#ffffff",
                           padding: "0.1rem 0.45rem",
                           borderRadius: "9999px",
@@ -574,102 +548,82 @@ export default function MainLayout() {
           </div>
 
           {/* Separated lower section for Hotel / Dining */}
-          {isHotelSection ? (
-            <div style={{ marginTop: "auto", paddingTop: "1.25rem", borderTop: "1px solid #fde68a" }}>
+          {isPatientUser && (
+            <div style={{
+              marginTop: "auto",
+              paddingTop: "1.25rem",
+              borderTop: "1.5px dashed #cbd5e1",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.45rem"
+            }}>
+              <div style={{
+                padding: "0 0.35rem",
+                fontSize: "0.7rem",
+                fontWeight: 800,
+                color: "#b45309",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.35rem"
+              }}>
+                <span>🌿</span>
+                <span>Culinary & Meal Services</span>
+              </div>
+
               <Link
-                to="/patient"
+                to="/patient/hotel/menu"
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.6rem",
-                  padding: "0.75rem 1rem",
-                  borderRadius: "12px",
+                  justifyContent: "space-between",
+                  padding: "0.8rem 1rem",
+                  borderRadius: "14px",
                   textDecoration: "none",
-                  color: "#0369a1",
-                  background: "#f0f9ff",
+                  color: "#78350f",
+                  background: isPatientInHotel
+                    ? "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)"
+                    : "linear-gradient(135deg, #fefce8 0%, #fef3c7 50%, #fde68a 100%)",
                   fontWeight: 700,
-                  fontSize: "0.86rem",
-                  border: "1.5px solid #bae6fd",
-                  boxShadow: "0 2px 6px rgba(2, 132, 199, 0.08)",
+                  fontSize: "0.88rem",
+                  border: isPatientInHotel ? "2px solid #d97706" : "1.5px solid #fcd34d",
+                  boxShadow: isPatientInHotel
+                    ? "0 4px 14px rgba(217, 119, 6, 0.22)"
+                    : "0 3px 10px rgba(217, 119, 6, 0.12)",
                   transition: "all 0.2s ease"
                 }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  e.currentTarget.style.boxShadow = "0 6px 14px rgba(217, 119, 6, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = isPatientInHotel
+                    ? "0 4px 14px rgba(217, 119, 6, 0.22)"
+                    : "0 3px 10px rgba(217, 119, 6, 0.12)";
+                }}
               >
-                <ArrowLeft size={16} />
-                <span>Return to Health Portal</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                  <span style={{ fontSize: "1.15rem", lineHeight: 1 }}>🍽️</span>
+                  <div>
+                    <div style={{ color: "#78350f", fontWeight: 800, fontSize: "0.88rem" }}>Hotel & Dining</div>
+                    <div style={{ color: "#b45309", fontSize: "0.69rem", fontWeight: 600 }}>Therapeutic Meals</div>
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: "0.72rem",
+                  background: "#d97706",
+                  color: "#ffffff",
+                  padding: "0.2rem 0.6rem",
+                  borderRadius: "9999px",
+                  fontWeight: 800,
+                  boxShadow: "0 2px 4px rgba(217, 119, 6, 0.3)"
+                }}>
+                  {isPatientInHotel ? "Active" : "Order"}
+                </span>
               </Link>
             </div>
-          ) : (
-            user?.role === "PATIENT" && (
-              <div style={{
-                marginTop: "auto",
-                paddingTop: "1.25rem",
-                borderTop: "1.5px dashed #cbd5e1",
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.45rem"
-              }}>
-                <div style={{
-                  padding: "0 0.35rem",
-                  fontSize: "0.7rem",
-                  fontWeight: 800,
-                  color: "#b45309",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.35rem"
-                }}>
-                  <span>🌿</span>
-                  <span>Culinary & Meal Services</span>
-                </div>
-
-                <Link
-                  to="/patient/hotel/menu"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "0.8rem 1rem",
-                    borderRadius: "14px",
-                    textDecoration: "none",
-                    color: "#78350f",
-                    background: "linear-gradient(135deg, #fefce8 0%, #fef3c7 50%, #fde68a 100%)",
-                    fontWeight: 700,
-                    fontSize: "0.88rem",
-                    border: "1.5px solid #fcd34d",
-                    boxShadow: "0 3px 10px rgba(217, 119, 6, 0.12)",
-                    transition: "all 0.2s ease"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 6px 14px rgba(217, 119, 6, 0.2)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 3px 10px rgba(217, 119, 6, 0.12)";
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
-                    <span style={{ fontSize: "1.15rem", lineHeight: 1 }}>🍽️</span>
-                    <div>
-                      <div style={{ color: "#78350f", fontWeight: 800, fontSize: "0.88rem" }}>Hotel & Dining</div>
-                      <div style={{ color: "#b45309", fontSize: "0.69rem", fontWeight: 600 }}>Therapeutic Meals</div>
-                    </div>
-                  </div>
-                  <span style={{
-                    fontSize: "0.72rem",
-                    background: "#d97706",
-                    color: "#ffffff",
-                    padding: "0.2rem 0.6rem",
-                    borderRadius: "9999px",
-                    fontWeight: 800,
-                    boxShadow: "0 2px 4px rgba(217, 119, 6, 0.3)"
-                  }}>
-                    Order
-                  </span>
-                </Link>
-              </div>
-            )
           )}
         </aside>
 

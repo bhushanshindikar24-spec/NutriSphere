@@ -130,7 +130,7 @@ export default function UploadReport() {
   return (
     <div style={{ maxWidth: "840px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>
       <button
-        onClick={() => navigate("/patient/reports")}
+        onClick={() => navigate("/patient/profile?tab=blood-reports")}
         className="btn btn-outline"
         style={{ width: "fit-content", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
       >
@@ -196,7 +196,7 @@ export default function UploadReport() {
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1.25rem" }}>
-            <button onClick={() => navigate("/patient/reports")} className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+            <button onClick={() => navigate("/patient/profile?tab=blood-reports")} className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
               <CheckCircle2 size={16} /> View in Reports Dashboard
             </button>
           </div>
@@ -358,7 +358,7 @@ export default function UploadReport() {
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "0.5rem" }}>
-            <button type="button" className="btn btn-outline" onClick={() => navigate("/patient/reports")}>
+            <button type="button" className="btn btn-outline" onClick={() => navigate("/patient/profile?tab=blood-reports")}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading} style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>

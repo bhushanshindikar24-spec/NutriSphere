@@ -3,8 +3,12 @@ package com.nutrisphere.nutrition.dietplan;
 import com.nutrisphere.exception.BadRequestException;
 import com.nutrisphere.exception.ForbiddenException;
 import com.nutrisphere.exception.ResourceNotFoundException;
+import com.nutrisphere.medical.condition.PatientConditionRepository;
+import com.nutrisphere.medical.laboratory.LaboratoryReportRepository;
+import com.nutrisphere.medical.laboratory.LaboratoryValueRepository;
 import com.nutrisphere.notification.NotificationService;
 import com.nutrisphere.nutrition.dietplan.dto.*;
+import com.nutrisphere.patient.PatientRepository;
 import com.nutrisphere.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,13 +36,31 @@ class DietPlanServiceTest {
     @Mock
     private UserRepository userRepo;
     @Mock
+    private PatientRepository patientRepo;
+    @Mock
+    private PatientConditionRepository conditionRepo;
+    @Mock
+    private LaboratoryReportRepository labReportRepo;
+    @Mock
+    private LaboratoryValueRepository labValueRepo;
+    @Mock
     private NotificationService notifService;
 
     private DietPlanService service;
 
     @BeforeEach
     void setUp() {
-        service = new DietPlanService(planRepo, mealRepo, itemRepo, userRepo, notifService);
+        service = new DietPlanService(
+            planRepo,
+            mealRepo,
+            itemRepo,
+            userRepo,
+            patientRepo,
+            conditionRepo,
+            labReportRepo,
+            labValueRepo,
+            notifService
+        );
     }
 
     @Test

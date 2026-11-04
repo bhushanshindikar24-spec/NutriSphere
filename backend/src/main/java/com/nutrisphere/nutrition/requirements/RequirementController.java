@@ -1,13 +1,18 @@
 package com.nutrisphere.nutrition.requirements;
+
 import com.nutrisphere.common.ApiResponse;
-import jakarta.validation.Valid;
 import com.nutrisphere.nutrition.requirements.dto.*;
 import com.nutrisphere.security.SecurityUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-@RestController @RequestMapping("/api/nutrition/requirements") @RequiredArgsConstructor
+
+@RestController
+@RequestMapping("/api/nutrition/requirements")
+@RequiredArgsConstructor
 public class RequirementController {
     private final RequirementService requirementService;
     private final SecurityUtils securityUtils;
@@ -16,6 +21,12 @@ public class RequirementController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<RequirementResponse> calculate(@Valid @RequestBody RequirementCalculationRequest req) {
         return ApiResponse.success(requirementService.calculate(req));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<RequirementResponse> getMyRequirements() {
+        return ApiResponse.success(requirementService.getDetailedForPatient(securityUtils.getCurrentUserId()));
     }
 
     @PostMapping
@@ -30,5 +41,12 @@ public class RequirementController {
     public ApiResponse<List<RequirementResponse>> getForPatient(@PathVariable Long patientUserId) {
         securityUtils.assertPatientAccess(patientUserId);
         return ApiResponse.success(requirementService.getForPatient(patientUserId));
+    }
+
+    @GetMapping("/patient/{patientUserId}/detailed")
+    @PreAuthorize("hasAnyRole('PATIENT','DOCTOR','DIETITIAN','ADMIN')")
+    public ApiResponse<RequirementResponse> getDetailedForPatient(@PathVariable Long patientUserId) {
+        securityUtils.assertPatientAccess(patientUserId);
+        return ApiResponse.success(requirementService.getDetailedForPatient(patientUserId));
     }
 }
