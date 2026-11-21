@@ -37,8 +37,8 @@ class RequirementCalculatorTest {
         assertEquals(2594.0, res.getCaloriesTarget());
         // Protein = 70 * 1.2 = 84.0g
         assertEquals(84.0, res.getProteinGTarget());
-        // Water = 70 * 35 = 2450.0ml
-        assertEquals(2450.0, res.getWaterMlTarget());
+        // Water = round50(70 * 35 + 300 activity bonus) = 2750.0ml
+        assertEquals(2750.0, res.getWaterMlTarget());
         assertTrue(res.getCalculationMethod().contains("Mifflin-St Jeor"));
     }
 
@@ -60,7 +60,8 @@ class RequirementCalculatorTest {
         assertEquals(1546.8, res.getTdee());
         // Target = 1546.8 - 500 = 1046.8 -> clamped to min 1200
         assertEquals(1200.0, res.getCaloriesTarget());
-        assertEquals(72.0, res.getProteinGTarget());
+        // Weight-loss goal uses 1.5 g/kg protein: 60 * 1.5 = 90.0g
+        assertEquals(90.0, res.getProteinGTarget());
     }
 
     @Test
@@ -84,7 +85,7 @@ class RequirementCalculatorTest {
     }
 
     @Test
-    void calculate_ClampedToMax4000Calories() {
+    void calculate_ClampedToMax4200Calories() {
         RequirementCalculationRequest req = new RequirementCalculationRequest();
         req.setGender(Gender.MALE);
         req.setWeightKg(160.0);
@@ -94,6 +95,7 @@ class RequirementCalculatorTest {
         req.setGoal("MUSCLE_GAIN");
 
         RequirementResponse res = calculator.calculate(req);
-        assertEquals(4000.0, res.getCaloriesTarget());
+        // Upper clinical clamp is 4200 kcal
+        assertEquals(4200.0, res.getCaloriesTarget());
     }
 }

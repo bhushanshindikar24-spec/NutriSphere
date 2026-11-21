@@ -530,16 +530,26 @@ public class DietPlanService {
         }
     }
 
+    /** Only the plan's patient or its responsible dietitian may modify it. */
     private void assertPlanModificationAccess(DietPlan plan, Long currentUserId) {
-        if (plan.getPatientUserId().equals(currentUserId)) return;
-        if (plan.getDietitianUserId() != null && plan.getDietitianUserId().equals(currentUserId)) return;
+        if (java.util.Objects.equals(plan.getPatientUserId(), currentUserId)) return;
+        if (java.util.Objects.equals(plan.getDietitianUserId(), currentUserId)) return;
+        throw new ForbiddenException("You are not allowed to modify this diet plan");
+    }
+
+    /** Unassigned plans can be claimed by the reviewing clinician; assigned plans only by their dietitian. */
+    private void assertPlanReviewAccess(DietPlan plan, Long clinicianUserId) {
+        if (plan.getDietitianUserId() != null && !plan.getDietitianUserId().equals(clinicianUserId)) {
+            throw new ForbiddenException("Only the plan's assigned dietitian can review this diet plan");
+        }
     }
 
     @Transactional
     public DietPlanResponse approvePlan(Long planId, Long clinicianUserId, PlanApprovalRequest req) {
         DietPlan plan = planRepo.findById(planId)
             .orElseThrow(() -> new ResourceNotFoundException("DietPlan", planId));
-        plan.setDietitianUserId(clinicianUserId);
+        assertPlanReviewAccess(plan, clinicianUserId);
+        if (plan.getDietitianUserId() == null) plan.setDietitianUserId(clinicianUserId);
         if (req == null || req.isApproved()) {
             plan.setStatus(DietPlanStatus.APPROVED);
             plan.setApprovedAt(LocalDateTime.now());
@@ -556,7 +566,8 @@ public class DietPlanService {
     public DietPlanResponse rejectPlan(Long planId, Long clinicianUserId, String notes) {
         DietPlan plan = planRepo.findById(planId)
             .orElseThrow(() -> new ResourceNotFoundException("DietPlan", planId));
-        plan.setDietitianUserId(clinicianUserId);
+        assertPlanReviewAccess(plan, clinicianUserId);
+        if (plan.getDietitianUserId() == null) plan.setDietitianUserId(clinicianUserId);
         plan.setStatus(DietPlanStatus.REJECTED);
         if (notes != null) plan.setNotes(notes);
         return toResponse(planRepo.save(plan));
@@ -632,6 +643,9 @@ public class DietPlanService {
         DietPlan plan = planRepo.findById(planId)
             .orElseThrow(() -> new ResourceNotFoundException("DietPlan", planId));
         assertPlanModificationAccess(plan, currentUserId);
+        if (plan.getStatus() == DietPlanStatus.APPROVED) {
+            throw new BadRequestException("Approved diet plans are immutable; create a new plan version instead");
+        }
 
         if (req.getTitle() != null && !req.getTitle().isBlank()) plan.setTitle(req.getTitle());
         if (req.getDescription() != null) plan.setDescription(req.getDescription());

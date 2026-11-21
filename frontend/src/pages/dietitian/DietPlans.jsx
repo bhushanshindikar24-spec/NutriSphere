@@ -14,7 +14,7 @@ export default function DietPlans() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const res = await api.get("/nutrition/diet-plans");
+        const res = await api.get("/nutrition/diet-plans/dietitian");
         setPlans(res.data?.data || res.data || []);
       } catch (_err) {
         setPlans([]);
@@ -26,7 +26,7 @@ export default function DietPlans() {
   }, []);
 
   const filtered = plans.filter((p) => {
-    const name = (p.name || "").toLowerCase();
+    const name = (p.title || "").toLowerCase();
     const patient = (p.patientName || "").toLowerCase();
     return name.includes(search.toLowerCase()) || patient.includes(search.toLowerCase());
   });
@@ -78,20 +78,20 @@ export default function DietPlans() {
           >
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-                <h3 style={{ margin: 0, fontSize: "1.15rem" }}>{plan.name}</h3>
-                <Badge variant={plan.status === "ACTIVE" ? "success" : plan.status === "DRAFT" ? "neutral" : "warning"}>
+                <h3 style={{ margin: 0, fontSize: "1.15rem" }}>{plan.title}</h3>
+                <Badge variant={plan.status === "APPROVED" ? "success" : plan.status === "DRAFT" ? "neutral" : "warning"}>
                   {plan.status}
                 </Badge>
               </div>
 
               <div style={{ display: "flex", gap: "1.25rem", fontSize: "0.85rem", color: "var(--text-muted)", flexWrap: "wrap" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <User size={14} /> Patient: <strong>{plan.patientName || `#${plan.patientId}`}</strong>
+                  <User size={14} /> Patient: <strong>{plan.patientName || `#${plan.patientUserId}`}</strong>
                 </span>
                 <span>•</span>
-                <span>Target: <strong>{plan.dailyCaloriesTarget} kcal</strong></span>
+                <span>Target: <strong>{plan.targetCalories ?? "—"} kcal</strong></span>
                 <span>•</span>
-                <span>Protein: <strong>{plan.dailyProteinTarget}g</strong></span>
+                <span>Protein: <strong>{plan.targetProteinG ?? "—"}g</strong></span>
                 <span>•</span>
                 <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
                   <Calendar size={14} /> {formatDate(plan.startDate)} - {formatDate(plan.endDate)}

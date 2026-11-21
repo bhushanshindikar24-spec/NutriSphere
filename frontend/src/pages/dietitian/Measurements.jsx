@@ -32,8 +32,10 @@ export default function Measurements() {
   const fetchMeasurements = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/dietitians/patients/${selectedPatientId}/measurements`);
-      setMeasurements(res.data?.data || res.data || []);
+      const res = await api.get(`/nutrition/progress/measurements/${selectedPatientId}`);
+      const list = res.data?.data || res.data || [];
+      // newest first
+      setMeasurements([...list].sort((a, b) => String(b.measurementDate).localeCompare(String(a.measurementDate))));
     } catch (_err) {
       setMeasurements([]);
     } finally {
@@ -51,30 +53,20 @@ export default function Measurements() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.post(`/dietitians/patients/${selectedPatientId}/measurements`, {
-        weightKg: Number(weightKg),
-        waistCm: Number(waistCm),
-        bodyFatPct: Number(bodyFatPct),
-        measuredAt: new Date().toISOString(),
+      const num = (v) => (v === "" || v == null ? null : Number(v));
+      await api.post("/nutrition/progress/measurements", {
+        patientUserId: Number(selectedPatientId),
+        measurementDate: new Date().toISOString().slice(0, 10),
+        weightKg: num(weightKg),
+        waistCm: num(waistCm),
+        bodyFatPercent: num(bodyFatPct),
       });
       await fetchMeasurements();
       setWeightKg("");
       setWaistCm("");
       setBodyFatPct("");
-    } catch (_err) {
-      setMeasurements((prev) => [
-        {
-          id: Date.now(),
-          date: new Date().toISOString().split("T")[0],
-          weightKg: Number(weightKg),
-          waistCm: Number(waistCm),
-          bodyFatPct: Number(bodyFatPct),
-        },
-        ...prev,
-      ]);
-      setWeightKg("");
-      setWaistCm("");
-      setBodyFatPct("");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to record measurement.");
     } finally {
       setSaving(false);
     }
@@ -166,13 +158,20 @@ export default function Measurements() {
             <tbody>
               {measurements.map((m, idx) => (
                 <tr key={m.id || idx} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                  <td style={{ padding: "0.75rem 0.5rem" }}>{formatDate(m.date || m.measuredAt)}</td>
+                  <td style={{ padding: "0.75rem 0.5rem" }}>{formatDate(m.measurementDate)}</td>
                   <td style={{ padding: "0.75rem 0.5rem", fontWeight: 600 }}>{m.weightKg} kg</td>
                   <td style={{ padding: "0.75rem 0.5rem" }}>{m.waistCm ? `${m.waistCm} cm` : "--"}</td>
-                  <td style={{ padding: "0.75rem 0.5rem" }}>{m.bodyFatPct ? `${m.bodyFatPct}%` : "--"}</td>
-                  <td style={{ padding: "0.75rem 0.5rem", color: idx === 0 ? "#10B981" : "inherit" }}>
-                    {idx === 0 ? "-1.7 kg" : "--"}
-                  </td>
+                  <td style={{ padding: "0.75rem 0.5rem" }}>{m.bodyFatPercent != null ? `${m.bodyFatPercent}%` : "--"}</td>
+                  {(() => {
+                    const baseline = measurements[measurements.length - 1]?.weightKg;
+                    const isBaseline = idx === measurements.length - 1;
+                    const delta = !isBaseline && baseline != null && m.weightKg != null ? Math.round((m.weightKg - baseline) * 10) / 10 : null;
+                    return (
+                      <td style={{ padding: "0.75rem 0.5rem", color: delta == null ? "inherit" : delta <= 0 ? "#10B981" : "#EF4444" }}>
+                        {isBaseline ? "Baseline" : delta == null ? "--" : `${delta > 0 ? "+" : ""}${delta} kg`}
+                      </td>
+                    );
+                  })()}
                 </tr>
               ))}
             </tbody>

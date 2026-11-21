@@ -26,19 +26,19 @@ export default function PlanApproval() {
 
   const handleApprove = async (id) => {
     try {
-      await api.put(`/nutrition/diet-plans/${id}/approve`);
+      await api.post(`/nutrition/diet-plans/${id}/approve`);
       setPendingPlans((prev) => prev.filter((p) => p.id !== id));
-    } catch (_err) {
-      setPendingPlans((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to approve the plan.");
     }
   };
 
   const handleReject = async (id) => {
     try {
-      await api.put(`/nutrition/diet-plans/${id}/reject`);
+      await api.post(`/nutrition/diet-plans/${id}/reject`);
       setPendingPlans((prev) => prev.filter((p) => p.id !== id));
-    } catch (_err) {
-      setPendingPlans((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to reject the plan.");
     }
   };
 

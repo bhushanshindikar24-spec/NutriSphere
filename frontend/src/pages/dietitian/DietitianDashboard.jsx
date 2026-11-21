@@ -40,7 +40,7 @@ export default function DietitianDashboard() {
 
   const handleApprovePlan = async (planId) => {
     try {
-      await api.put(`/diet-plans/${planId}/approve`);
+      await api.post(`/nutrition/diet-plans/${planId}/approve`);
       fetchDashboardData();
     } catch (err) {
       console.error("Failed to approve plan:", err);

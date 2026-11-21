@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/dietitians/**").hasAnyRole("DIETITIAN", "ADMIN")
                 .requestMatchers("/api/patients/**", "/api/patient/**").authenticated()
                 .requestMatchers("/api/medical/**").hasAnyRole("DOCTOR", "DIETITIAN", "PATIENT", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/nutrition/progress/**").hasAnyRole("DOCTOR", "DIETITIAN", "PATIENT", "ADMIN")
                 .requestMatchers("/api/nutrition/**").hasAnyRole("DIETITIAN", "PATIENT", "ADMIN")
                 .requestMatchers("/api/food-logs/**").hasAnyRole("PATIENT", "DIETITIAN", "ADMIN")
                 .requestMatchers("/api/water-logs/**").hasAnyRole("PATIENT", "DIETITIAN", "ADMIN")
