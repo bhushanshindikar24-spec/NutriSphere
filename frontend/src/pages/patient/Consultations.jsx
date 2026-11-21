@@ -54,7 +54,7 @@ export default function PatientConsultations() {
         consultationDate: bookForm.consultationDate,
         status: "PENDING",
       });
-      setBookSuccess("Consultation booked! Your verification OTP is 1234.");
+      setBookSuccess("Consultation booked! Your 4-digit verification code is shown on the consultation card below.");
       setShowBookModal(false);
       setBookForm({
         doctorId: doctors[0]?.userId || "",
@@ -64,19 +64,7 @@ export default function PatientConsultations() {
       fetchConsultations();
     } catch (err) {
       console.error("Booking error:", err);
-      const selectedDoc = doctors.find((d) => (d.userId || d.id) === Number(bookForm.doctorId));
-      const newConsult = {
-        id: Date.now(),
-        physicianName: selectedDoc?.fullName || (selectedDoc ? `Dr. ${selectedDoc.firstName} ${selectedDoc.lastName}` : "Attending Physician"),
-        chiefComplaint: bookForm.chiefComplaint || "Routine Clinical Nutrition Checkup",
-        consultationDate: bookForm.consultationDate,
-        status: "PENDING",
-        otp: "1234",
-        clinicalNotes: "Scheduled consultation. Provide OTP 1234 to doctor during appointment.",
-      };
-      setConsultations((prev) => [newConsult, ...prev]);
-      setShowBookModal(false);
-      setBookSuccess("Consultation booked! Your verification OTP is 1234.");
+      alert(err.response?.data?.message || "Could not book the consultation. Please try again.");
     } finally {
       setBooking(false);
     }
@@ -355,7 +343,7 @@ Follow-up: ${c.followUpDate ? new Date(c.followUpDate).toLocaleDateString() : "A
                           boxShadow: "0 4px 12px rgba(245, 158, 11, 0.2)",
                         }}
                       >
-                        {c.otp || "1234"}
+                        {c.otp || "—"}
                       </div>
                     </div>
                   </div>
@@ -433,7 +421,7 @@ Follow-up: ${c.followUpDate ? new Date(c.followUpDate).toLocaleDateString() : "A
               </div>
 
               <div style={{ background: "#f8fafc", padding: "0.85rem", borderRadius: "8px", fontSize: "0.82rem", color: "#64748b" }}>
-                🔒 <strong>Verification OTP:</strong> Once scheduled, you will receive verification OTP <strong>1234</strong> to share with your physician during appointment.
+                🔒 <strong>Verification OTP:</strong> Once scheduled, a unique 4-digit verification code will appear on this page. Share it with your physician during the appointment.
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>

@@ -2,6 +2,7 @@ import {  useState, useEffect  } from "react";
 import PlannedVsActualComponent from "../../components/nutrition/PlannedVsActual";
 import NutritionProgress from "../../components/nutrition/NutritionProgress";
 import api from "../../services/api";
+import { toPlannedVsActual } from "../../utils/dailyReport";
 
 export default function PlannedVsActual() {
   const [selectedPatientId, setSelectedPatientId] = useState(101);
@@ -15,7 +16,7 @@ export default function PlannedVsActual() {
         const res = await api.get("/dietitians/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       }
@@ -27,8 +28,8 @@ export default function PlannedVsActual() {
     const fetchComparison = async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/nutrition/planned-vs-actual?patientId=${selectedPatientId}`);
-        setData(res.data?.data || res.data);
+        const res = await api.get(`/food-logs/daily-report?patientUserId=${selectedPatientId}`);
+        setData(toPlannedVsActual(res.data?.data || res.data));
       } catch (_err) {
         setData(null);
       } finally {
@@ -66,13 +67,13 @@ export default function PlannedVsActual() {
         <div style={{ display: "grid", gap: "1.5rem" }}>
           <NutritionProgress
             consumedCalories={data.actual?.calories || 0}
-            targetCalories={data.planned?.calories || 2000}
+            targetCalories={data.planned?.calories || 0}
             consumedMacros={data.actual || {}}
             targetMacros={data.planned || {}}
             waterConsumedMl={data.actual?.waterMl || 0}
-            waterTargetMl={data.planned?.waterMl || 2500}
+            waterTargetMl={data.planned?.waterMl || 0}
           />
-          <PlannedVsActualComponent planned={data.planned} actual={data.actual} meals={data.meals} />
+          <PlannedVsActualComponent comparison={data.report} />
         </div>
       ) : (
         <div className="glass-panel" style={{ padding: "2rem", textAlign: "center" }}>No logs recorded.</div>

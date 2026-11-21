@@ -13,6 +13,7 @@ export default function PatientProfile() {
   const [twin, setTwin] = useState(null);
 // eslint-disable-next-line unused-imports/no-unused-vars
   const [barriers, setBarriers] = useState([]);
+  const [reality, setReality] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,28 +26,24 @@ export default function PatientProfile() {
       }
 
       try {
-        const twinRes = await api.get(`/digital-twin?patientId=${id || 1}`);
+        const twinRes = await api.get(`/digital-twin/patient/${id}`);
         setTwin(twinRes.data?.data || twinRes.data);
       } catch (_e) {
-        setTwin({
-          currentWeightKg: 78.5,
-          targetWeightKg: 72.0,
-          projectedWeight30Days: 76.2,
-          dailyCaloricTarget: 1950,
-          realityScore: 84,
-          bmr: 1680,
-          tdee: 2320,
-        });
+        setTwin(null);
       }
 
       try {
-        const barrierRes = await api.get(`/adherence/barriers?patientId=${id || 1}`);
+        const rsRes = await api.get(`/reality-score/latest?patientUserId=${id}`);
+        setReality(rsRes.data?.data || rsRes.data || null);
+      } catch (_e) {
+        setReality(null);
+      }
+
+      try {
+        const barrierRes = await api.get(`/adherence/barriers?patientUserId=${id}`);
         setBarriers(barrierRes.data?.data || barrierRes.data || []);
       } catch (_e) {
-        setBarriers([
-          { type: "TIME_CONSTRAINT", count: 3 },
-          { type: "FOOD_UNAVAILABLE", count: 1 },
-        ]);
+        setBarriers([]);
       } finally {
         setLoading(false);
       }
@@ -108,16 +105,17 @@ export default function PatientProfile() {
       {/* Twin & Score Grids */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
         <DigitalTwinSummary twinData={twin} />
-        <RealityScoreGauge
-          score={twin?.realityScore || 84}
-          interpretation="High Real-World Feasibility"
-          dimensionScores={{
-            "Caloric Feasibility": 88,
-            "Meal Timing Feasibility": 82,
-            "Food Availability": 85,
-            "Biological Tolerance": 80,
-          }}
-        />
+        {reality ? (
+          <RealityScoreGauge
+            score={reality.overallScore ?? 0}
+            interpretation={reality.interpretation || ""}
+            dimensionScores={reality.dimensionScores || {}}
+          />
+        ) : (
+          <div className="glass-panel" style={{ padding: "1.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+            No Reality Score has been calculated for this patient yet.
+          </div>
+        )}
       </div>
 
       {/* Active Diet Plan & Barriers */}

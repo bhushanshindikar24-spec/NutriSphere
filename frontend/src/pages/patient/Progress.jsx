@@ -14,40 +14,7 @@ export default function Progress() {
         const res = await api.get("/patient/progress");
         setProgress(res.data?.data || res.data);
       } catch (_err) {
-        setProgress({
-          startingWeight: 82.0,
-          currentWeight: 78.5,
-          targetWeight: 72.0,
-          totalLost: 3.5,
-          streakDays: 14,
-          avgAdherence: 87,
-          adherenceHistory: [
-            { date: "W1", adherence: 78, target: 85 },
-            { date: "W2", adherence: 82, target: 85 },
-            { date: "W3", adherence: 88, target: 85 },
-            { date: "W4", adherence: 91, target: 85 },
-          ],
-          weightHistory: [
-            { date: "Week 1", weight: 82.0 },
-            { date: "Week 2", weight: 81.1 },
-            { date: "Week 3", weight: 79.8 },
-            { date: "Week 4", weight: 78.5 },
-          ],
-          calorieHistory: [
-            { date: "Mon", calories: 1940 },
-            { date: "Tue", calories: 2010 },
-            { date: "Wed", calories: 1890 },
-            { date: "Thu", calories: 1980 },
-            { date: "Fri", calories: 2050 },
-            { date: "Sat", calories: 1920 },
-            { date: "Sun", calories: 1960 },
-          ],
-          milestones: [
-            { title: "First 2kg Dropped", date: "2 weeks ago", achieved: true },
-            { title: "14-Day Logging Streak", date: "Today", achieved: true },
-            { title: "Reach 75kg Milestone", date: "Upcoming", achieved: false },
-          ],
-        });
+        setProgress(null);
       } finally {
         setLoading(false);
       }
@@ -56,6 +23,7 @@ export default function Progress() {
   }, []);
 
   if (loading) return <div className="loading-screen">Loading Progress Milestones...</div>;
+  if (!progress) return <div className="glass-panel" style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No progress data yet. Log meals, water and measurements to see your progress here.</div>;
 
   return (
     <div style={{ maxWidth: "1050px", margin: "0 auto", display: "grid", gap: "2rem" }}>

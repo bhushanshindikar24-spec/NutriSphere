@@ -46,18 +46,7 @@ export default function Consultations() {
       setTimeout(() => setVerifySuccess(""), 4000);
     } catch (err) {
       console.error("OTP verification failed", err);
-      if (otpInput.trim() === "1234") {
-        // Allow dummy OTP 1234 local fallback
-        setConsultations((prev) =>
-          prev.map((c) => (c.id === verifyingConsult.id ? { ...c, status: "COMPLETED" } : c))
-        );
-        setVerifySuccess(`Consultation with ${verifyingConsult.patientName || "patient"} verified and marked as COMPLETED!`);
-        setVerifyingConsult(null);
-        setOtpInput("");
-        setTimeout(() => setVerifySuccess(""), 4000);
-      } else {
-        setOtpError(err.response?.data?.message || "Invalid OTP. For testing, please enter dummy OTP: 1234");
-      }
+      setOtpError(err.response?.data?.message || "Invalid OTP. Ask the patient for the code shown on their Consultations page.");
     } finally {
       setVerifying(false);
     }
@@ -175,7 +164,7 @@ export default function Consultations() {
                   }}
                 />
                 <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.4rem", textAlign: "center" }}>
-                  (Testing dummy OTP: <strong>1234</strong>)
+                  Ask the patient for the 4-digit code shown on their Consultations page.
                 </div>
               </div>
 

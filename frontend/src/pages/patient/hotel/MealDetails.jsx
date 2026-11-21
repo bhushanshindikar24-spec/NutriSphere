@@ -16,23 +16,10 @@ export default function MealDetails() {
   useEffect(() => {
     const fetchMeal = async () => {
       try {
-        const res = await api.get(`/hotel/meals/${id || 1}`);
+        const res = await api.get(`/hotel/meals/${id}`);
         setMeal(res.data?.data || res.data);
       } catch (_err) {
-        setMeal({
-          id: id || 1,
-          name: "Mediterranean Herb Chicken Bowl",
-          category: "LUNCH",
-          price: 14.5,
-          calories: 480,
-          proteinG: 42,
-          carbsG: 48,
-          fatG: 14,
-          description: "Grilled free-range chicken breast served over warm tri-color quinoa, roasted zucchini, and cherry tomatoes, drizzled with cold-pressed olive oil vinaigrette.",
-          kitchenName: "NutriKitchen Downtown Partner",
-          allergens: ["None detected"],
-          prepTimeMinutes: 20,
-        });
+        setMeal(null);
       } finally {
         setLoading(false);
       }
@@ -90,11 +77,11 @@ export default function MealDetails() {
           </div>
           <div>
             <span className="text-muted" style={{ fontSize: "0.75rem", display: "block" }}>Carbs</span>
-            <strong style={{ color: "#10B981" }}>{meal.carbsG || 45}g</strong>
+            <strong style={{ color: "#10B981" }}>{meal.carbsG ?? "—"}g</strong>
           </div>
           <div>
             <span className="text-muted" style={{ fontSize: "0.75rem", display: "block" }}>Fat</span>
-            <strong style={{ color: "#F59E0B" }}>{meal.fatG || 12}g</strong>
+            <strong style={{ color: "#F59E0B" }}>{meal.fatG ?? "—"}g</strong>
           </div>
         </div>
 

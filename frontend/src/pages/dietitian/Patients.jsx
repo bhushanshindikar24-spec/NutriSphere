@@ -105,14 +105,14 @@ export default function Patients() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginTop: "1rem", background: "rgba(255, 255, 255, 0.02)", padding: "0.75rem", borderRadius: "8px" }}>
                   <div>
                     <span className="text-muted" style={{ fontSize: "0.75rem", display: "block" }}>Adherence</span>
-                    <strong style={{ color: (patient.adherenceRate || 80) >= 75 ? "#10B981" : "#EF4444" }}>
-                      {patient.adherenceRate || 80}%
+                    <strong style={{ color: patient.adherenceRate == null ? "var(--text-muted)" : patient.adherenceRate >= 75 ? "#10B981" : "#EF4444" }}>
+                      {patient.adherenceRate == null ? "No data" : `${Math.round(patient.adherenceRate)}%`}
                     </strong>
                   </div>
                   <div>
                     <span className="text-muted" style={{ fontSize: "0.75rem", display: "block" }}>Reality Score</span>
-                    <strong style={{ color: (patient.realityScore || 80) >= 70 ? "#10B981" : "#F59E0B" }}>
-                      {patient.realityScore || 80} / 100
+                    <strong style={{ color: patient.realityScore == null ? "var(--text-muted)" : patient.realityScore >= 70 ? "#10B981" : "#F59E0B" }}>
+                      {patient.realityScore == null ? "Not calculated" : `${Math.round(patient.realityScore)} / 100`}
                     </strong>
                   </div>
                 </div>

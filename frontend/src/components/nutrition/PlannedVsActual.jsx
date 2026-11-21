@@ -11,10 +11,10 @@ export default function PlannedVsActual({ comparison }) {
     );
   }
 
-  const planned = comparison.plannedCalories || 2000;
+  const planned = comparison.plannedCalories || 0;
   const actual = comparison.actualCalories || 0;
   const diff = actual - planned;
-  const adherence = comparison.adherencePercentage || Math.max(0, 100 - Math.abs(Math.round((diff / planned) * 100)));
+  const adherence = comparison.adherencePercentage ?? (planned > 0 ? Math.max(0, 100 - Math.abs(Math.round((diff / planned) * 100))) : 0);
 
   return (
     <div className="glass-panel" style={{ padding: "1.5rem", borderRadius: "var(--radius-lg)" }}>

@@ -23,4 +23,8 @@ public class AssignmentResponse {
     private String assignedDietitian;
     private String assignedDoctor;
     private String status;
+    /** From the patient's digital twin (logged intake vs plan); null when no data. */
+    private Double adherenceRate;
+    /** Latest stored Reality Score; null when never calculated. */
+    private Double realityScore;
 }

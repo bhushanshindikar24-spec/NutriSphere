@@ -134,7 +134,7 @@ export default function DailyReport() {
               Daily Dietary Telemetry for {getDayName(selectedDate)}
             </div>
             <div style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "0.15rem" }}>
-              Supervised by: <strong>{report?.assignedDoctorName || "Assigned Medical Doctor"}</strong> • <strong>{report?.assignedDietitianName || "Clinical Dietitian / NutriSphere AI"}</strong>
+              Supervised by: <strong>{report?.assignedDoctorName || "No doctor assigned"}</strong> • <strong>{report?.assignedDietitianName || "No dietitian assigned"}</strong>
             </div>
           </div>
         </div>
@@ -377,7 +377,7 @@ export default function DailyReport() {
             `Today's recorded consumption reached ${Math.round(actualCals)} kcal (${adherence}% protocol adherence vs target ${Math.round(plannedCals)} kcal). ` +
             (actualCals < plannedCals - 200 ? "You are currently running a caloric deficit. Ensure protein intake remains adequate to prevent lean tissue catabolism. " : "") +
             (actualCals > plannedCals + 200 ? "Caloric intake is slightly elevated over prescribed metabolic limits. Prioritize high-fiber complex foods to promote satiety. " : "") +
-            `Hydration logged at ${Math.round(report?.actualWaterMl || 0)} ml (${Math.round((report?.actualWaterMl || 0) / (report?.plannedWaterMl || 2400) * 100)}% of electrolytic target).`
+            `Hydration logged at ${Math.round(report?.actualWaterMl || 0)} ml (${Math.round((report?.actualWaterMl || 0) / (report?.plannedWaterMl || 1) * 100)}% of target).`
           )}
         </p>
       </div>

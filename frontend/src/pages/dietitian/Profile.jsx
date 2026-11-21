@@ -22,7 +22,7 @@ export default function Profile() {
           lastName: user?.lastName || "",
           email: user?.email || "",
           licenseNumber: user?.licenseNumber || "",
-          specialization: user?.specialization || "Clinical Nutrition",
+          specialization: user?.specialization || "",
           phone: user?.phone || "",
           clinic: user?.clinic || "",
           clinicName: user?.clinic || "",
@@ -82,7 +82,7 @@ export default function Profile() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Building size={16} color="var(--primary)" />
-            <span>{profile?.clinicName || profile?.clinic || "Clinical Nutrition Center"}</span>
+            <span>{profile?.clinicName || profile?.clinic || "Clinic not specified"}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Mail size={16} color="var(--primary)" />

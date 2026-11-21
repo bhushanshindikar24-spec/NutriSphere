@@ -73,11 +73,12 @@ public class Consultation extends BaseEntity {
     @Transient
     private Object vitalSigns;
 
-    @Transient
-    @Builder.Default
-    private String otp = "1234";
+    /** Stored verification code; never serialized directly. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "verification_otp", length = 10)
+    private String verificationOtp;
 
-    public String getOtp() {
-        return otp != null ? otp : "1234";
-    }
+    /** Exposed only to the patient who owns the consultation (set in the controller). */
+    @Transient
+    private String otp;
 }

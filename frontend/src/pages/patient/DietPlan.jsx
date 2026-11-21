@@ -255,10 +255,10 @@ export default function DietPlan() {
         foodName: it.foodName,
         quantityG: Number(logQuantities[it.id] || it.quantityG || 100),
         servingDescription: it.servingDescription || `${logQuantities[it.id] || it.quantityG || 100}g`,
-        calories: Number(((it.calories || 100) * (Number(logQuantities[it.id] || it.quantityG || 100) / (it.quantityG || 100))).toFixed(1)),
-        proteinG: Number(((it.proteinG || 5) * (Number(logQuantities[it.id] || it.quantityG || 100) / (it.quantityG || 100))).toFixed(1)),
-        carbsG: Number(((it.carbsG || 15) * (Number(logQuantities[it.id] || it.quantityG || 100) / (it.quantityG || 100))).toFixed(1)),
-        fatG: Number(((it.fatG || 2) * (Number(logQuantities[it.id] || it.quantityG || 100) / (it.quantityG || 100))).toFixed(1)),
+        calories: Number(((it.calories || 0) * (Number(logQuantities[it.id] || it.quantityG || 100) / (it.quantityG || 100))).toFixed(1)),
+        proteinG: Number(((it.proteinG || 0) * (Number(logQuantities[it.id] || it.quantityG || 100) / (it.quantityG || 100))).toFixed(1)),
+        carbsG: Number(((it.carbsG || 0) * (Number(logQuantities[it.id] || it.quantityG || 100) / (it.quantityG || 100))).toFixed(1)),
+        fatG: Number(((it.fatG || 0) * (Number(logQuantities[it.id] || it.quantityG || 100) / (it.quantityG || 100))).toFixed(1)),
       }));
 
       await api.post("/food-logs/meal-builder", {
@@ -296,10 +296,10 @@ export default function DietPlan() {
         foodName: it.foodName || "",
         quantityG: it.quantityG || 100,
         servingDescription: it.servingDescription || "1 portion",
-        calories: it.calories || 100,
-        proteinG: it.proteinG || 5,
-        carbsG: it.carbsG || 15,
-        fatG: it.fatG || 2,
+        calories: it.calories || 0,
+        proteinG: it.proteinG || 0,
+        carbsG: it.carbsG || 0,
+        fatG: it.fatG || 0,
         notes: it.notes || ""
       }))
     });

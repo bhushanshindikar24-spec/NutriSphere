@@ -8,29 +8,44 @@ export default function NutritionAnalysis() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Built from the patient's real food logs for the last 7 days (and their requirement targets)
     const fetchAnalysis = async () => {
+      const to = new Date();
+      const from = new Date(Date.now() - 6 * 864e5);
+      const iso = (d) => d.toISOString().slice(0, 10);
       try {
-        const res = await api.get("/nutrition/analysis");
-        setAnalysis(res.data?.data || res.data);
+        const [logsRes, reqRes] = await Promise.allSettled([
+          api.get(`/food-logs/range?from=${iso(from)}&to=${iso(to)}`),
+          api.get("/nutrition/requirements/my"),
+        ]);
+        const logs = logsRes.status === "fulfilled" ? logsRes.value.data?.data || [] : [];
+        const reqs = reqRes.status === "fulfilled" ? reqRes.value.data?.data : null;
+        if (!logs.length) {
+          setAnalysis(null);
+          return;
+        }
+        const sum = (k) => logs.reduce((t, l) => t + (Number(l[k]) || 0), 0);
+        const daysLogged = new Set(logs.map((l) => l.logDate)).size || 1;
+        const protein = sum("proteinG"), carbs = sum("carbsG"), fat = sum("fatG"), fiber = sum("fiberG");
+        const kcalFromMacros = protein * 4 + carbs * 4 + fat * 9;
+        const pct = (v) => (kcalFromMacros > 0 ? Math.round((v / kcalFromMacros) * 100) : 0);
+        const macroSplit = [
+          { name: "Carbohydrates", value: pct(carbs * 4), color: "#10B981" },
+          { name: "Protein", value: pct(protein * 4), color: "#3B82F6" },
+          { name: "Fats", value: pct(fat * 9), color: "#F59E0B" },
+        ];
+        const fiberAvg = Math.round((fiber / daysLogged) * 10) / 10;
+        const fiberTarget = reqs?.fiberGTarget ?? null;
+        const insights = [
+          `Based on ${logs.length} logged items across ${daysLogged} day(s) in the last week.`,
+          `Energy split: ${macroSplit.map((m) => `${m.name.toLowerCase()} ${m.value}%`).join(", ")}.`,
+          fiberTarget
+            ? `Average fiber intake is ${fiberAvg} g/day, ${Math.round((fiberAvg / fiberTarget) * 100)}% of your ${fiberTarget} g target.`
+            : `Average fiber intake is ${fiberAvg} g/day (no fiber target has been set by your dietitian yet).`,
+        ];
+        setAnalysis({ macroSplit, fiberG: fiberAvg, fiberTargetG: fiberTarget, daysLogged, insights });
       } catch (_err) {
-        setAnalysis({
-          macroSplit: [
-            { name: "Carbohydrates", value: 50, color: "#10B981" },
-            { name: "Protein", value: 28, color: "#3B82F6" },
-            { name: "Fats", value: 22, color: "#F59E0B" },
-          ],
-          fiberG: 28,
-          fiberTargetG: 30,
-          sodiumMg: 1850,
-          sodiumTargetMg: 2300,
-          potassiumMg: 3100,
-          potassiumTargetMg: 3400,
-          insights: [
-            "Protein distribution is evenly paced across 3 main meals, supporting lean mass preservation.",
-            "Sodium intake is well within clinical limits (below 2,300 mg/day threshold).",
-            "Prebiotic fiber intake is at 93% of the optimal metabolic threshold.",
-          ],
-        });
+        setAnalysis(null);
       } finally {
         setLoading(false);
       }
@@ -39,6 +54,7 @@ export default function NutritionAnalysis() {
   }, []);
 
   if (loading) return <div className="loading-screen">Analyzing Nutritional Bio-Data...</div>;
+  if (!analysis) return <div className="glass-panel" style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No food logs in the last 7 days. Log your meals to see your nutrition analysis.</div>;
 
   return (
     <div style={{ maxWidth: "1000px", margin: "0 auto", display: "grid", gap: "2rem" }}>
@@ -84,44 +100,25 @@ export default function NutritionAnalysis() {
         {/* Micronutrient Balance */}
         <div className="glass-panel" style={{ padding: "1.75rem", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <h4 style={{ margin: "0 0 1.25rem 0" }}>Critical Micronutrient Fulfillment</h4>
+            <h4 style={{ margin: "0 0 1.25rem 0" }}>Fiber Intake (7-day average)</h4>
             <div style={{ display: "grid", gap: "1rem" }}>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "0.25rem" }}>
                   <span>Dietary Fiber</span>
-                  <strong>{analysis?.fiberG} / {analysis?.fiberTargetG} g</strong>
+                  <strong>
+                    {analysis.fiberG} {analysis.fiberTargetG ? `/ ${analysis.fiberTargetG}` : ""} g/day
+                  </strong>
                 </div>
-                <div style={{ height: "6px", background: "var(--border-color)", borderRadius: "3px" }}>
-                  <div style={{ width: `${Math.min(100, (analysis?.fiberG / analysis?.fiberTargetG) * 100)}%`, height: "100%", background: "#10B981", borderRadius: "3px" }} />
-                </div>
+                {analysis.fiberTargetG > 0 && (
+                  <div style={{ height: "6px", background: "var(--border-color)", borderRadius: "3px" }}>
+                    <div style={{ width: `${Math.min(100, (analysis.fiberG / analysis.fiberTargetG) * 100)}%`, height: "100%", background: "#10B981", borderRadius: "3px" }} />
+                  </div>
+                )}
               </div>
-
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "0.25rem" }}>
-                  <span>Sodium (Target: &lt;{analysis?.sodiumTargetMg} mg)</span>
-                  <strong>{analysis?.sodiumMg} mg</strong>
-                </div>
-                <div style={{ height: "6px", background: "var(--border-color)", borderRadius: "3px" }}>
-                  <div style={{ width: `${Math.min(100, (analysis?.sodiumMg / analysis?.sodiumTargetMg) * 100)}%`, height: "100%", background: "#3B82F6", borderRadius: "3px" }} />
-                </div>
-              </div>
-
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "0.25rem" }}>
-                  <span>Potassium</span>
-                  <strong>{analysis?.potassiumMg} / {analysis?.potassiumTargetMg} mg</strong>
-                </div>
-                <div style={{ height: "6px", background: "var(--border-color)", borderRadius: "3px" }}>
-                  <div style={{ width: `${Math.min(100, (analysis?.potassiumMg / analysis?.potassiumTargetMg) * 100)}%`, height: "100%", background: "#F59E0B", borderRadius: "3px" }} />
-                </div>
-              </div>
+              <p className="text-muted" style={{ margin: 0, fontSize: "0.8rem" }}>
+                Sodium and potassium are not tracked in food logs yet, so they are not shown here.
+              </p>
             </div>
-          </div>
-
-          <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-color)", marginTop: "1rem" }}>
-            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-              Overall Micronutrient Balance Score: <strong style={{ color: "#10B981" }}>91 / 100</strong>
-            </span>
           </div>
         </div>
       </div>

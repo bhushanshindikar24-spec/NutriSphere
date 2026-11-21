@@ -151,6 +151,7 @@ class AuthServiceTest {
         req.setFirstName("Gordon");
         req.setLastName("Ramsay");
         req.setRole(Role.HOTEL);
+        req.setLicenseNumber("FSSAI-10012345678901");
 
         when(userRepository.existsByEmail("kitchen@hotel.com")).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPass");
@@ -161,6 +162,22 @@ class AuthServiceTest {
         assertEquals("PENDING", response.getStatus());
         verify(hotelRepository, times(1)).save(any());
         verify(auditService, times(1)).log(any(), eq("REGISTER_PENDING"), eq("HOTEL"), any(), anyString());
+    }
+
+    @Test
+    void registerProfessional_WithoutLicense_ThrowsBadRequestException() {
+        RegisterRequest req = new RegisterRequest();
+        req.setEmail("nolicense@clinic.com");
+        req.setPassword("DoctorPass@123");
+        req.setFirstName("No");
+        req.setLastName("License");
+        req.setRole(Role.DOCTOR);
+
+        when(userRepository.existsByEmail("nolicense@clinic.com")).thenReturn(false);
+
+        assertThrows(BadRequestException.class, () -> authService.register(req));
+        verify(userRepository, never()).save(any());
+        verify(doctorRepository, never()).save(any());
     }
 
     @Test

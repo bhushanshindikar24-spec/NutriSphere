@@ -62,9 +62,27 @@ public class AssignmentService {
         return toDietitianAssignmentResponse(dietitianPatientRepo.save(assignment));
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.nutrisphere.intelligence.digitaltwin.DigitalTwinService digitalTwinService;
+
     public List<AssignmentResponse> getDietitianPatients(Long dietitianUserId) {
         return dietitianPatientRepo.findByDietitianUserIdAndActiveTrue(dietitianUserId)
-            .stream().map(this::toDietitianAssignmentResponse).collect(Collectors.toList());
+            .stream().map(this::toDietitianAssignmentResponse)
+            .peek(this::attachClinicalScores)
+            .collect(Collectors.toList());
+    }
+
+    private void attachClinicalScores(AssignmentResponse r) {
+        if (digitalTwinService == null || r.getPatientUserId() == null) return;
+        try {
+            var twin = digitalTwinService.buildDigitalTwin(r.getPatientUserId());
+            if (twin != null) {
+                r.setAdherenceRate(twin.getAdherencePercent());
+                r.setRealityScore(twin.getLatestRealityScore());
+            }
+        } catch (RuntimeException e) {
+            // Leave scores null so the UI shows "no data" rather than a guess
+        }
     }
 
     public List<AssignmentResponse> getPatientDoctors(Long patientUserId) {

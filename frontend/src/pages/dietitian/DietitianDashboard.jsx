@@ -63,7 +63,7 @@ export default function DietitianDashboard() {
             Dietitian Clinical Workspace
           </h1>
           <p style={{ color: "#64748b", margin: 0, fontSize: "0.95rem" }}>
-            Welcome back, <strong style={{ color: "#0f172a" }}>{stats?.dietitianName || "Clinical Dietitian"}</strong>. Formulate precision nutrition plans, manage patient rosters, and review adaptive changes.
+            Welcome back, <strong style={{ color: "#0f172a" }}>{stats?.dietitianName || ""}</strong>. Formulate precision nutrition plans, manage patient rosters, and review adaptive changes.
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>

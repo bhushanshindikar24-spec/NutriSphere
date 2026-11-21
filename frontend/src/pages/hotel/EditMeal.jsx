@@ -23,33 +23,23 @@ export default function EditMeal() {
   useEffect(() => {
     const fetchMeal = async () => {
       try {
-        const res = await api.get(`/hotel/meals/${id || 1}`);
+        const res = await api.get(`/hotel/meals/${id}`);
         const m = res.data?.data || res.data;
         if (m) {
           setFormData({
             name: m.name || "",
             category: m.category || "LUNCH",
-            price: m.price || 14.5,
-            calories: m.calories || 480,
-            proteinG: m.proteinG || 42,
-            carbsG: m.carbsG || 45,
-            fatG: m.fatG || 14,
+            price: m.price ?? "",
+            calories: m.calories ?? "",
+            proteinG: m.proteinG ?? "",
+            carbsG: m.carbsG ?? "",
+            fatG: m.fatG ?? "",
             description: m.description || "",
             isAvailable: m.isAvailable !== false,
           });
         }
       } catch (_err) {
-        setFormData({
-          name: "Mediterranean Herb Chicken Bowl",
-          category: "LUNCH",
-          price: 14.5,
-          calories: 480,
-          proteinG: 42,
-          carbsG: 45,
-          fatG: 14,
-          description: "Grilled chicken, wild quinoa, steamed vegetables.",
-          isAvailable: true,
-        });
+        setFormData(null);
       } finally {
         setLoading(false);
       }
@@ -61,16 +51,17 @@ export default function EditMeal() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.put(`/hotel/meals/${id || 1}`, formData);
+      await api.put(`/hotel/meals/${id}`, formData);
       navigate("/hotel/menu");
-    } catch (_err) {
-      navigate("/hotel/menu");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to save meal.");
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) return <div className="loading-screen">Loading Meal...</div>;
+  if (!formData) return <div className="glass-panel" style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>Meal not found.</div>;
 
   return (
     <div style={{ maxWidth: "750px", margin: "0 auto" }}>

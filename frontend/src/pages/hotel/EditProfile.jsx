@@ -18,28 +18,39 @@ export default function EditProfile() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (user) {
- 
-      setFormData({
-        kitchenName: user.hotelName || "NutriKitchen Clinical Hub - Mumbai",
-        phone: user.phone || "+91 98220 12345",
-        address: user.address || "Unit 4B, Health Tech Park, BKC, Mumbai, Maharashtra 400051",
-        hours: user.hours || "Mon-Sun: 7:00 AM - 10:30 PM IST",
-        bio: user.bio || "Specializing in medically tailored Indian satvik meals, diabetic glycemic portions, and heart-healthy thalis.",
-      });
-    }
+    const load = async () => {
+      try {
+        const res = await api.get("/hotel/profile");
+        const p = res.data?.data || res.data || {};
+        setFormData({
+          kitchenName: p.hotelName ?? "",
+          phone: p.phoneNumber ?? "",
+          address: p.hotelAddress ?? "",
+          hours: p.cuisineType ?? "",
+          bio: p.description ?? "",
+        });
+      } catch (_err) {
+        // keep empty form; the user can still fill it in
+      }
+    };
+    load();
   }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.put("/hotel/profile", formData);
+      await api.put("/hotel/profile", {
+        hotelName: formData.kitchenName,
+        phoneNumber: formData.phone,
+        hotelAddress: formData.address,
+        cuisineType: formData.hours,
+        description: formData.bio,
+      });
       setSuccess(true);
       setTimeout(() => navigate("/hotel/profile"), 1200);
-    } catch (_err) {
-      setSuccess(true);
-      setTimeout(() => navigate("/hotel/profile"), 1200);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to save kitchen profile.");
     } finally {
       setLoading(false);
     }
@@ -89,7 +100,7 @@ export default function EditProfile() {
               />
             </div>
             <div>
-              <label className="form-label">Operating Hours</label>
+              <label className="form-label">Cuisine Type</label>
               <input
                 type="text"
                 className="input-field"

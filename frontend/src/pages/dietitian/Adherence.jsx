@@ -14,18 +14,7 @@ export default function Adherence() {
         const res = await api.get("/dietitians/adherence");
         setAdherenceStats(res.data?.data || res.data);
       } catch (_err) {
-        setAdherenceStats({
-          avgCohortAdherence: 82,
-          highAdherenceCount: 14,
-          moderateAdherenceCount: 6,
-          atRiskCount: 3,
-          adherenceHistory: [
-            { date: "Week 1", adherence: 76, target: 80 },
-            { date: "Week 2", adherence: 79, target: 80 },
-            { date: "Week 3", adherence: 83, target: 80 },
-            { date: "Week 4", adherence: 82, target: 80 },
-          ],
-        });
+        setAdherenceStats(null);
       } finally {
         setLoading(false);
       }
@@ -34,6 +23,7 @@ export default function Adherence() {
   }, []);
 
   if (loading) return <div className="loading-screen">Aggregating Adherence Analytics...</div>;
+  if (!adherenceStats) return <div className="glass-panel" style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No adherence data is available yet. It will appear once your patients start logging meals.</div>;
 
   return (
     <div style={{ maxWidth: "1050px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>

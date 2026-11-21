@@ -62,10 +62,10 @@ public class PatientMapper {
         r.setAlcoholConsumption(p.getAlcoholConsumption());
 
         // Calculate BMR & TDEE (Mifflin-St Jeor formula) only if weight & height are present
-        if (p.getWeightKg() != null && p.getHeightCm() != null && p.getWeightKg() > 0 && p.getHeightCm() > 0) {
+        if (p.getWeightKg() != null && p.getHeightCm() != null && r.getAge() != null && p.getWeightKg() > 0 && p.getHeightCm() > 0) {
             double weight = p.getWeightKg();
             double height = p.getHeightCm();
-            int age = r.getAge() != null ? r.getAge() : 30;
+            int age = r.getAge();
             boolean isFemale = p.getGender() == com.nutrisphere.common.enums.Gender.FEMALE;
             double bmr = (10.0 * weight) + (6.25 * height) - (5.0 * age) + (isFemale ? -161.0 : 5.0);
             r.setBmr(Math.round(bmr * 10.0) / 10.0);

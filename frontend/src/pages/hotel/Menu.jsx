@@ -15,44 +15,7 @@ export default function Menu() {
       const res = await api.get("/hotel/meals");
       setMeals(res.data?.data || res.data || []);
     } catch (_err) {
-      setMeals([
-        {
-          id: 1,
-          name: "Paneer Tikka & Multigrain Phulka Thali",
-          category: "LUNCH",
-          price: 220,
-          calories: 480,
-          proteinG: 26,
-          isAvailable: true,
-        },
-        {
-          id: 2,
-          name: "Moong Dal Khichdi with A2 Desi Ghee & Dahi",
-          category: "DINNER",
-          price: 160,
-          calories: 380,
-          proteinG: 16,
-          isAvailable: true,
-        },
-        {
-          id: 3,
-          name: "Vegetable Poha with Roasted Peanuts & Lemon",
-          category: "BREAKFAST",
-          price: 120,
-          calories: 340,
-          proteinG: 10,
-          isAvailable: true,
-        },
-        {
-          id: 4,
-          name: "Tandoori Chicken Tikka with Brown Rice & Chaas",
-          category: "DINNER",
-          price: 260,
-          calories: 510,
-          proteinG: 42,
-          isAvailable: true,
-        },
-      ]);
+      setMeals([]);
     } finally {
       setLoading(false);
     }

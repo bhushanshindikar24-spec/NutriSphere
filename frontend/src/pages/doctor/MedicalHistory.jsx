@@ -15,7 +15,7 @@ export default function MedicalHistory() {
         const res = await api.get("/doctors/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       }
@@ -26,7 +26,7 @@ export default function MedicalHistory() {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/medical/history?patientId=${selectedPatientId}`);
+      const res = await api.get(`/medical/history/patient/${selectedPatientId}`);
       setHistoryItems(res.data?.data || res.data || []);
     } catch (_err) {
       setHistoryItems([]);

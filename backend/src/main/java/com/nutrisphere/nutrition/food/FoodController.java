@@ -24,6 +24,12 @@ public class FoodController {
         return ApiResponse.success(foodService.getById(id));
     }
 
+    @GetMapping("/{id}/alternatives")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> alternatives(
+            @PathVariable Long id, @RequestParam(defaultValue = "5") int limit) {
+        return ApiResponse.success(foodService.findAlternatives(id, Math.min(Math.max(limit, 1), 20)));
+    }
+
     @PostMapping
     public ApiResponse<FoodResponse> create(@RequestBody FoodRequest req) {
         return ApiResponse.success(foodService.create(req));

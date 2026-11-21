@@ -37,6 +37,23 @@ public class HotelService {
         r.setHotelName(p.getHotelName()); r.setHotelAddress(p.getHotelAddress());
         r.setPhoneNumber(p.getPhoneNumber()); r.setDescription(p.getDescription());
         r.setCuisineType(p.getCuisineType()); r.setActive(p.isActive());
+        r.setLicenseNumber(p.getLicenseNumber()); r.setVerificationStatus(p.getVerificationStatus());
+        r.setContactName(p.getUser().getFullName()); r.setEmail(p.getUser().getEmail());
         return r;
+    }
+
+    /** Admin-approved, active partner kitchens visible to patients. */
+    public java.util.List<HotelProfileResponse> listApprovedKitchens() {
+        return hotelRepo.findByVerificationStatus("APPROVED").stream()
+            .filter(HotelProfile::isActive)
+            .map(this::toResponse)
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    public HotelProfileResponse getApprovedKitchen(Long hotelUserId) {
+        HotelProfile p = hotelRepo.findByUserId(hotelUserId)
+            .filter(h -> h.isActive() && "APPROVED".equals(h.getVerificationStatus()))
+            .orElseThrow(() -> new com.nutrisphere.exception.ResourceNotFoundException("Kitchen", hotelUserId));
+        return toResponse(p);
     }
 }

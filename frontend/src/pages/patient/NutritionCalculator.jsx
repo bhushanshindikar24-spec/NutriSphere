@@ -43,10 +43,10 @@ export default function NutritionCalculator() {
   const [profileData, setProfileData] = useState(null);
 
   // Personalized Requirement Calculator Inputs
-  const [age, setAge] = useState(26);
+  const [age, setAge] = useState("");
   const [gender, setGender] = useState("FEMALE");
-  const [heightCm, setHeightCm] = useState(165);
-  const [weightKg, setWeightKg] = useState(60);
+  const [heightCm, setHeightCm] = useState("");
+  const [weightKg, setWeightKg] = useState("");
   const [activityLevel, setActivityLevel] = useState("MODERATELY_ACTIVE");
   const [healthGoal, setHealthGoal] = useState("FAT_LOSS");
   const [selectedConditions, setSelectedConditions] = useState([]);
@@ -135,10 +135,12 @@ export default function NutritionCalculator() {
   }, []);
 
   // Scientific Nutrition Calculations (Mifflin-St Jeor & Clinical Adjustments)
+  // Results are only shown once real age/height/weight are present (from the profile or typed in)
+  const hasBodyInputs = Number(heightCm) > 0 && Number(weightKg) > 0 && Number(age) > 0;
   const calculationResults = useMemo(() => {
-    const h = Number(heightCm) || 165;
-    const w = Number(weightKg) || 60;
-    const a = Number(age) || 26;
+    const h = Number(heightCm) || 1;
+    const w = Number(weightKg) || 0;
+    const a = Number(age) || 0;
 
     // 1. BMI
     const heightM = h / 100.0;
@@ -286,6 +288,7 @@ export default function NutritionCalculator() {
 
   // Apply Calculated Targets to Patient Profile
   const handleApplyTargetsToProfile = async () => {
+    if (!hasBodyInputs) return;
     try {
       setApplyingTargets(true);
       setApplySuccessMsg("");
@@ -728,6 +731,11 @@ export default function NutritionCalculator() {
           </div>
 
           {/* Right Column: Calculated Nutrition Requirements */}
+          {!hasBodyInputs ? (
+            <div className="glass-panel" style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)", alignSelf: "start" }}>
+              Enter your age, height and weight (or complete your profile) to calculate your nutrition requirements.
+            </div>
+          ) : (
           <div style={{ display: "grid", gap: "1.25rem" }}>
             
             {/* Caloric & Metabolic Summary Card */}
@@ -803,7 +811,7 @@ export default function NutritionCalculator() {
                     {calculationResults.targetProteinG}g
                   </div>
                   <div style={{ fontSize: "0.78rem", color: "#475569" }}>
-                    {calculationResults.proteinPercent}% of daily energy • {(calculationResults.targetProteinG / (Number(weightKg) || 60)).toFixed(1)}g/kg
+                    {calculationResults.proteinPercent}% of daily energy • {(calculationResults.targetProteinG / (Number(weightKg) || 1)).toFixed(1)}g/kg
                   </div>
                 </div>
 
@@ -952,6 +960,7 @@ export default function NutritionCalculator() {
             </div>
 
           </div>
+          )}
         </div>
       )}
 

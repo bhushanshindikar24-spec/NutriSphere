@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import LaboratoryReportCard from "../../components/medical/LaboratoryReportCard";
 import LabValueTable from "../../components/medical/LabValueTable";
 import api from "../../services/api";
+import { normalizeLabReports } from "../../utils/labReports";
 
 export default function LaboratoryReports() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export default function LaboratoryReports() {
         const res = await api.get("/doctors/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       }
@@ -31,39 +32,13 @@ export default function LaboratoryReports() {
   const fetchLabs = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/medical/laboratory?patientId=${selectedPatientId}`);
-      const items = res.data?.data || res.data || [];
+      const res = await api.get(`/medical/laboratory/patient/${selectedPatientId}`);
+      const items = normalizeLabReports(res.data?.data || res.data || []);
       setLabPanels(items);
       if (items.length > 0) setSelectedPanel(items[0]);
     } catch (_err) {
-      const fallback = [
-        {
-          id: 1,
-          testName: "Comprehensive Metabolic Panel (CMP)",
-          testDate: "2026-09-15",
-          notes: "Fasting glucose, electrolytes, and liver enzymes within normal physiological limits.",
-          labValues: [
-            { markerName: "Fasting Glucose", value: 94, unit: "mg/dL", referenceMin: 70, referenceMax: 99, flag: "NORMAL" },
-            { markerName: "Serum Creatinine", value: 0.9, unit: "mg/dL", referenceMin: 0.7, referenceMax: 1.3, flag: "NORMAL" },
-            { markerName: "eGFR", value: 98, unit: "mL/min/1.73m²", referenceMin: 90, referenceMax: 120, flag: "NORMAL" },
-            { markerName: "ALT (Alanine Aminotransferase)", value: 24, unit: "U/L", referenceMin: 7, referenceMax: 56, flag: "NORMAL" },
-          ],
-        },
-        {
-          id: 2,
-          testName: "Lipid Panel",
-          testDate: "2026-08-20",
-          notes: "Mild LDL elevation, optimal triglycerides.",
-          labValues: [
-            { markerName: "Total Cholesterol", value: 195, unit: "mg/dL", referenceMin: 125, referenceMax: 200, flag: "NORMAL" },
-            { markerName: "LDL-C (Calculated)", value: 118, unit: "mg/dL", referenceMin: 0, referenceMax: 100, flag: "HIGH", isAbnormal: true },
-            { markerName: "HDL-C", value: 58, unit: "mg/dL", referenceMin: 40, referenceMax: 90, flag: "NORMAL" },
-            { markerName: "Triglycerides", value: 95, unit: "mg/dL", referenceMin: 0, referenceMax: 150, flag: "NORMAL" },
-          ],
-        },
-      ];
-      setLabPanels(fallback);
-      setSelectedPanel(fallback[0]);
+      setLabPanels([]);
+      setSelectedPanel(null);
     } finally {
       setLoading(false);
     }

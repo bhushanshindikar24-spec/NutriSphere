@@ -70,12 +70,12 @@ public class AdaptiveEngineService {
         }
         avgWater /= 7.0;
 
-        double targetWater = plan != null && plan.getTargetWaterMl() != null ? plan.getTargetWaterMl() : 2000.0;
+        double targetWater = plan != null && plan.getTargetWaterMl() != null ? plan.getTargetWaterMl() : 0.0; // 0 = no plan target; only the clinical floor applies
         if ((targetWater > 0 && avgWater < targetWater * 0.8) || (avgWater < 1500.0)) {
             addIfNotPending(generated, createRecommendation(patientUserId, effectivePlanId, "LOW_HYDRATION",
                 "Low Hydration Pattern",
                 "Average water intake of " + String.format("%.0f", avgWater) +
-                    "ml/day is below clinical hydration threshold (" + String.format("%.0f", Math.min(targetWater * 0.8, 1500.0)) + "ml/day).",
+                    "ml/day is below clinical hydration threshold (" + String.format("%.0f", targetWater > 0 ? Math.min(targetWater * 0.8, 1500.0) : 1500.0) + "ml/day).",
                 "Consistently low water intake over 7-day period",
                 "Use hydration reminders and distribute fluids across the day within the approved plan",
                 "MEDIUM"));

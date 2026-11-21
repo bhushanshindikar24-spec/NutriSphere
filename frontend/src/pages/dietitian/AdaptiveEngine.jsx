@@ -19,7 +19,7 @@ export default function AdaptiveEngine() {
         const res = await api.get("/dietitians/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       } finally {

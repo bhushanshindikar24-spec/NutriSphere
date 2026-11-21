@@ -22,7 +22,7 @@ export default function Profile() {
           lastName: user?.lastName || "",
           email: user?.email || "",
           licenseNumber: user?.licenseNumber || "",
-          specialization: user?.specialization || "Clinical Medicine",
+          specialization: user?.specialization || "",
           hospital: user?.hospital || "",
           hospitalName: user?.hospital || "",
           consultationFee: user?.consultationFee || 0,
@@ -83,7 +83,7 @@ export default function Profile() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Building size={16} color="#10B981" />
-            <span>{profile?.hospitalName || profile?.hospital || "Clinical Practice"}</span>
+            <span>{profile?.hospitalName || profile?.hospital || "Hospital not specified"}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Mail size={16} color="#10B981" />

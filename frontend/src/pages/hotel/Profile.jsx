@@ -1,7 +1,7 @@
 import {  useContext, useState, useEffect  } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { Utensils, Mail, MapPin, Award, Edit3, Clock } from "lucide-react";
+import { Utensils, Mail, MapPin, Award, Edit3, Phone } from "lucide-react";
 import api from "../../services/api";
 
 export default function Profile() {
@@ -16,16 +16,7 @@ export default function Profile() {
         const res = await api.get("/hotel/profile");
         setProfile(res.data?.data || res.data);
       } catch (_err) {
-        setProfile({
-          kitchenName: user?.hotelName || "NutriKitchen Clinical Hub - Mumbai",
-          contactPerson: `${user?.firstName || "Pooja"} ${user?.lastName || "Sharma"}`,
-          email: user?.email || "kitchen@nutrikitchen.in",
-          phone: "+91 98220 12345",
-          address: "Unit 4B, Health Tech Park, BKC, Mumbai, Maharashtra 400051",
-          licenseNumber: "FSSAI-LIC-11524999000123",
-          hours: "Mon-Sun: 7:00 AM - 10:30 PM IST",
-          bio: "Specializing in medically tailored Indian meals, low-sodium DASH thalis, diabetic-friendly glycemic portions, and allergen-isolated satvik culinary preparation.",
-        });
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -34,6 +25,7 @@ export default function Profile() {
   }, [user]);
 
   if (loading) return <div className="loading-screen">Loading Kitchen Profile...</div>;
+  if (!profile) return <div className="glass-panel" style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>Could not load your kitchen profile. Please try again.</div>;
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gap: "1.5rem" }}>
@@ -57,7 +49,7 @@ export default function Profile() {
             <Utensils size={32} />
           </div>
           <div>
-            <h3 style={{ margin: 0 }}>{profile?.kitchenName}</h3>
+            <h3 style={{ margin: 0 }}>{profile?.hotelName}</h3>
             <span style={{ color: "#F59E0B", fontSize: "0.85rem", fontWeight: 600 }}>
               Certified Clinical Nutrition Kitchen
             </span>
@@ -65,25 +57,25 @@ export default function Profile() {
         </div>
 
         <p style={{ lineHeight: 1.6, color: "var(--text-secondary)", marginBottom: "1.5rem" }}>
-          {profile?.bio}
+          {profile?.description}
         </p>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", background: "rgba(255, 255, 255, 0.02)", padding: "1.25rem", borderRadius: "var(--radius-md)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Award size={16} color="#F59E0B" />
-            <span>Food Safety License: <strong>{profile?.licenseNumber}</strong></span>
+            <span>Food Safety License: <strong>{profile?.licenseNumber || "Not provided"}</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <MapPin size={16} color="#F59E0B" />
-            <span>{profile?.address}</span>
+            <span>{profile?.hotelAddress || "Address not set"}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
             <Mail size={16} color="#F59E0B" />
             <span>{profile?.email}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <Clock size={16} color="#F59E0B" />
-            <span>{profile?.hours}</span>
+            <Phone size={16} color="#F59E0B" />
+            <span>{profile?.phoneNumber || "Phone not set"}</span>
           </div>
         </div>
       </div>

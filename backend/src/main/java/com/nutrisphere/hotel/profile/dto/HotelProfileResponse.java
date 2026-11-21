@@ -10,4 +10,8 @@ public class HotelProfileResponse {
     private String description;
     private String cuisineType;
     private boolean active;
+    private String licenseNumber;
+    private String verificationStatus;
+    private String contactName;
+    private String email;
 }

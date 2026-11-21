@@ -46,7 +46,7 @@ export default function EditProfile() {
         setFormData({
           firstName: user.firstName || "",
           lastName: user.lastName || "",
-          specialization: user.specialization || "Clinical Medicine",
+          specialization: user.specialization || "",
           hospital: user.hospital || "",
           hospitalName: user.hospital || "",
           phone: user.phone || "",

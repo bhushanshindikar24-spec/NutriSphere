@@ -201,11 +201,12 @@ public class FoodLogService {
         double actualWaterMl = waterMl != null ? waterMl : 0.0;
 
         // Fetch targets dynamically
-        double plannedCalories = 1800.0;
-        double plannedProtein = 70.0;
-        double plannedCarbs = 200.0;
-        double plannedFat = 50.0;
-        double plannedWaterMl = 2200.0;
+        // 0 means "no target recorded" — targets come only from the approved plan or the patient profile
+        double plannedCalories = 0.0;
+        double plannedProtein = 0.0;
+        double plannedCarbs = 0.0;
+        double plannedFat = 0.0;
+        double plannedWaterMl = 0.0;
 
         var approvedPlan = planRepo.findByPatientUserIdAndStatus(patientUserId, DietPlanStatus.APPROVED);
         if (approvedPlan.isPresent()) {
@@ -220,10 +221,10 @@ public class FoodLogService {
             if (prof != null) {
                 if (prof.getTargetDailyCalories() != null && prof.getTargetDailyCalories() > 0) {
                     plannedCalories = prof.getTargetDailyCalories();
-                } else if (prof.getWeightKg() != null && prof.getHeightCm() != null && prof.getWeightKg() > 20 && prof.getHeightCm() > 50) {
+                } else if (prof.getWeightKg() != null && prof.getHeightCm() != null && prof.getDateOfBirth() != null && prof.getWeightKg() > 20 && prof.getHeightCm() > 50) {
                     double w = prof.getWeightKg();
                     double h = prof.getHeightCm();
-                    int age = prof.getDateOfBirth() != null ? java.time.Period.between(prof.getDateOfBirth(), LocalDate.now()).getYears() : 30;
+                    int age = java.time.Period.between(prof.getDateOfBirth(), LocalDate.now()).getYears();
                     boolean isFemale = prof.getGender() != com.nutrisphere.common.enums.Gender.MALE;
                     double bmr = (10.0 * w) + (6.25 * h) - (5.0 * age) + (isFemale ? -161.0 : 5.0);
                     double mult = 1.375;
@@ -247,8 +248,10 @@ public class FoodLogService {
                 if (prof.getWeightKg() != null && prof.getWeightKg() > 20) {
                     plannedProtein = Math.round(prof.getWeightKg() * 1.3);
                 }
-                plannedFat = Math.round((plannedCalories * 0.28) / 9.0);
-                plannedCarbs = Math.max(100.0, Math.round((plannedCalories - (plannedProtein * 4.0) - (plannedFat * 9.0)) / 4.0));
+                if (plannedCalories > 0) {
+                    plannedFat = Math.round((plannedCalories * 0.28) / 9.0);
+                    plannedCarbs = Math.max(100.0, Math.round((plannedCalories - (plannedProtein * 4.0) - (plannedFat * 9.0)) / 4.0));
+                }
                 if (prof.getTargetDailyWaterMl() != null && prof.getTargetDailyWaterMl() > 0) {
                     plannedWaterMl = prof.getTargetDailyWaterMl();
                 } else if (prof.getWeightKg() != null && prof.getWeightKg() > 20) {
@@ -266,11 +269,11 @@ public class FoodLogService {
         // Doctor and Dietitian Names
         String docName = doctorPatientRepo.findByPatientUserIdAndActiveTrue(patientUserId).stream().findFirst()
             .flatMap(a -> userRepo.findById(a.getDoctorUserId()))
-            .map(u -> "Dr. " + u.getFullName()).orElse("Assigned Medical Supervisor");
+            .map(u -> "Dr. " + u.getFullName()).orElse(null);
 
         String dietName = dietitianPatientRepo.findByPatientUserIdAndActiveTrue(patientUserId).stream().findFirst()
             .flatMap(a -> userRepo.findById(a.getDietitianUserId()))
-            .map(u -> u.getFullName()).orElse("Assigned Clinical Dietitian");
+            .map(u -> u.getFullName()).orElse(null);
 
         // Collect difficulty feedback & notes
         List<DailyNutritionReportResponse.PatientDifficultyItem> difficulties = new ArrayList<>();

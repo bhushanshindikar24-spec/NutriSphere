@@ -40,8 +40,22 @@ public class DietPlanService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.nutrisphere.nutrition.requirements.RequirementCalculator requirementCalculator;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.nutrisphere.nutrition.requirements.RequirementRepository requirementRepo;
+
+    /** First non-null of: explicit request value, patient's active requirement record, patient profile target. */
+    private static Double pick(Double requested, Double fromRequirement, Double fromProfile) {
+        if (requested != null) return requested;
+        if (fromRequirement != null) return fromRequirement;
+        return fromProfile;
+    }
+
     @Transactional
     public DietPlanResponse createPlan(Long dietitianUserId, DietPlanRequest req) {
+        var requirement = requirementRepo != null && req.getPatientUserId() != null
+            ? requirementRepo.findFirstByPatientUserIdAndActiveTrue(req.getPatientUserId()).orElse(null) : null;
+        var profile = req.getPatientUserId() != null ? patientRepo.findByUserId(req.getPatientUserId()).orElse(null) : null;
+
         DietPlanStatus initialStatus = ("APPROVED".equalsIgnoreCase(req.getStatus()) || "ACTIVE".equalsIgnoreCase(req.getStatus()))
             ? DietPlanStatus.APPROVED : DietPlanStatus.SUBMITTED;
 
@@ -52,12 +66,12 @@ public class DietPlanService {
             .description(req.getDescription())
             .startDate(req.getStartDate() != null ? req.getStartDate() : LocalDate.now())
             .endDate(req.getEndDate() != null ? req.getEndDate() : LocalDate.now().plusDays(30))
-            .targetCalories(req.getTargetCalories() != null ? req.getTargetCalories() : 2000.0)
-            .targetProteinG(req.getTargetProteinG() != null ? req.getTargetProteinG() : 120.0)
-            .targetCarbsG(req.getTargetCarbsG() != null ? req.getTargetCarbsG() : 200.0)
-            .targetFatG(req.getTargetFatG() != null ? req.getTargetFatG() : 65.0)
-            .targetFiberG(req.getTargetFiberG() != null ? req.getTargetFiberG() : 28.0)
-            .targetWaterMl(req.getTargetWaterMl() != null ? req.getTargetWaterMl() : 2500.0)
+            .targetCalories(pick(req.getTargetCalories(), requirement != null ? requirement.getCaloriesTarget() : null, profile != null ? profile.getTargetDailyCalories() : null))
+            .targetProteinG(pick(req.getTargetProteinG(), requirement != null ? requirement.getProteinGTarget() : null, null))
+            .targetCarbsG(pick(req.getTargetCarbsG(), requirement != null ? requirement.getCarbsGTarget() : null, null))
+            .targetFatG(pick(req.getTargetFatG(), requirement != null ? requirement.getFatGTarget() : null, null))
+            .targetFiberG(pick(req.getTargetFiberG(), requirement != null ? requirement.getFiberGTarget() : null, null))
+            .targetWaterMl(pick(req.getTargetWaterMl(), requirement != null ? requirement.getWaterMlTarget() : null, profile != null ? profile.getTargetDailyWaterMl() : null))
             .notes(req.getNotes())
             .status(initialStatus)
             .approvedAt(initialStatus == DietPlanStatus.APPROVED ? LocalDateTime.now() : null)
@@ -81,7 +95,7 @@ public class DietPlanService {
                 MealItem item = MealItem.builder()
                     .dietPlanMeal(meal)
                     .foodName(m.getDescription() != null ? m.getDescription() : m.getMealType() + " nutrition portion")
-                    .calories(m.getTargetCalories() != null ? m.getTargetCalories() : 400.0)
+                    .calories(m.getTargetCalories())
                     .quantityG(150.0)
                     .servingDescription("1 serving")
                     .build();

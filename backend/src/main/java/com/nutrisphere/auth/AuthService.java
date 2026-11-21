@@ -45,6 +45,9 @@ public class AuthService {
 
         boolean isProfessional = (targetRole == Role.DOCTOR || targetRole == Role.DIETITIAN || targetRole == Role.HOTEL);
         Status initialStatus = isProfessional ? Status.PENDING : Status.ACTIVE;
+        if (isProfessional && (req.getLicenseNumber() == null || req.getLicenseNumber().isBlank())) {
+            throw new BadRequestException("A license number is required for " + targetRole.name().toLowerCase(java.util.Locale.ROOT) + " registration.");
+        }
 
         User user = User.builder()
             .email(email)
@@ -70,14 +73,14 @@ public class AuthService {
         } else if (targetRole == Role.DOCTOR) {
             com.nutrisphere.doctor.DoctorProfile docProfile = com.nutrisphere.doctor.DoctorProfile.builder()
                 .user(user)
-                .licenseNumber(req.getLicenseNumber() != null && !req.getLicenseNumber().isBlank() ? req.getLicenseNumber() : "MD-" + user.getId() + "-LIC")
-                .degree(req.getDegree() != null && !req.getDegree().isBlank() ? req.getDegree() : "MBBS, MD")
-                .specialization(req.getSpecialization() != null && !req.getSpecialization().isBlank() ? req.getSpecialization() : "Clinical Medicine")
-                .achievements(req.getAchievements() != null ? req.getAchievements() : "Licensed Medical Practitioner")
-                .hospitalName(req.getHospitalOrClinic() != null ? req.getHospitalOrClinic() : "Clinical Medical Center")
+                .licenseNumber(req.getLicenseNumber().trim())
+                .degree(blankToNull(req.getDegree()))
+                .specialization(blankToNull(req.getSpecialization()))
+                .achievements(blankToNull(req.getAchievements()))
+                .hospitalName(blankToNull(req.getHospitalOrClinic()))
                 .hospitalAddress(req.getAddress())
-                .yearsExperience(req.getYearsExperience() != null ? req.getYearsExperience() : 5)
-                .consultationFee(req.getConsultationFee() != null ? req.getConsultationFee() : 100.0)
+                .yearsExperience(req.getYearsExperience())
+                .consultationFee(req.getConsultationFee())
                 .licenseDocumentUrl(req.getLicenseDocumentUrl())
                 .verificationStatus("PENDING")
                 .build();
@@ -95,14 +98,14 @@ public class AuthService {
         } else if (targetRole == Role.DIETITIAN) {
             com.nutrisphere.dietitian.DietitianProfile dietProfile = com.nutrisphere.dietitian.DietitianProfile.builder()
                 .user(user)
-                .licenseNumber(req.getLicenseNumber() != null && !req.getLicenseNumber().isBlank() ? req.getLicenseNumber() : "RD-" + user.getId() + "-LIC")
-                .degree(req.getDegree() != null && !req.getDegree().isBlank() ? req.getDegree() : "Registered Dietitian (RD), M.Sc Nutrition")
-                .specialization(req.getSpecialization() != null && !req.getSpecialization().isBlank() ? req.getSpecialization() : "Clinical Nutrition")
-                .achievements(req.getAchievements() != null ? req.getAchievements() : "Certified Dietetic Specialist")
-                .clinicName(req.getHospitalOrClinic() != null ? req.getHospitalOrClinic() : "Clinical Nutrition Clinic")
+                .licenseNumber(req.getLicenseNumber().trim())
+                .degree(blankToNull(req.getDegree()))
+                .specialization(blankToNull(req.getSpecialization()))
+                .achievements(blankToNull(req.getAchievements()))
+                .clinicName(blankToNull(req.getHospitalOrClinic()))
                 .clinicAddress(req.getAddress())
-                .yearsExperience(req.getYearsExperience() != null ? req.getYearsExperience() : 5)
-                .consultationFee(req.getConsultationFee() != null ? req.getConsultationFee() : 75.0)
+                .yearsExperience(req.getYearsExperience())
+                .consultationFee(req.getConsultationFee())
                 .licenseDocumentUrl(req.getLicenseDocumentUrl())
                 .verificationStatus("PENDING")
                 .build();
@@ -120,11 +123,11 @@ public class AuthService {
         } else if (targetRole == Role.HOTEL) {
             com.nutrisphere.hotel.profile.HotelProfile hotelProfile = com.nutrisphere.hotel.profile.HotelProfile.builder()
                 .user(user)
-                .hotelName(req.getHospitalOrClinic() != null ? req.getHospitalOrClinic() : req.getFirstName() + "'s Culinary Kitchen")
-                .licenseNumber(req.getLicenseNumber() != null && !req.getLicenseNumber().isBlank() ? req.getLicenseNumber() : "FSSAI-" + user.getId() + "-CUL")
+                .hotelName(req.getHospitalOrClinic() != null && !req.getHospitalOrClinic().isBlank() ? req.getHospitalOrClinic() : req.getFirstName() + "'s Culinary Kitchen")
+                .licenseNumber(req.getLicenseNumber().trim())
                 .licenseDocumentUrl(req.getLicenseDocumentUrl())
                 .verificationStatus("PENDING")
-                .cuisineType(req.getCuisineType() != null ? req.getCuisineType() : "Clinical & Therapeutic Catering")
+                .cuisineType(blankToNull(req.getCuisineType()))
                 .hotelAddress(req.getAddress())
                 .phoneNumber(req.getPhoneNumber())
                 .active(false)
@@ -255,5 +258,9 @@ public class AuthService {
             .lastName(user.getLastName())
             .role(user.getRole())
             .build();
+    }
+
+    private static String blankToNull(String v) {
+        return v == null || v.isBlank() ? null : v.trim();
     }
 }

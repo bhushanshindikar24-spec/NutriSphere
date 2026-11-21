@@ -4,6 +4,7 @@ import { ArrowLeft, User, Stethoscope, Plus, Activity } from "lucide-react";
 import ConditionCard from "../../components/medical/ConditionCard";
 import LaboratoryReportCard from "../../components/medical/LaboratoryReportCard";
 import api from "../../services/api";
+import { normalizeLabReports } from "../../utils/labReports";
 
 export default function PatientProfile() {
   const { id } = useParams();
@@ -23,38 +24,17 @@ export default function PatientProfile() {
       }
 
       try {
-        const condRes = await api.get(`/medical/conditions?patientId=${id || 1}`);
+        const condRes = await api.get(`/medical/conditions/patient/${id}`);
         setConditions(condRes.data?.data || condRes.data || []);
       } catch (_e) {
-        setConditions([
-          {
-            id: 1,
-            conditionName: "Mild Dyslipidemia",
-            icdCode: "E78.5",
-            status: "ACTIVE",
-            diagnosedDate: "2026-08-10",
-            notes: "Elevated LDL (112 mg/dL) with normal triglycerides.",
-            dietaryRestrictions: "Limit saturated fats to <7% daily caloric intake.",
-          },
-        ]);
+        setConditions([]);
       }
 
       try {
-        const labRes = await api.get(`/medical/laboratory?patientId=${id || 1}`);
-        setLabReports(labRes.data?.data || labRes.data || []);
+        const labRes = await api.get(`/medical/laboratory/patient/${id}`);
+        setLabReports(normalizeLabReports(labRes.data?.data || labRes.data || []));
       } catch (_e) {
-        setLabReports([
-          {
-            id: 1,
-            testName: "Comprehensive Metabolic Panel (CMP)",
-            testDate: "2026-09-15",
-            notes: "Fasting glucose and kidney function normal.",
-            labValues: [
-              { markerName: "Glucose", value: 94, unit: "mg/dL", flag: "NORMAL" },
-              { markerName: "Creatinine", value: 0.9, unit: "mg/dL", flag: "NORMAL" },
-            ],
-          },
-        ]);
+        setLabReports([]);
       } finally {
         setLoading(false);
       }

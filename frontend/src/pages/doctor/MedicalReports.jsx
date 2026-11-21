@@ -18,7 +18,7 @@ export default function MedicalReports() {
         const res = await api.get("/doctors/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       }
@@ -29,19 +29,10 @@ export default function MedicalReports() {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/medical/reports?patientId=${selectedPatientId}`);
+      const res = await api.get(`/medical/reports/patient/${selectedPatientId}`);
       setReports(res.data?.data || res.data || []);
     } catch (_err) {
-      setReports([
-        {
-          id: 1,
-          title: "Comprehensive Metabolic Panel (CMP)",
-          reportType: "LAB_REPORT",
-          reportDate: "2026-09-15",
-          summary: "Fasting glucose 94 mg/dL, electrolytes normal, eGFR >90.",
-          fileUrl: "#",
-        },
-      ]);
+      setReports([]);
     } finally {
       setLoading(false);
     }

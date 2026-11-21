@@ -149,9 +149,9 @@ export default function Directory() {
                 <span style={{ fontSize: "0.72rem", background: "rgba(2, 132, 199, 0.15)", color: "#0284c7", padding: "0.2rem 0.5rem", borderRadius: "4px", fontWeight: 700 }}>
                   SUPERVISING PHYSICIAN
                 </span>
-                <h4 style={{ margin: "0.5rem 0 0.2rem 0", fontSize: "1.1rem" }}>{doc.doctorName || "Dr. Attending Doctor"}</h4>
+                <h4 style={{ margin: "0.5rem 0 0.2rem 0", fontSize: "1.1rem" }}>{doc.doctorName}</h4>
                 <div style={{ color: "var(--primary)", fontSize: "0.82rem", fontWeight: 600 }}>
-                  {doc.doctorSpecialization || "Internal Medicine & Endocrinology"}
+                  {doc.doctorSpecialization || "Specialization not specified"}
                 </div>
                 <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
                   <Link to="/patient/consultations" className="btn btn-primary" style={{ fontSize: "0.75rem", padding: "0.35rem 0.65rem" }}>

@@ -14,7 +14,7 @@ export default function DigitalTwin() {
         const res = await api.get("/dietitians/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       }
@@ -26,7 +26,7 @@ export default function DigitalTwin() {
     const fetchTwin = async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/digital-twin?patientId=${selectedPatientId}`);
+        const res = await api.get(`/digital-twin/patient/${selectedPatientId}`);
         setTwinData(res.data?.data || res.data);
       } catch (_err) {
         setTwinData(null);

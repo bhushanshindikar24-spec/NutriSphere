@@ -3,11 +3,11 @@ import { formatGrams } from "../../utils/formatters";
 
 export default function MacroBreakdown({
   carbs = 0,
-  carbsTarget = 250,
+  carbsTarget = 0,
   protein = 0,
-  proteinTarget = 100,
+  proteinTarget = 0,
   fat = 0,
-  fatTarget = 65,
+  fatTarget = 0,
 }) {
   const macros = [
     { name: "Carbs", actual: carbs, target: carbsTarget, color: "#3B82F6" },

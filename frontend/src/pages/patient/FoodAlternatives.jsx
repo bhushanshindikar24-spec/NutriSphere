@@ -10,34 +10,17 @@ export default function FoodAlternatives() {
 
   const fetchAlternatives = async (food) => {
     setSelectedFood(food);
+    // Alternatives come from the NutriSphere food database; external search hits have no local id
+    if (!food.id || (food.source && food.source !== "LOCAL")) {
+      setAlternatives([]);
+      return;
+    }
     setLoading(true);
     try {
-      const res = await api.get(`/nutrition/foods/${food.id || 1}/alternatives`);
+      const res = await api.get(`/food/${food.id}/alternatives`);
       setAlternatives(res.data?.data || res.data || []);
     } catch (_err) {
-      // Heuristic fallback substitutes based on food category/name
-      const name = (food.name || "").toLowerCase();
-// eslint-disable-next-line no-useless-assignment
-      let mockList = [];
-      if (name.includes("rice") || name.includes("bread") || name.includes("roti") || name.includes("grain")) {
-        mockList = [
-          { name: "Jowar / Bajra Bhakri", calories: 105, proteinG: 3.7, carbsG: 21.6, fatG: 0.8, reason: "High-fiber gluten-free millet flatbread with low glycemic index." },
-          { name: "Steamed Brown Basmati Rice", calories: 112, proteinG: 2.6, carbsG: 23.5, fatG: 0.9, reason: "Complex whole grain with slow digestive absorption." },
-          { name: "Multigrain Phulka (Wheat, Jowar & Bajra)", calories: 84, proteinG: 3.3, carbsG: 16.1, fatG: 0.7, reason: "Traditional Indian staple packed with fiber and magnesium." },
-        ];
-      } else if (name.includes("chicken") || name.includes("mutton") || name.includes("fish") || name.includes("meat")) {
-        mockList = [
-          { name: "Low-Fat Paneer Bhurji", calories: 145, proteinG: 12.0, carbsG: 2.8, fatG: 9.0, reason: "Dense vegetarian dairy protein with calcium and minimal carbohydrates." },
-          { name: "Panchmel Dal Tadka", calories: 110, proteinG: 6.5, carbsG: 16.0, fatG: 2.8, reason: "Easily digestible satvik legume mix rich in prebiotic fiber and iron." },
-          { name: "Sprouted Kala Chana Chaat", calories: 125, proteinG: 8.5, carbsG: 21.0, fatG: 1.2, reason: "High bioavailable zinc, magnesium, and plant-based amino acids." },
-        ];
-      } else {
-        mockList = [
-          { name: "Roasted Desi Makhana (Foxnuts)", calories: 105, proteinG: 2.9, carbsG: 22.8, fatG: 0.3, reason: "Zero cholesterol, low-sodium Indian superfood rich in magnesium." },
-          { name: "Spiced Tadka Chaas (Buttermilk)", calories: 35, proteinG: 2.2, carbsG: 3.2, fatG: 1.2, reason: "Traditional probiotic cooler with roasted cumin to stimulate digestion." },
-        ];
-      }
-      setAlternatives(mockList);
+      setAlternatives([]);
     } finally {
       setLoading(false);
     }
@@ -75,6 +58,11 @@ export default function FoodAlternatives() {
           </h4>
 
           <div style={{ display: "grid", gap: "1rem" }}>
+            {alternatives.length === 0 && (
+              <div className="glass-panel" style={{ padding: "1.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+                No alternatives in the same food category were found in the database.
+              </div>
+            )}
             {alternatives.map((alt, idx) => (
               <div
                 key={idx}
@@ -91,10 +79,10 @@ export default function FoodAlternatives() {
                 <div>
                   <h4 style={{ margin: "0 0 0.25rem 0" }}>{alt.name}</h4>
                   <p className="text-muted" style={{ margin: "0 0 0.5rem 0", fontSize: "0.825rem" }}>
-                    {alt.reason || "Clinically balanced nutritional substitute."}
+                    {alt.reason}
                   </p>
                   <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.8rem" }}>
-                    <span><strong>{alt.calories}</strong> kcal</span>
+                    <span><strong>{Math.round(alt.calories ?? 0)}</strong> kcal/100g</span>
                     <span>•</span>
                     <span>P: {alt.proteinG}g</span>
                     <span>•</span>

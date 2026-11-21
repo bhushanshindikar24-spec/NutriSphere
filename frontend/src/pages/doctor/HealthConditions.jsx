@@ -23,7 +23,7 @@ export default function HealthConditions() {
         const res = await api.get("/doctors/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       }
@@ -34,21 +34,10 @@ export default function HealthConditions() {
   const fetchConditions = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/medical/conditions?patientId=${selectedPatientId}`);
+      const res = await api.get(`/medical/conditions/patient/${selectedPatientId}`);
       setConditions(res.data?.data || res.data || []);
     } catch (_err) {
-      setConditions([
-        {
-          id: 1,
-          conditionName: "Mild Dyslipidemia",
-          icdCode: "E78.5",
-          severity: "MILD",
-          status: "ACTIVE",
-          diagnosedDate: "2026-08-10",
-          notes: "Elevated LDL with normal triglycerides.",
-          dietaryRestrictions: "Limit saturated fat, increase soluble fibers.",
-        },
-      ]);
+      setConditions([]);
     } finally {
       setLoading(false);
     }
@@ -64,38 +53,25 @@ export default function HealthConditions() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.post("/medical/conditions", {
-        patientId: Number(selectedPatientId),
-        conditionName,
-        icdCode,
-        severity,
-        dietaryRestrictions: dietaryImpact,
+      const details = [
+        icdCode && `ICD-10: ${icdCode}`,
+        dietaryImpact && `Dietary impact: ${dietaryImpact}`,
         notes,
-        status: "ACTIVE",
+      ].filter(Boolean).join(" | ");
+      await api.post("/medical/conditions/patient", {
+        patientUserId: Number(selectedPatientId),
+        conditionName,
+        severity,
+        notes: details,
+        diagnosedDate: new Date().toISOString().slice(0, 10),
       });
       await fetchConditions();
       setConditionName("");
       setIcdCode("");
       setDietaryImpact("");
       setNotes("");
-    } catch (_err) {
-      setConditions((prev) => [
-        {
-          id: Date.now(),
-          conditionName,
-          icdCode,
-          severity,
-          dietaryRestrictions: dietaryImpact,
-          notes,
-          status: "ACTIVE",
-          diagnosedDate: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-      setConditionName("");
-      setIcdCode("");
-      setDietaryImpact("");
-      setNotes("");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to add condition.");
     } finally {
       setSaving(false);
     }
@@ -103,10 +79,10 @@ export default function HealthConditions() {
 
   const handleDeleteCondition = async (id) => {
     try {
-      await api.delete(`/medical/conditions/${id}`);
+      await api.delete(`/medical/conditions/patient/${id}`);
       setConditions((prev) => prev.filter((c) => c.id !== id));
-    } catch (_err) {
-      setConditions((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to remove condition.");
     }
   };
 

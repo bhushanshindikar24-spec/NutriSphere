@@ -12,32 +12,11 @@ export default function MealDetails() {
   useEffect(() => {
     const fetchMeal = async () => {
       try {
-        const res = await api.get(`/nutrition/meals/${id || 1}`);
+        const res = await api.get(`/nutrition/meals/${id}`);
         setMeal(res.data?.data || res.data);
       } catch (_err) {
         // Fallback default details
-        setMeal({
-          id: id || 1,
-          name: "Paneer Tikka with Multigrain Phulka & Dal Tadka",
-          mealType: "LUNCH",
-          calories: 510,
-          proteinG: 28,
-          carbsG: 52,
-          fatG: 16,
-          fiberG: 9,
-          sodiumMg: 380,
-          description: "Char-grilled marinated cottage cheese cubes paired with handmade multigrain phulkas, golden moong dal tadka, fresh probiotic dahi, and lemon kachumber.",
-          allergens: ["DAIRY"],
-          isSafe: true,
-          ingredients: [
-            "120g Fresh Low-Fat Paneer (Char-grilled with Indian spices)",
-            "2 Multigrain Phulkas (Whole Wheat, Jowar & Bajra)",
-            "1 Bowl Yellow Moong Dal Tadka (Jeera, Garlic & Hing tempering)",
-            "1 Katori Fresh Probiotic Dahi (Curd with roasted cumin)",
-            "Indian Kachumber Salad (Cucumber, Tomato, Onion & Lemon)",
-            "Fresh Pudina (Mint) & Coriander Chutney",
-          ],
-        });
+        setMeal(null);
       } finally {
         setLoading(false);
       }

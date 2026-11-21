@@ -4,11 +4,11 @@ import MacroBreakdown from "./MacroBreakdown";
 
 export default function NutritionProgress({
   consumedCalories = 0,
-  targetCalories = 2000,
-  consumedMacros = { proteinG: 0, carbsG: 0, fatG: 0 },
-  targetMacros = { proteinG: 120, carbsG: 220, fatG: 65 },
+  targetCalories = 0,
+  consumedMacros = {},
+  targetMacros = {},
   waterConsumedMl = 0,
-  waterTargetMl = 2500,
+  waterTargetMl = 0,
 }) {
   return (
     <div className="glass-panel" style={{ padding: "1.5rem", borderRadius: "var(--radius-lg)", display: "grid", gap: "1.5rem" }}>
@@ -21,7 +21,14 @@ export default function NutritionProgress({
         <h5 style={{ margin: "0 0 0.75rem 0", fontSize: "0.9rem", color: "var(--text-muted)" }}>
           Macronutrient Fulfillment
         </h5>
-        <MacroBreakdown actual={consumedMacros} target={targetMacros} />
+        <MacroBreakdown
+          carbs={consumedMacros.carbsG || 0}
+          carbsTarget={targetMacros.carbsG || 0}
+          protein={consumedMacros.proteinG || 0}
+          proteinTarget={targetMacros.proteinG || 0}
+          fat={consumedMacros.fatG || 0}
+          fatTarget={targetMacros.fatG || 0}
+        />
       </div>
 
       {waterTargetMl > 0 && (

@@ -14,7 +14,7 @@ export default function FoodLogs() {
         const res = await api.get("/dietitians/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       }
@@ -25,7 +25,7 @@ export default function FoodLogs() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/food-logs?patientId=${selectedPatientId}`);
+      const res = await api.get(`/food-logs/range?from=${new Date(Date.now() - 29 * 864e5).toISOString().slice(0, 10)}&to=${new Date().toISOString().slice(0, 10)}&patientUserId=${selectedPatientId}`);
       setLogs(res.data?.data?.content || res.data?.data || res.data || []);
     } catch (_err) {
       setLogs([]);

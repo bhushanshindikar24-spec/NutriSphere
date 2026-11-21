@@ -8,6 +8,8 @@ import lombok.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.nutrisphere.exception.BadRequestException;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +22,11 @@ public class ConsultationController {
     private final ConsultationRepository repo;
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
+    private static final SecureRandom OTP_RANDOM = new SecureRandom();
+
+    private static String generateOtp() {
+        return String.format("%04d", OTP_RANDOM.nextInt(10000));
+    }
 
     @GetMapping({"", "/doctor"})
     @PreAuthorize("hasAnyRole('DOCTOR', 'DIETITIAN', 'ADMIN')")
@@ -95,9 +102,8 @@ public class ConsultationController {
         if (c.getBloodPressure() == null) c.setBloodPressure(request.getBloodPressure());
         if (c.getHeartRate() == null) c.setHeartRate(request.getHeartRate());
         
-        // Status defaults to PENDING (with dummy OTP 1234)
         c.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus() : "PENDING");
-        c.setOtp("1234");
+        c.setVerificationOtp(generateOtp());
 
         Consultation saved = repo.save(c);
         populateTransientFields(List.of(saved));
@@ -138,19 +144,25 @@ public class ConsultationController {
             @RequestBody Map<String, String> body) {
         Consultation c = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Consultation not found with id: " + id));
+        securityUtils.assertPatientAccess(c.getPatientUserId());
         String enteredOtp = body.get("otp");
-        if (enteredOtp == null || !enteredOtp.trim().equals("1234")) {
-            throw new RuntimeException("Invalid consultation verification OTP. Please provide the patient's 4-digit OTP (1234).");
+        if (c.getVerificationOtp() == null || enteredOtp == null
+                || !java.security.MessageDigest.isEqual(c.getVerificationOtp().getBytes(), enteredOtp.trim().getBytes())) {
+            throw new BadRequestException("Invalid consultation verification OTP. Ask the patient for the 4-digit code shown in their Consultations page.");
         }
         c.setStatus("COMPLETED");
+        c.setVerificationOtp(null);
         Consultation saved = repo.save(c);
         populateTransientFields(List.of(saved));
         return ApiResponse.success(saved);
     }
 
     private void populateTransientFields(List<Consultation> list) {
+        Long viewerId = securityUtils.getCurrentUserId();
+        boolean viewerIsPatient = securityUtils.hasRole("PATIENT");
         for (Consultation c : list) {
-            c.setOtp("1234");
+            // Only the patient sees their own OTP; doctors must obtain it from the patient.
+            c.setOtp(viewerIsPatient && viewerId.equals(c.getPatientUserId()) ? c.getVerificationOtp() : null);
             if (c.getStatus() == null || c.getStatus().isBlank()) {
                 c.setStatus("PENDING");
             }
@@ -166,8 +178,8 @@ public class ConsultationController {
             }
             if (c.getBloodPressure() != null || c.getHeartRate() != null) {
                 Map<String, String> vitals = new HashMap<>();
-                vitals.put("bloodPressure", c.getBloodPressure() != null ? c.getBloodPressure() : "120/80");
-                vitals.put("heartRate", c.getHeartRate() != null ? c.getHeartRate() : "72");
+                vitals.put("bloodPressure", c.getBloodPressure());
+                vitals.put("heartRate", c.getHeartRate());
                 c.setVitalSigns(vitals);
             }
         }

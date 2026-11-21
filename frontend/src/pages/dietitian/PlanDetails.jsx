@@ -14,7 +14,7 @@ export default function PlanDetails() {
   useEffect(() => {
     const fetchPlan = async () => {
       try {
-        const res = await api.get(`/nutrition/diet-plans/${id || 201}`);
+        const res = await api.get(`/nutrition/diet-plans/${id}`);
         setPlan(res.data?.data || res.data);
       } catch (_err) {
         setPlan(null);

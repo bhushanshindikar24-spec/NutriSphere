@@ -17,7 +17,7 @@ export default function RealityScore() {
         const res = await api.get("/dietitians/patients");
         const list = res.data?.data || res.data || [];
         setPatients(list);
-        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId || 101);
+        if (list.length > 0) setSelectedPatientId(list[0].id || list[0].patientUserId);
       } catch (_err) {
         setPatients([]);
       }
@@ -28,7 +28,7 @@ export default function RealityScore() {
   const fetchScore = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/intelligence/reality-score?patientId=${selectedPatientId}`);
+      const res = await api.get(`/reality-score/latest?patientUserId=${selectedPatientId}`);
       setScoreData(res.data?.data || res.data);
     } catch (_err) {
       setScoreData(null);
@@ -46,7 +46,7 @@ export default function RealityScore() {
   const handleRecalculate = async () => {
     setRecalculating(true);
     try {
-      await api.post(`/intelligence/reality-score/calculate?patientId=${selectedPatientId}`);
+      await api.post(`/reality-score/calculate?patientUserId=${selectedPatientId}`);
       await fetchScore();
     } catch (_err) {
       await fetchScore();

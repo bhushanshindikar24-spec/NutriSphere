@@ -8,45 +8,37 @@ export default function EditDietPlan() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
-    dailyCaloriesTarget: 2000,
-    dailyProteinTarget: 130,
-    dailyCarbsTarget: 210,
-    dailyFatTarget: 65,
-    dailyWaterTarget: 2500,
+    dailyCaloriesTarget: "",
+    dailyProteinTarget: "",
+    dailyCarbsTarget: "",
+    dailyFatTarget: "",
+    dailyWaterTarget: "",
     notes: "",
-    status: "ACTIVE",
+    status: "",
   });
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchPlan = async () => {
       try {
-        const res = await api.get(`/nutrition/diet-plans/${id || 201}`);
+        const res = await api.get(`/nutrition/diet-plans/${id}`);
         const plan = res.data?.data || res.data;
         if (plan) {
           setFormData({
-            name: plan.name || "",
-            dailyCaloriesTarget: plan.dailyCaloriesTarget || 2000,
-            dailyProteinTarget: plan.dailyProteinTarget || 130,
-            dailyCarbsTarget: plan.dailyCarbsTarget || 210,
-            dailyFatTarget: plan.dailyFatTarget || 65,
-            dailyWaterTarget: plan.dailyWaterTarget || 2500,
-            notes: plan.notes || "",
-            status: plan.status || "ACTIVE",
+            name: plan.title ?? "",
+            dailyCaloriesTarget: plan.targetCalories ?? "",
+            dailyProteinTarget: plan.targetProteinG ?? "",
+            dailyCarbsTarget: plan.targetCarbsG ?? "",
+            dailyFatTarget: plan.targetFatG ?? "",
+            dailyWaterTarget: plan.targetWaterMl ?? "",
+            notes: plan.notes ?? "",
+            status: plan.status ?? "",
           });
         }
-      } catch (_err) {
-        setFormData({
-          name: "Phase 2 Mediterranean Fat-Loss",
-          dailyCaloriesTarget: 1950,
-          dailyProteinTarget: 140,
-          dailyCarbsTarget: 180,
-          dailyFatTarget: 65,
-          dailyWaterTarget: 2500,
-          notes: "Anti-inflammatory emphasis with low glycemic carbs.",
-          status: "ACTIVE",
-        });
+      } catch (err) {
+        setError(err.response?.data?.message || "Could not load this diet plan.");
       } finally {
         setLoading(false);
       }
@@ -57,12 +49,21 @@ export default function EditDietPlan() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    const num = (v) => (v === "" || v == null ? null : Number(v));
     try {
-      await api.put(`/nutrition/diet-plans/${id || 201}`, formData);
-      navigate(`/dietitian/plans/${id || 201}`);
+      await api.put(`/nutrition/diet-plans/${id}`, {
+        title: formData.name,
+        targetCalories: num(formData.dailyCaloriesTarget),
+        targetProteinG: num(formData.dailyProteinTarget),
+        targetCarbsG: num(formData.dailyCarbsTarget),
+        targetFatG: num(formData.dailyFatTarget),
+        targetWaterMl: num(formData.dailyWaterTarget),
+        notes: formData.notes,
+      });
+      navigate(`/dietitian/plans/${id}`);
     } catch (err) {
       console.error("Failed to update plan", err);
-      navigate(`/dietitian/plans/${id || 201}`);
+      setError(err.response?.data?.message || "Failed to save the diet plan.");
     } finally {
       setSaving(false);
     }
@@ -83,6 +84,9 @@ export default function EditDietPlan() {
       <h2>Edit Diet Plan</h2>
 
       <div className="glass-panel" style={{ padding: "2rem", borderRadius: "var(--radius-lg)" }}>
+        {error && (
+          <div style={{ color: "#EF4444", marginBottom: "1rem", fontSize: "0.9rem" }}>{error}</div>
+        )}
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.25rem" }}>
           <div>
             <label className="form-label">Plan Title</label>
